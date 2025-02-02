@@ -57,14 +57,15 @@ export class UsersController {
   @Post()
   async create(@Body() user: User, @Res() reply: FastifyReply) {
     const postUserResult = await this.usersService.create(user);
+    console.log(postUserResult)
+    if (!postUserResult) {
+      return reply.status(400).send({
+        statusCode: 400,
+        messege: 'Bad Input',
+        data: postUserResult,
+      });
+    }
 
-    // if (!postUserResult) {
-    //   return reply.status(400).send({
-    //     statusCode: 400,
-    //     messege: 'Bad Input',
-    //     data: postUserResult,
-    //   });
-    // }
     return reply.status(200).send({
       statusCode: 200,
       messege: 'User Created.',

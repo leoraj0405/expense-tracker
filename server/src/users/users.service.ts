@@ -1,4 +1,4 @@
-import { Injectable, Res } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { User } from './users.entity';
@@ -24,13 +24,9 @@ export class UsersService {
     return singleUser;
   }
 
-  create(user: User): Promise<User> {
-    try {
-      return this.userRepository.save(user);
-    } catch (error) {
-
-      return error.sqlMessage
-    }
+  async create(user: User): Promise<User> {
+    const createUser = await this.userRepository.save(user);
+    return createUser;
   }
 
   async update(id: number, user: Partial<User>): Promise<void> {
