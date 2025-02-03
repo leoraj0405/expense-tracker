@@ -11,7 +11,6 @@ import {
 import { UsersService } from './users.service';
 import { User } from './users.entity';
 import { FastifyReply } from 'fastify';
-import { repl } from '@nestjs/core';
 
 @Controller('user')
 export class UsersController {
@@ -57,7 +56,7 @@ export class UsersController {
   @Post()
   async create(@Body() user: User, @Res() reply: FastifyReply) {
     const postUserResult = await this.usersService.create(user);
-    console.log(postUserResult)
+    console.log('leo')
     if (!postUserResult) {
       return reply.status(400).send({
         statusCode: 400,
