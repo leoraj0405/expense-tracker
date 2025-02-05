@@ -11,6 +11,7 @@ import {
 import { UsersService } from './users.service';
 import { User } from './users.entity';
 import { FastifyReply } from 'fastify';
+import { QueryFailedError } from 'typeorm';
 
 @Controller('user')
 export class UsersController {
@@ -23,14 +24,14 @@ export class UsersController {
     if (!usersResult) {
       return reply.status(404).send({
         statusCode: 404,
-        messege: 'Requested resource could not be found.',
+        message: 'Requested resource could not be found.',
         data: null,
       });
     }
 
     return reply.status(200).send({
       statusCode: 200,
-      messege: 'Success',
+      message: 'Success',
       data: usersResult,
     });
   }
@@ -42,38 +43,38 @@ export class UsersController {
     if (!singleUserResult) {
       return reply.status(404).send({
         statusCode: 404,
-        messege: 'Requested resource could not be found.',
+        message: 'Requested resource could not be found.',
         data: null,
       });
     }
     return reply.status(200).send({
       statusCode: 200,
-      messege: 'Success',
+      message: 'Success',
       data: singleUserResult,
     });
   }
 
   @Post()
   async create(@Body() user: User, @Res() reply: FastifyReply) {
-    const postUserResult = await this.usersService.create(user);
-    console.log('leo')
-    if (!postUserResult) {
-      return reply.status(400).send({
-        statusCode: 400,
-        messege: 'Bad Input',
+    try {
+      const postUserResult = await this.usersService.create(user);
+      return reply.status(200).send({
+        statusCode: 200,
+        message: 'User Created.',
         data: postUserResult,
       });
+    } catch (error) {
+      return reply.status(400).send({
+        statusCode: 400,
+        message: error.message,
+        data: null,
+      });
     }
-
-    return reply.status(200).send({
-      statusCode: 200,
-      messege: 'User Created.',
-      data: postUserResult,
-    });
   }
 
   @Put(':id')
   update(@Param('id') id: number, @Body() user: Partial<User>) {
+    
     return this.usersService.update(id, user);
   }
 

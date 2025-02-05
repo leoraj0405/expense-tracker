@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { User } from './users.entity';
-import { send } from 'node:process';
 
 @Injectable()
 export class UsersService {
@@ -28,12 +27,11 @@ export class UsersService {
   async create(user: User): Promise<User> {
     try {
       const createUser = await this.userRepository.save(user);
-      return createUser
+      // console.log(await this.userRepository.save(user))
+      return createUser;
     } catch (error) {
-      throw new Error(error)
+      throw new Error(error);
     }
-
-
   }
 
   async update(id: number, user: Partial<User>): Promise<void> {
