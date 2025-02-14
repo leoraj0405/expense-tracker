@@ -1,57 +1,71 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from '../schemas/user.schema';
-import { RequestUser } from './user';
-
-// interface RequestCreateUser2 {
-//   name: User["name"],
-//   email: User["email"],
-//   password: User["password"]
-// }
+import { RequestUser } from '../request';
 
 @Injectable()
 export class UserService {
   constructor(@InjectModel(User.name) private userModel: Model<User>) {}
   async createUser({ name, email, password }: RequestUser): Promise<User> {
-    const newUser = new this.userModel({
-      name,
-      email,
-      password,
-      createdAt: new Date(),
-      updatedAt: null,
-      deletedAt: null,
-    });
-    return newUser.save();
+    try {
+      const newUser = new this.userModel({
+        name,
+        email,
+        password,
+        createdAt: new Date(),
+        updatedAt: null,
+        deletedAt: null,
+      });
+      return newUser.save();
+    } catch (error) {
+      throw new InternalServerErrorException(`Error : ${error.message}`);
+    }
   }
 
   async findAllUser(): Promise<User[]> {
-    const getUser = this.userModel.find({
-      deletedAt: null,
-    });
-    return getUser.exec();
+    try {
+      const getUser = this.userModel.find({
+        deletedAt: null,
+      });
+      return getUser.exec();
+    } catch (error) {
+      throw new InternalServerErrorException(`Error : ${error.message}`);
+    }
   }
 
   async updateUser(id: string, updateData: RequestUser): Promise<User | null> {
-    const updateUser = this.userModel.findByIdAndUpdate(
-      id,
-      { $set: { ...updateData, updatedAt: new Date() } },
-      { new: true },
-    );
-    return updateUser.exec();
+    try {
+      const updateUser = this.userModel.findByIdAndUpdate(
+        id,
+        { $set: { ...updateData, updatedAt: new Date() } },
+        { new: true },
+      );
+      return updateUser.exec();
+    } catch (error) {
+      throw new InternalServerErrorException(`Error : ${error.message}`);
+    }
   }
 
   async deleteUser(id: string): Promise<User | null> {
-    const deleteuser = this.userModel.findByIdAndUpdate(
-      id,
-      { $set: { deletedAt: new Date() } },
-      { new: true },
-    );
-    return deleteuser.exec();
+    try {
+      const deleteuser = this.userModel.findByIdAndUpdate(
+        id,
+        { $set: { deletedAt: new Date() } },
+        { new: true },
+      );
+      return deleteuser.exec();
+    } catch (error) {
+      throw new InternalServerErrorException(`Error : ${error.message}`);
+    }
   }
 
-  async findOneUser(id: string): Promise<User| null> {
-    const getOneUser = this.userModel.findById(id)
-    return getOneUser
+  async findOneUser(id: string): Promise<User | null> {
+    try {
+      const getOneUser = this.userModel.findById(id);
+      return getOneUser;
+    } catch (error) {
+      throw new InternalServerErrorException(`Error : ${error.message}`);
+    }
   }
 }

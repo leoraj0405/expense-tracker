@@ -9,7 +9,8 @@ import {
   Delete,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import type { RequestUser, ResponseUser } from './user';
+import type { RequestUser } from '../request';
+import { ResponseDto } from '../response';
 
 @Controller('user')
 export class UserController {
@@ -20,7 +21,7 @@ export class UserController {
     @Body() body: RequestUser,
     @Res() reply: any,
   ): Promise<void> {
-    const response: ResponseUser = {
+    const response: ResponseDto = {
       message: 'Success',
       data: null,
     };
@@ -39,15 +40,24 @@ export class UserController {
 
   @Get()
   async findAllUser(@Res() reply: any): Promise<void> {
-    const response: ResponseUser = {
+    const response: ResponseDto = {
       message: 'Success',
       data: null,
     };
     try {
-      response.data = await this.userService.findAllUser();
+      const getUser = await this.userService.findAllUser();
+      if (!getUser.length) {
+        response.message = 'Not Found';
+        return reply.status(404).send(response);
+      }
+      response.data = getUser;
       return reply.status(200).send(response);
     } catch (error) {
-      response.message = `Error : ${error.message}`;
+      if (error.code === 11000) {
+        response.message = 'This email already exists';
+      } else {
+        response.message = `Error : ${error.message}`;
+      }
       return reply.status(500).send(response);
     }
   }
@@ -58,7 +68,7 @@ export class UserController {
     @Param('id') id: any,
     @Res() reply: any,
   ): Promise<void> {
-    const response: ResponseUser = {
+    const response: ResponseDto = {
       message: 'Success',
       data: null,
     };
@@ -72,13 +82,14 @@ export class UserController {
   }
 
   @Delete('/:id')
-  async deleteUser(@Param('id') id: any, @Res() reply: any) {
-    const response: ResponseUser = {
+  async deleteUser(@Param('id') id: any, @Res() reply: any): Promise<void> {
+    const response: ResponseDto = {
       message: 'Success',
       data: null,
     };
     try {
       response.data = await this.userService.deleteUser(id);
+
       reply.status(200).send(response);
     } catch (error) {
       response.message = `Error : ${error.message}`;
@@ -87,8 +98,9 @@ export class UserController {
   }
 
   @Get('/:id')
-  async findOneUser(@Res() reply: any, @Param('id') id: any): Promise<void> {
-    const response: ResponseUser = {
+  async findOneUser(@Res() reply: any, @Param('id') id: string): Promise<void> {
+    console.log(id)
+    const response: ResponseDto = {
       message: 'Success',
       data: null,
     };
