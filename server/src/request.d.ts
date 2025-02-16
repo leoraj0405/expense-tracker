@@ -10,3 +10,23 @@ export interface RequestUser {
 export interface RequestCategory {
     name: Category.name
 }
+
+export interface RequestExpense {
+    userId: string,
+    description: string,
+    amount: number,
+    categoryId: string
+}
+
+export interface RequestGroup {
+    name: string,
+    createdBy: string
+}
+
+export interface RequestGrpExpense {
+    groupId: string,
+    description: string,
+    amount: number,
+    userId: string,
+    categoryId: string
+}

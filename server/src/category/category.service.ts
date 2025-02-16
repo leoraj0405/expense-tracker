@@ -24,7 +24,7 @@ export class CategoryService {
     }
   }
 
-  async findAllUser(): Promise<Category[]> {
+  async findAllCategory(): Promise<Category[]> {
     try {
       const getCategory = await this.categoryModel
         .find({
@@ -73,9 +73,7 @@ export class CategoryService {
   async singleCategory(id: string): Promise<Category | null> {
     try {
       const singleCategory = await this.categoryModel
-        .findById(id, {
-          deletedAt: null,
-        })
+        .findOne({ _id: id, deletedAt: null })
         .exec();
       return singleCategory;
     } catch (error) {

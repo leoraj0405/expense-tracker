@@ -8,54 +8,55 @@ import {
   Res,
   Param,
 } from '@nestjs/common';
-import { CategoryService } from './category.service';
-import { RequestCategory } from 'src/request';
+import { ExpenseService } from './expense.service';
+import { RequestExpense } from 'src/request';
 import { ResponseDto } from 'src/response';
-import { Category } from 'src/schemas/category.schema';
+import { Expense } from 'src/schemas/expense.schma';
 
-@Controller('category')
-export class CategoryController {
-  constructor(private readonly categoryService: CategoryService) {}
+@Controller('expense')
+export class ExpenseController {
+  constructor(private readonly expenseService: ExpenseService) {}
 
   @Post()
-  async postCategory(
-    @Body() body: RequestCategory,
+  async postExpense(
+    @Body() body: RequestExpense,
     @Res() reply: any,
-  ): Promise<void | Category> {
+  ): Promise<void | Expense> {
     const response: ResponseDto = {
       message: 'Success',
       data: null,
     };
     try {
-      response.data = await this.categoryService.createCategory({
-        name: body.name,
+      response.data = await this.expenseService.createExpense({
+        userId: body.userId,
+        description: body.description,
+        amount: body.amount,
+        categoryId: body.categoryId,
       });
       return reply.status(200).send(response);
     } catch (error) {
-      if (error.code === 11000) {
-        response.message = 'Category already exists';
+      if (error.name === 'ValidationError') {
+        response.message = 'Invalid user or expense category';
       } else {
         response.message = `Error : ${error.message}`;
       }
-
       return reply.status(500).send(response);
     }
   }
 
   @Get()
-  async getCategory(@Res() reply: any): Promise<void | Category> {
+  async getExpense(@Res() reply: any): Promise<void | Expense> {
     const response: ResponseDto = {
       message: 'Success',
       data: null,
     };
     try {
-      const getCategory = await this.categoryService.findAllCategory();
-      if (!getCategory.length) {
+      const getExpense = await this.expenseService.findAllExpense();
+      if (!getExpense.length) {
         response.message = 'Not Found';
         return reply.status(404).send(response);
       }
-
-      response.data = getCategory;
+      response.data = getExpense;
       return reply.status(200).send(response);
     } catch (error) {
       response.message = `Error : ${error.message}`;
@@ -64,18 +65,18 @@ export class CategoryController {
   }
 
   @Put('/:id')
-  async putCategory(
+  async updateExpense(
     @Param('id') id: string,
     @Res() reply: any,
-    @Body() body: RequestCategory,
-  ): Promise<Category | null> {
+    @Body() body: RequestExpense,
+  ): Promise<Expense | null> {
     const response: ResponseDto = {
       message: 'Success',
       data: null,
     };
     try {
-      const putCategory = await this.categoryService.putCategory(id, body);
-      response.data = putCategory;
+      const putExpense = await this.expenseService.putExpense(id, body);
+      response.data = putExpense;
       return reply.status(200).send(response);
     } catch (error) {
       response.message = `Error : ${error.message}`;
@@ -84,17 +85,16 @@ export class CategoryController {
   }
 
   @Delete('/:id')
-  async deleteCategory(
+  async deleteExepense(
     @Param('id') id: string,
     @Res() reply: any,
-  ): Promise<Category | null> {
+  ): Promise<Expense | null> {
     const response: ResponseDto = {
       message: 'Success',
       data: null,
     };
     try {
-      const deleteData = await this.categoryService.deleteCategory(id);
-      console.log(deleteData);
+      const deleteData = await this.expenseService.deleteExpense(id);
       response.data = deleteData;
       return reply.status(200).send(response);
     } catch (error) {
@@ -104,21 +104,21 @@ export class CategoryController {
   }
 
   @Get('/:id')
-  async getSingleCategory(
+  async getOneExpense(
     @Param('id') id: string,
     @Res() reply: any,
-  ): Promise<Category | null> {
+  ): Promise<Expense | null> {
     const response: ResponseDto = {
       message: 'Success',
       data: null,
     };
     try {
-      const oneCategory = await this.categoryService.singleCategory(id);
-      if (!oneCategory) {
+      const oneExpense = await this.expenseService.singleExpense(id);
+      if (!oneExpense) {
         response.message = 'Not found';
         return reply.status(404).send(response);
       } else {
-        response.data = oneCategory
+        response.data = oneExpense
         return reply.status(200).send(response);
       }
     } catch (error) {

@@ -1,27 +1,22 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { RequestExpense } from '../request';
-import { Expense } from 'src/schemas/expense.schma';
-
+import { RequestGroup } from '../request';
+import { Group } from 'src/schemas/group.schma';
 @Injectable()
-export class ExpenseService {
+export class GroupService {
   constructor(
-    @InjectModel(Expense.name) private expenseModel: Model<Expense>,
+    @InjectModel(Group.name) private groupModel: Model<Group>,
   ) {}
 
-  async createExpense({
-    userId,
-    description,
-    amount,
-    categoryId,
-  }: RequestExpense) {
+  async createGroup({
+    name,
+    createdBy
+  }: RequestGroup) {
     try {
-      const postExpense = new this.expenseModel({
-        userId,
-        description,
-        amount,
-        categoryId,
+      const postExpense = new this.groupModel({
+        name,
+        createdBy,
         createdAt: new Date(),
         updatedAt: null,
         deletedAt: null,
@@ -32,60 +27,59 @@ export class ExpenseService {
     }
   }
 
-  async findAllExpense(): Promise<Expense[]> {
+  async findAllGroup(): Promise<Group[]> {
     try {
-      const getExpense = await this.expenseModel
+      const getGroup = await this.groupModel
         .find({
           deletedAt: null,
         })
-        .populate({ path: 'userId', select: '-_id name' })
-        .populate({ path: 'categoryId', select: '-_id name' })
+        .populate({ path: 'createdBy', select: '-_id name' })
         .exec();
-      return getExpense;
+      return getGroup;
     } catch (error) {
       throw new InternalServerErrorException(`Error : ${error.message}`);
     }
   }
 
-  async putExpense(
+  async putGroup(
     id: string,
-    updateData: RequestExpense,
-  ): Promise<Expense | null> {
+    updateData: RequestGroup,
+  ): Promise<Group | null> {
     try {
-      const updateExpense = await this.expenseModel
+      const updateGroup = await this.groupModel
         .findByIdAndUpdate(
           id,
           { $set: { ...updateData, updatedAt: new Date() } },
           { new: true },
         )
         .exec();
-      return updateExpense;
+      return updateGroup;
     } catch (error) {
       throw new InternalServerErrorException(`Error: ${error.message}`);
     }
   }
 
-  async deleteExpense(id: string): Promise<Expense | null> {
+  async deleteGroup(id: string): Promise<Group | null> {
     try {
-      const delExpense = await this.expenseModel
+      const delGroup = await this.groupModel
         .findByIdAndUpdate(
           id,
           { $set: { deletedAt: new Date() } },
           { new: true },
         )
         .exec();
-      return delExpense;
+      return delGroup;
     } catch (error) {
       throw new InternalServerErrorException(`Error: ${error.message}`);
     }
   }
 
-  async singleExpense(id: string): Promise<Expense | null> {
+  async singleGroup(id: string): Promise<Group | null> {
     try {
-      const oneExpense = await this.expenseModel
+      const oneGroup = await this.groupModel
         .findOne({ _id: id, deletedAt: null })
         .exec();
-      return oneExpense;
+      return oneGroup;
     } catch (error) {
       throw new InternalServerErrorException(`Error: ${error.message}`);
     }

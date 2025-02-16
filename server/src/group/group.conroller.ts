@@ -8,54 +8,53 @@ import {
   Res,
   Param,
 } from '@nestjs/common';
-import { CategoryService } from './category.service';
-import { RequestCategory } from 'src/request';
+import { GroupService } from './group.service';
+import { RequestGroup } from 'src/request';
 import { ResponseDto } from 'src/response';
-import { Category } from 'src/schemas/category.schema';
+import { Group } from 'src/schemas/group.schma';
 
-@Controller('category')
-export class CategoryController {
-  constructor(private readonly categoryService: CategoryService) {}
+@Controller('group')
+export class GroupController {
+  constructor(private readonly groupService: GroupService) {}
 
   @Post()
-  async postCategory(
-    @Body() body: RequestCategory,
+  async postExpense(
+    @Body() body: RequestGroup,
     @Res() reply: any,
-  ): Promise<void | Category> {
+  ): Promise<void | Group> {
     const response: ResponseDto = {
       message: 'Success',
       data: null,
     };
     try {
-      response.data = await this.categoryService.createCategory({
+      response.data = await this.groupService.createGroup({
         name: body.name,
+        createdBy: body.createdBy
       });
       return reply.status(200).send(response);
     } catch (error) {
-      if (error.code === 11000) {
-        response.message = 'Category already exists';
+      if (error.name === 'ValidationError') {
+        response.message = 'Invalid user or expense category';
       } else {
         response.message = `Error : ${error.message}`;
       }
-
       return reply.status(500).send(response);
     }
   }
 
   @Get()
-  async getCategory(@Res() reply: any): Promise<void | Category> {
+  async getGroup(@Res() reply: any): Promise<void | Group> {
     const response: ResponseDto = {
       message: 'Success',
       data: null,
     };
     try {
-      const getCategory = await this.categoryService.findAllCategory();
-      if (!getCategory.length) {
+      const getGroup = await this.groupService.findAllGroup();
+      if (!getGroup.length) {
         response.message = 'Not Found';
         return reply.status(404).send(response);
       }
-
-      response.data = getCategory;
+      response.data = getGroup;
       return reply.status(200).send(response);
     } catch (error) {
       response.message = `Error : ${error.message}`;
@@ -64,18 +63,18 @@ export class CategoryController {
   }
 
   @Put('/:id')
-  async putCategory(
+  async updateGroup(
     @Param('id') id: string,
     @Res() reply: any,
-    @Body() body: RequestCategory,
-  ): Promise<Category | null> {
+    @Body() body: RequestGroup,
+  ): Promise<Group | null> {
     const response: ResponseDto = {
       message: 'Success',
       data: null,
     };
     try {
-      const putCategory = await this.categoryService.putCategory(id, body);
-      response.data = putCategory;
+      const putGroup = await this.groupService.putGroup(id, body);
+      response.data = putGroup;
       return reply.status(200).send(response);
     } catch (error) {
       response.message = `Error : ${error.message}`;
@@ -84,17 +83,16 @@ export class CategoryController {
   }
 
   @Delete('/:id')
-  async deleteCategory(
+  async deleteGroup(
     @Param('id') id: string,
     @Res() reply: any,
-  ): Promise<Category | null> {
+  ): Promise<Group | null> {
     const response: ResponseDto = {
       message: 'Success',
       data: null,
     };
     try {
-      const deleteData = await this.categoryService.deleteCategory(id);
-      console.log(deleteData);
+      const deleteData = await this.groupService.deleteGroup(id);
       response.data = deleteData;
       return reply.status(200).send(response);
     } catch (error) {
@@ -104,21 +102,21 @@ export class CategoryController {
   }
 
   @Get('/:id')
-  async getSingleCategory(
+  async getOneGroup(
     @Param('id') id: string,
     @Res() reply: any,
-  ): Promise<Category | null> {
+  ): Promise<Group | null> {
     const response: ResponseDto = {
       message: 'Success',
       data: null,
     };
     try {
-      const oneCategory = await this.categoryService.singleCategory(id);
-      if (!oneCategory) {
+      const oneGroup = await this.groupService.singleGroup(id);
+      if (!oneGroup) {
         response.message = 'Not found';
         return reply.status(404).send(response);
       } else {
-        response.data = oneCategory
+        response.data = oneGroup
         return reply.status(200).send(response);
       }
     } catch (error) {

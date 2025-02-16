@@ -62,7 +62,7 @@ export class UserService {
 
   async findOneUser(id: string): Promise<User | null> {
     try {
-      const getOneUser = this.userModel.findById(id);
+      const getOneUser = this.userModel.findOne({_id: id, deletedAt: null});
       return getOneUser;
     } catch (error) {
       throw new InternalServerErrorException(`Error : ${error.message}`);
