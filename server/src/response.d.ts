@@ -4,6 +4,7 @@ import { Expense } from './schemas/expense.schma';
 import { Group } from './schemas/group.schma';
 import { GroupExpense } from './schemas/groupExpense.schema';
 import { GroupMember } from './schemas/groupMember.schema';
+import { Admin } from './schemas/admin.schema';
 
 export interface ResponseDto {
   message: string;
@@ -20,5 +21,7 @@ export interface ResponseDto {
     | GroupExpense
     | GroupExpense[]
     | GroupMember
-    |GroupMember [];
+    | GroupMember[]
+    | Admin
+    | Amdin[];
 }

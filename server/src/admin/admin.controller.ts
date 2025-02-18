@@ -8,36 +8,34 @@ import {
   Res,
   Param,
 } from '@nestjs/common';
-import { GrpExpenseService } from './grpExpense.service';
-import { RequestGrpExpense } from 'src/request';
+import { Admin } from 'src/schemas/admin.schema';
+import { RequsetAdmin } from 'src/request';
 import { ResponseDto } from 'src/response';
-import { GroupExpense } from 'src/schemas/groupExpense.schema';
+import { AdminService } from './admin.service';
 
-@Controller('groupexpense')
-export class GrpExpenseController {
-  constructor(private readonly grpExpenseService: GrpExpenseService) {}
+@Controller('admin')
+export class AdminController {
+  constructor(private readonly adminService: AdminService) {}
 
   @Post()
-  async postExpense(
-    @Body() body: RequestGrpExpense,
+  async postAdmin(
+    @Body() body: RequsetAdmin,
     @Res() reply: any,
-  ): Promise<void | GroupExpense> {
+  ): Promise<void | Admin> {
     const response: ResponseDto = {
       message: 'Success',
       data: null,
     };
     try {
-      response.data = await this.grpExpenseService.createGrpExpense({
-        groupId: body.groupId,
-        description: body.description,
-        amount: body.amount,
-        userId: body.userId,
-        categoryId: body.categoryId
+      response.data = await this.adminService.createAdmin({
+        name: body.name,
+        email: body.email,
+        password: body.password
       });
       return reply.status(200).send(response);
     } catch (error) {
       if (error.name === 'ValidationError') {
-        response.message = 'Invalid user | group | category';
+        response.message = 'Invalid user | group ';
       } else {
         response.message = `Error : ${error.message}`;
       }
@@ -46,18 +44,18 @@ export class GrpExpenseController {
   }
 
   @Get()
-  async getGrpExpense(@Res() reply: any): Promise<void | GroupExpense> {
+  async getAdmin(@Res() reply: any): Promise<void | Admin> {
     const response: ResponseDto = {
       message: 'Success',
       data: null,
     };
     try {
-      const getGrpExpense = await this.grpExpenseService.findAllGrpExpense();
-      if (!getGrpExpense.length) {
+      const getAdmin = await this.adminService.findAllAdmin();
+      if (!getAdmin.length) {
         response.message = 'Not Found';
         return reply.status(404).send(response);
       }
-      response.data = getGrpExpense;
+      response.data = getAdmin;
       return reply.status(200).send(response);
     } catch (error) {
       response.message = `Error : ${error.message}`;
@@ -66,17 +64,17 @@ export class GrpExpenseController {
   }
 
   @Put('/:id')
-  async updateGrpExpense(
+  async updateAdmin(
     @Param('id') id: string,
     @Res() reply: any,
-    @Body() body: RequestGrpExpense,
-  ): Promise<GroupExpense | null> {
+    @Body() body: RequsetAdmin,
+  ): Promise<Admin | null> {
     const response: ResponseDto = {
       message: 'Success',
       data: null,
     };
     try {
-      response.data = await this.grpExpenseService.putGrpExpense(id, body);
+      response.data = await this.adminService.putAdmin(id, body);
       return reply.status(200).send(response);
     } catch (error) {
       response.message = `Error : ${error.message}`;
@@ -85,16 +83,16 @@ export class GrpExpenseController {
   }
 
   @Delete('/:id')
-  async deleteGrpExpense(
+  async deleteAdmin(
     @Param('id') id: string,
     @Res() reply: any,
-  ): Promise<GroupExpense | null> {
+  ): Promise<Admin | null> {
     const response: ResponseDto = {
       message: 'Success',
       data: null,
     };
     try {
-      response.data = await this.grpExpenseService.deleteGrpExpense(id);
+      response.data = await this.adminService.deleteAdmin(id);
       return reply.status(200).send(response);
     } catch (error) {
       response.message = `Error : ${error.message}`;
@@ -103,21 +101,21 @@ export class GrpExpenseController {
   }
 
   @Get('/:id')
-  async getOneGrpExpense(
+  async getOneAdmin(
     @Param('id') id: string,
     @Res() reply: any,
-  ): Promise<GroupExpense | null> {
+  ): Promise<Admin | null> {
     const response: ResponseDto = {
       message: 'Success',
       data: null,
     };
     try {
-      const oneGrpExpense = await this.grpExpenseService.singleGrpExpense(id);
-      if (!oneGrpExpense) {
+      const oneAdmin = await this.adminService.singleAdmin(id);
+      if (!oneAdmin) {
         response.message = 'Not found';
         return reply.status(404).send(response);
       } else {
-        response.data = oneGrpExpense
+        response.data = oneAdmin;
         return reply.status(200).send(response);
       }
     } catch (error) {

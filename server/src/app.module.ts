@@ -6,6 +6,8 @@ import { CategoryModule } from './category/category.module';
 import { ExpenseModule } from './expense/expense.module';
 import { GroupModule } from './group/group.module';
 import { GroupExpenseModule } from './groupExpense/grpExpense.module';
+import { GroupMemberModule } from './groupMember/grpMember.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -14,7 +16,9 @@ import { GroupExpenseModule } from './groupExpense/grpExpense.module';
     CategoryModule,
     ExpenseModule,
     GroupModule,
-    GroupExpenseModule
+    GroupExpenseModule,
+    GroupMemberModule,
+    AdminModule
   ],
 })
 export class AppModule {}

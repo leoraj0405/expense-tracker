@@ -99,7 +99,7 @@ export class UserController {
 
   @Get('/:id')
   async findOneUser(@Res() reply: any, @Param('id') id: string): Promise<void> {
-    console.log(id)
+    console.log(id);
     const response: ResponseDto = {
       message: 'Success',
       data: null,
@@ -110,7 +110,7 @@ export class UserController {
         response.message = 'Not found';
         return reply.status(404).send(response);
       } else {
-        response.data = oneUser
+        response.data = oneUser;
         return reply.status(200).send(response);
       }
     } catch (error) {

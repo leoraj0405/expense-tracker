@@ -30,3 +30,14 @@ export interface RequestGrpExpense {
     userId: string,
     categoryId: string
 }
+
+export interface RequestGrpMember {
+    groupId: string,
+    userId: string
+}
+
+export interface RequsetAdmin {
+    name: string,
+    email: string,
+    password: string
+}
