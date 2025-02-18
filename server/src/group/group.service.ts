@@ -78,6 +78,7 @@ export class GroupService {
     try {
       const oneGroup = await this.groupModel
         .findOne({ _id: id, deletedAt: null })
+        .populate({ path: 'createdBy', select: '-_id name' })
         .exec();
       return oneGroup;
     } catch (error) {

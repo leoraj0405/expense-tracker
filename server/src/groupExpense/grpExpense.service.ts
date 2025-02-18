@@ -34,61 +34,67 @@ export class GrpExpenseService {
     }
   }
 
-//   async findAllGroup(): Promise<Group[]> {
-//     try {
-//       const getGroup = await this.groupModel
-//         .find({
-//           deletedAt: null,
-//         })
-//         .populate({ path: 'createdBy', select: '-_id name' })
-//         .exec();
-//       return getGroup;
-//     } catch (error) {
-//       throw new InternalServerErrorException(`Error : ${error.message}`);
-//     }
-//   }
+  async findAllGrpExpense(): Promise<GroupExpense[]> {
+    try {
+      const getGrpExpense = await this.grpExpenseModel
+        .find({
+          deletedAt: null,
+        })
 
-//   async putGroup(
-//     id: string,
-//     updateData: RequestGroup,
-//   ): Promise<Group | null> {
-//     try {
-//       const updateGroup = await this.groupModel
-//         .findByIdAndUpdate(
-//           id,
-//           { $set: { ...updateData, updatedAt: new Date() } },
-//           { new: true },
-//         )
-//         .exec();
-//       return updateGroup;
-//     } catch (error) {
-//       throw new InternalServerErrorException(`Error: ${error.message}`);
-//     }
-//   }
+        .populate({ path: 'groupId', select: '-_id name' })
+        .populate({path: 'userId', select: '-_id name'})
+        .populate({path: 'categoryId', select: '-_id name'})
+        .exec();
+      return getGrpExpense;
+    } catch (error) {
+      throw new InternalServerErrorException(`Error : ${error.message}`);
+    }
+  }
 
-//   async deleteGroup(id: string): Promise<Group | null> {
-//     try {
-//       const delGroup = await this.groupModel
-//         .findByIdAndUpdate(
-//           id,
-//           { $set: { deletedAt: new Date() } },
-//           { new: true },
-//         )
-//         .exec();
-//       return delGroup;
-//     } catch (error) {
-//       throw new InternalServerErrorException(`Error: ${error.message}`);
-//     }
-//   }
+  async putGrpExpense(
+    id: string,
+    updateData: RequestGrpExpense,
+  ): Promise<GroupExpense | null> {
+    try {
+      const updateGrpExpense = await this.grpExpenseModel
+        .findByIdAndUpdate(
+          id,
+          { $set: { ...updateData, updatedAt: new Date() } },
+          { new: true },
+        )
+        .exec();
+      return updateGrpExpense;
+    } catch (error) {
+      throw new InternalServerErrorException(`Error: ${error.message}`);
+    }
+  }
 
-//   async singleGroup(id: string): Promise<Group | null> {
-//     try {
-//       const oneGroup = await this.groupModel
-//         .findOne({ _id: id, deletedAt: null })
-//         .exec();
-//       return oneGroup;
-//     } catch (error) {
-//       throw new InternalServerErrorException(`Error: ${error.message}`);
-//     }
-//   }
+  async deleteGrpExpense(id: string): Promise<GroupExpense | null> {
+    try {
+      const delGrpExpense = await this.grpExpenseModel
+        .findByIdAndUpdate(
+          id,
+          { $set: { deletedAt: new Date() } },
+          { new: true },
+        )
+        .exec();
+      return delGrpExpense;
+    } catch (error) {
+      throw new InternalServerErrorException(`Error: ${error.message}`);
+    }
+  }
+
+  async singleGrpExpense(id: string): Promise<GroupExpense | null> {
+    try {
+      const oneGrpExpense = await this.grpExpenseModel
+        .findOne({ _id: id, deletedAt: null })
+        .populate({ path: 'groupId', select: '-_id name' })
+        .populate({path: 'userId', select: '-_id name'})
+        .populate({path: 'categoryId', select: '-_id name'})
+        .exec();
+      return oneGrpExpense;
+    } catch (error) {
+      throw new InternalServerErrorException(`Error: ${error.message}`);
+    }
+  }
 }

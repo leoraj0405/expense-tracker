@@ -3,6 +3,7 @@ import { Category } from './schemas/category.schema';
 import { Expense } from './schemas/expense.schma';
 import { Group } from './schemas/group.schma';
 import { GroupExpense } from './schemas/groupExpense.schema';
+import { GroupMember } from './schemas/groupMember.schema';
 
 export interface ResponseDto {
   message: string;
@@ -17,5 +18,7 @@ export interface ResponseDto {
     | Group
     | Group[]
     | GroupExpense
-    | GroupExpense[];
+    | GroupExpense[]
+    | GroupMember
+    |GroupMember [];
 }
