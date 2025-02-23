@@ -1,0 +1,6 @@
+.neon-border {
+    background-color: black;
+    border: 5px solid #313cd0;
+    box-shadow: 0 0 10px #313cd0, 0 0 20px #313cd0, 0 0 40px #313cd0;
+  }
+  
