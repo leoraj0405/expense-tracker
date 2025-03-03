@@ -41,3 +41,8 @@ export interface RequsetAdmin {
     email: string,
     password: string
 }
+
+export interface LoginUserReq {
+    email: string,
+    password: string
+}

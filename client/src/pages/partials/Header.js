@@ -1,6 +1,7 @@
 import React from "react";
 import { IoLogoBitcoin } from "react-icons/io";
 import { Navbar, Container, NavDropdown } from "react-bootstrap";
+import { Link, Outlet } from 'react-router-dom'
 function Header() {
     return (
         <>
@@ -14,13 +15,15 @@ function Header() {
                         <Navbar.Text style={{ display: 'flex', gap: '10px' }}>
                             <p>Signed in as:</p>
                             <NavDropdown title="Leo Raj" id="basic-nav-dropdown">
-                                <NavDropdown.Item href="/profile">Profile</NavDropdown.Item>
-                                <NavDropdown.Item href="/login">Logout</NavDropdown.Item>
+                                <NavDropdown.Item><Link to='/profile'>Profile</Link></NavDropdown.Item>
+                                <NavDropdown.Item><Link to='/login'>Logout</Link></NavDropdown.Item>
                             </NavDropdown>
                         </Navbar.Text>
                     </Navbar.Collapse>
                 </Container>
             </Navbar>
+
+            <Outlet />
         </>
     );
 }

@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from '../schemas/user.schema';
 import { RequestUser } from '../request';
+import { LoginUserReq } from '../request';
 
 @Injectable()
 export class UserService {
@@ -62,8 +63,21 @@ export class UserService {
 
   async findOneUser(id: string): Promise<User | null> {
     try {
-      const getOneUser = this.userModel.findOne({_id: id, deletedAt: null});
+      const getOneUser = this.userModel.findOne({ _id: id, deletedAt: null });
       return getOneUser;
+    } catch (error) {
+      throw new InternalServerErrorException(`Error : ${error.message}`);
+    }
+  }
+
+  async loginUser(updateData: LoginUserReq) {
+    try {
+      const loginUser = await this.userModel.findOne({
+        email: updateData.email,
+        password: updateData.password,
+        deletedAt: null,
+      });
+      return loginUser
     } catch (error) {
       throw new InternalServerErrorException(`Error : ${error.message}`);
     }
