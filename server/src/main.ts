@@ -3,7 +3,7 @@ import { AppModule } from './app.module';
 import * as session from 'express-session';
 
 const PORT = 1000;
-const SESSION_TIME = 15 * 60 * 1000;
+const SESSION_TIME = 1 * 60 * 1000;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

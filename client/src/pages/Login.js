@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import '../style/Login.css'
 import { FaAngleDoubleDown } from "react-icons/fa";
 import Footer from '../layouts/Footer';
@@ -10,10 +10,13 @@ import { RiLockPasswordFill } from "react-icons/ri";
 function Login() {
 
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const [dangerAlert, setDangerAlter] = useState(true)
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
+  const navigate = useNavigate()
 
   function handleSubmit() {
 
@@ -35,11 +38,10 @@ function Login() {
     fetch("http://localhost:1000/user/login", requestOptions)
       .then(async (response) => {
         if (response.status === 200) {
-          alert('login success')
+          setDangerAlter(true)
+          navigate('/home')
         } else {
-          if (response.status === 404) {
-            alert('Invalid email or password')
-          }
+          setDangerAlter(false)
         }
       });
   }
@@ -55,8 +57,8 @@ function Login() {
                 htmlFor="email"
                 className='form-label'>
                 Email Address</label>
-                <div className="input-group mb-3">
-                <span className='input-group-text'><FaUser/></span>
+              <div className="input-group mb-3">
+                <span className='input-group-text'><FaUser /></span>
                 <input
                   type="email"
                   name="email"
@@ -70,13 +72,16 @@ function Login() {
                 Password
               </label>
               <div className="input-group mb-3">
-                <span className='input-group-text'><RiLockPasswordFill/></span>
+                <span className='input-group-text'><RiLockPasswordFill /></span>
                 <input
                   type="password"
                   name="password"
                   className='form-control'
                   value={formData.password}
                   onChange={handleChange} />
+              </div>
+              <div className="alert alert-danger h-10" hidden={dangerAlert} >
+                Invalid Email or Password.
               </div>
               <div>
                 <button className='btn btn-primary' onClick={handleSubmit}>Submit</button>

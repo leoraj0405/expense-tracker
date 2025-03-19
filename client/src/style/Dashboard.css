@@ -1,6 +1,32 @@
-.neon-border {
-    background-color: black;
-    border: 5px solid #313cd0;
-    box-shadow: 0 0 10px #313cd0, 0 0 20px #313cd0, 0 0 40px #313cd0;
-  }
-  
+/* header style start */
+.header {
+  background: linear-gradient(136deg, #ffc107, #0d6efd);
+  color: #fff;  /* Text color for contrast */
+}
+.right-header, .left-header {
+  padding-top: 20px !important;
+  gap: 20px;
+}
+.a {
+  text-decoration: none;
+  color: white;
+}
+span {
+  font-weight: bold;
+}
+
+/* header style end */
+
+.li-a {
+  text-decoration: none;
+  color: black;
+}
+.ul {
+  list-style: none;
+  padding: 20px !important;
+  background: linear-gradient(130deg,#ffc107, #0d6efd);
+  max-width: 40vh !important;
+  height: 100vh;
+  box-sizing: border-box;
+  margin: 0;
+}

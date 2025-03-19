@@ -15,5 +15,8 @@
 
 .mt {
     margin-top: 10vh !important;
-
+}
+.h-10 {
+    height: 10% !important;
+    box-sizing: border-box;
 }
