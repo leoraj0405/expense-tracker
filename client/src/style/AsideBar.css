@@ -1,0 +1,26 @@
+/* sidebar style start */
+.li-a {
+    text-decoration: none;
+    color: black;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .ul {
+    list-style: none;
+    padding: 20px !important;
+    background: #ffc107;
+    height: 84vh;
+    box-sizing: border-box;
+    margin: 0;
+    display: flex;
+    gap: 30px;
+    flex-direction: column;
+    width: 100% !important;
+  }
+  .btn {
+    all: unset;
+  }
+  
+  /* side bar style end */
+

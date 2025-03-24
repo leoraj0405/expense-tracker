@@ -1,0 +1,25 @@
+.header {
+  background: #0d6efd;
+  color: #fff;
+  /* Text color for contrast */
+}
+
+.right-header,
+.left-header {
+  padding: 20px !important;
+  gap: 20px;
+  box-sizing: border-box;
+}
+
+.a {
+  text-decoration: none;
+  color: white;
+}
+
+span {
+  font-weight: bold;
+}
+
+.logo {
+  width: 10% !important;
+}
