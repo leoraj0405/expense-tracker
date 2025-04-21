@@ -4,7 +4,8 @@ import { Category } from "./schemas/category.schema"
 export interface RequestUser {
     name: User.name,
     email: User.email,
-    password: User.password
+    password: User.password,
+    parentEmail: User.parentEmail
 }
 
 export interface RequestCategory {
@@ -15,6 +16,7 @@ export interface RequestExpense {
     userId: string,
     description: string,
     amount: number,
+    date: string,
     categoryId: string
 }
 
@@ -45,4 +47,9 @@ export interface RequsetAdmin {
 export interface LoginUserReq {
     email: string,
     password: string
+}
+
+export interface LoginParentReq {
+    parentEmail : string,
+    parentotp:? string
 }

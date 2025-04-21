@@ -10,7 +10,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import type { LoginUserReq, RequestUser } from '../request';
+import type { LoginParentReq, LoginUserReq, RequestUser } from '../request';
 import { ResponseDto } from '../response';
 
 @Controller('user')
@@ -31,6 +31,7 @@ export class UserController {
         name: body.name,
         email: body.email,
         password: body.password,
+        parentEmail: body.parentEmail,
       });
       return reply.status(200).send(response);
     } catch (error) {
@@ -111,8 +112,7 @@ export class UserController {
       const loggedUser = await this.userService.loginUser(body);
       if (loggedUser) {
         request.session.isLogged = true;
-        request.session.data = loggedUser;
-        response.data = 'user Data inserted in session';
+        response.data = loggedUser;
         return reply.status(200).send(response);
       } else {
         request.session.isLogged = false;
@@ -165,6 +165,57 @@ export class UserController {
         return reply.status(404).send(response);
       } else {
         response.data = oneUser;
+        return reply.status(200).send(response);
+      }
+    } catch (error) {
+      response.message = `Error : ${error.message}`;
+      return reply.status(500).send(response);
+    }
+  }
+
+  @Post('/parentgenerateotp')
+  async findParent(
+    @Res() reply: any,
+    @Body() body: LoginParentReq,
+  ): Promise<void> {
+    const response: ResponseDto = {
+      message: 'Success',
+      data: null,
+    };
+    try {
+      const findParent = await this.userService.parentGenerateOtp(body);
+      if (!findParent) {
+        response.message = 'Not found';
+        return reply.status(404).send(response);
+      } else {
+        response.data = findParent;
+        return reply.status(200).send(response);
+      }
+    } catch (error) {
+      response.message = `Error : ${error.message}`;
+      return reply.status(500).send(response);
+    }
+  }
+
+  @Post('/parentproccessotp')
+  async processOtp(
+    @Res() reply: any,
+    @Body() body: LoginParentReq,
+  ): Promise<void> {
+    const response: ResponseDto = {
+      message: 'Success',
+      data: null,
+    };
+    try {
+      let email = body.parentEmail
+      let otp = body.parentotp
+      const processOtp = await this.userService.parentProcessOtp(email, otp);
+      console.log(processOtp)
+      if (!processOtp) {
+        response.message = 'Not found';
+        return reply.status(404).send(response);
+      } else {
+        response.data = processOtp;
         return reply.status(200).send(response);
       }
     } catch (error) {

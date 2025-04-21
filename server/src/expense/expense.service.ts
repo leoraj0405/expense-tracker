@@ -14,13 +14,16 @@ export class ExpenseService {
     userId,
     description,
     amount,
+    date,
     categoryId,
+
   }: RequestExpense) {
     try {
       const postExpense = new this.expenseModel({
         userId,
         description,
         amount,
+        date,
         categoryId,
         createdAt: new Date(),
         updatedAt: null,
@@ -84,8 +87,8 @@ export class ExpenseService {
     try {
       const oneExpense = await this.expenseModel
         .findOne({ _id: id, deletedAt: null })
-        .populate({ path: 'userId', select: '-_id name' })
-        .populate({ path: 'categoryId', select: '-_id name' })
+        .populate({ path: 'userId', select: '_id name' })
+        .populate({ path: 'categoryId', select: '_id name' })
         .exec();
       return oneExpense;
     } catch (error) {

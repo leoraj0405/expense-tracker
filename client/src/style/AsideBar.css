@@ -10,7 +10,7 @@
     list-style: none;
     padding: 20px !important;
     background: #ffc107;
-    height: 84vh;
+    height: 100vh;
     box-sizing: border-box;
     margin: 0;
     display: flex;
@@ -21,6 +21,14 @@
   .btn {
     all: unset;
   }
+
+  .disabled {
+    pointer-events: none; /* Disable click interactions */
+    opacity: 0;        /* Visual cue to indicate it's disabled */
+  }
   
+  .sidebar {
+    min-height: 100vh;
+  }
   /* side bar style end */
 

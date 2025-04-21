@@ -1,21 +1,50 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { IoMdArrowDropdown } from "react-icons/io";
 import '../style/AsideBar.css'
 
-
 function AsideBar() {
+
+    const [showList, setShowList] = useState(false)
+
+    function handleShowList() {
+        if (showList) {
+            setShowList(false)
+        } else {
+            setShowList(true)
+        }
+    }
+
     return (
         <>
             <nav>
-                <ul className='ul'>
+                <ul className='ul sidebar'>
                     <li><Link className='li-a text-dark'>DashBoard </Link></li>
-                    <li><Link className='li-a text-dark'>My Expense </Link></li>
+                    <li><Link 
+                    className='li-a text-dark'
+                    to='/myexpense'>My Expense </Link></li>
                     <li><Link className='li-a text-dark'>Category </Link></li>
-                    <li><Link className='li-a text-dark'>Group <button className='btn'><IoMdArrowDropdown /></button></Link></li>
-                    <li><Link className='li-a text-dark'>Group List</Link></li>
-                    <li><Link className='li-a text-dark'>Group Members</Link></li>
-                    <li><Link className='li-a text-dark'>Group Expense</Link></li>
+                    <li>
+                        <Link className='li-a text-dark'>Group
+                            <button
+                                className='btn'
+                                onClick={handleShowList}>
+                                <IoMdArrowDropdown />
+                            </button>
+                        </Link>
+                    </li>
+                    <li
+                        className={showList ? '' : 'd-none'}>
+                        <Link className='li-a text-dark' >Group List</Link>
+                    </li>
+                    <li
+                        className={showList ? '' : 'd-none'}>
+                        <Link className='li-a text-dark'>Group Members</Link>
+                    </li>
+                    <li
+                        className={showList ? '' : 'd-none'}>
+                        <Link className='li-a text-dark'>Group Expense</Link>
+                    </li>
                     <li><Link className='li-a text-dark'>About us</Link></li>
                 </ul>
             </nav>

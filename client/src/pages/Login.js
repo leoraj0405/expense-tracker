@@ -4,21 +4,21 @@ import '../style/Login.css'
 import { FaAngleDoubleDown } from "react-icons/fa";
 import { FaUser } from "react-icons/fa";
 import { RiLockPasswordFill } from "react-icons/ri";
-
+import { setUserSession } from '../components/SessionAuth';
+import Footer from '../layouts/Footer'
 
 function Login() {
 
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [dangerAlert, setDangerAlter] = useState(true)
+  const navigate = useNavigate()
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const navigate = useNavigate()
 
   function handleSubmit() {
-
     const myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
 
@@ -31,12 +31,12 @@ function Login() {
       method: "POST",
       headers: myHeaders,
       body: raw,
-      redirect: "follow"
     };
 
-    fetch("http://localhost:1000/user/login", requestOptions)
+    fetch(`${process.env.REACT_APP_FETCH_URL}/user/login`, requestOptions)
       .then(async (response) => {
         if (response.status === 200) {
+          setUserSession(true, await response.json())
           setDangerAlter(true)
           navigate('/home')
         } else {
@@ -45,11 +45,14 @@ function Login() {
       });
   }
 
+
   return (
     <>
-      <div className="d-flex h-100 justify-content-center mt">
-        <div className='d-flex w-50 flex-column flex-md-row'>
-          <div className="logiBlock p-5 mt-3">
+      <div
+        className="d-flex w-100 h-100 justify-content-center mt">
+        <div
+          className='d-flex flex-column flex-md-row'>
+          <div className="loginBlock p-5 mt-3">
             <h1>Login</h1>
             <div className='d-flex flex-column'>
               <label
@@ -57,7 +60,9 @@ function Login() {
                 className='form-label'>
                 Email Address</label>
               <div className="input-group mb-3">
-                <span className='input-group-text'><FaUser /></span>
+                <span className='input-group-text'>
+                  <FaUser />
+                </span>
                 <input
                   type="email"
                   name="email"
@@ -71,7 +76,9 @@ function Login() {
                 Password
               </label>
               <div className="input-group mb-3">
-                <span className='input-group-text'><RiLockPasswordFill /></span>
+                <span className='input-group-text'>
+                  <RiLockPasswordFill />
+                </span>
                 <input
                   type="password"
                   name="password"
@@ -83,18 +90,40 @@ function Login() {
                 Invalid Email or Password.
               </div>
               <div>
-                <button className='btn btn-primary' onClick={handleSubmit}>Submit</button>
-                <Link className='btn btn-link'>Forget password ?</Link>
+                <button
+                  className='btn btn-primary'
+                  onClick={handleSubmit}>
+                  Submit
+                </button>
+                <Link
+                  className='btn btn-link text-dark'>
+                  Forget password ?
+                </Link>
+              </div>
+              <div>
+                <Link
+                  to='/registration'
+                  className='btn btn-link m-2 text-dark signup-btn'>
+                  Create a new account
+                </Link>
               </div>
             </div>
           </div>
-          <div className="signupBlock p-5 rounded-right mt-md-3">
-            <h1>Sign up</h1>
-            <p>Dont have account ? </p>
+          <div
+            className="parentLoginBlock  p-5 rounded-right mt-md-3">
+            <h1>Parent Login</h1>
+            <p>Are you parent ?</p>
             <p>Click here <FaAngleDoubleDown /></p>
-            <Link className='btn btn-warning'>Resigter Now</Link>
+            <Link
+              className='btn btn-warning'
+              to='/parentlogin'>
+              Parent login
+            </Link>
           </div>
         </div>
+      </div>
+      <div className='text-center mt-3'>
+        <Footer />
       </div>
     </>
   );

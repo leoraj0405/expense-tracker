@@ -31,6 +31,7 @@ export class ExpenseController {
         userId: body.userId,
         description: body.description,
         amount: body.amount,
+        date:body.date,
         categoryId: body.categoryId,
       });
       return reply.status(200).send(response);
