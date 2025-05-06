@@ -5,10 +5,19 @@ import AsideBar from '../../layouts/AsideBar'
 import { Link } from 'react-router-dom'
 import { FaEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
+import { getToken } from '../../components/SessionAuth';
+import { useNavigate } from 'react-router-dom'
 
 
 
 function ListMyExpense() {
+    const isLogged = getToken()
+    const navigate = useNavigate()
+    useEffect(() => {
+        if (!isLogged) {
+            navigate('/login')
+        }
+    }, [isLogged, navigate])
     const [expenses, setExpenses] = useState([])
     const [alert, setAlert] = useState({
         successBlockState: true,
@@ -19,8 +28,17 @@ function ListMyExpense() {
 
     async function fetchExpenses() {
         const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/expense`)
-        const expenseData = await response.json()
-        setExpenses(expenseData.data)
+        if (response.ok) {
+            const expenseData = await response.json()
+            setExpenses(expenseData.data)
+        } else {
+            let errorData = await response.json()
+            setAlert({
+                successBlockState: true,
+                errorBlockState: false,
+                msg: errorData.message
+            })
+        }
     }
     useEffect(() => {
         fetchExpenses()
@@ -99,30 +117,40 @@ function ListMyExpense() {
                                 </tr>
                             </thead>
                             <tbody className='m-4'>
-                                {expenses.map(expense => {
-                                    return (
-                                        <tr>
-                                            <th scope="row">{serialNo++}</th>
-                                            <td>{expense.categoryId.name}</td>
-                                            <td>{expense.userId.name}</td>
-                                            <td>{expense.amount}</td>
-                                            <td>{expense.date.split('T')[0]}</td>
-                                            <td>{expense.description}</td>
-                                            <td>
-                                                <Link
-                                                    style={{ color: 'black' }}
-                                                    to={`/editexpense?mode=edit&expense=${expense._id}`}>
-                                                    <FaEdit />
-                                                </Link>
-                                                <Link
-                                                    onClick={() => handleDelete(expense._id)}
-                                                    style={{ color: 'red' }}>
-                                                    <MdDelete />
-                                                </Link>
-                                            </td>
-                                        </tr>
-                                    )
-                                })}
+                                {expenses.length > 0 ?
+                                    expenses.map(expense => {
+                                        return (
+                                            <tr>
+                                                <th scope="row">{serialNo++}</th>
+                                                <td>{expense.categoryId.name}</td>
+                                                <td>{expense.userId.name}</td>
+                                                <td>{expense.amount}</td>
+                                                <td>{expense.date.split('T')[0]}</td>
+                                                <td>{expense.description}</td>
+                                                <td>
+                                                    <Link
+                                                        style={{ color: 'black' }}
+                                                        to={`/editexpense?mode=edit&expense=${expense._id}`}>
+                                                        <FaEdit />
+                                                    </Link>
+                                                    ||
+                                                    <Link
+                                                        onClick={() => handleDelete(expense._id)}
+                                                        style={{ color: 'red' }}>
+                                                        <MdDelete />
+                                                    </Link>
+                                                </td>
+                                            </tr>
+                                        )
+                                    }) :
+                                    <tr>
+                                        <td
+                                            colSpan={7}
+                                            className='text-center text-secondary'>
+                                            No Expenses founded
+                                        </td>
+                                    </tr>
+                                }
                             </tbody>
                         </table>
                         <div

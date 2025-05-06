@@ -33,7 +33,7 @@ export class GroupService {
         .find({
           deletedAt: null,
         })
-        .populate({ path: 'createdBy', select: '-_id name' })
+        .populate({ path: 'createdBy', select: '_id name' })
         .exec();
       return getGroup;
     } catch (error) {

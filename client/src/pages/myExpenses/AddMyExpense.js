@@ -3,14 +3,22 @@ import Header from '../../layouts/Header'
 import Footer from '../../layouts/Footer'
 import AsideBar from '../../layouts/AsideBar'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { getToken } from '../../components/SessionAuth';
+
 
 function useQuery() {
     return new URLSearchParams(useLocation().search)
 }
 
 function AddMyExpense() {
-    const queryValue = useQuery()
+    const isLogged = getToken()
     const navigate = useNavigate()
+    useEffect(() => {
+        if (!isLogged) {
+            navigate('/login')
+        }
+    }, [isLogged, navigate])
+    const queryValue = useQuery()
     const [users, setUsers] = useState([])
     const [categories, setCategories] = useState([])
     const [formData, setFormData] = useState({
@@ -39,17 +47,22 @@ function AddMyExpense() {
 
     async function fetchExpense(id) {
         const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/expense/${id}`)
-        const expenseData = await response.json()
-        const isoDate = expenseData.data.date
-        const formattedDate = isoDate.split("T")[0];
-        setFormData({
-            id: expenseData.data._id,
-            user: expenseData.data.userId._id,
-            category: expenseData.data.categoryId._id,
-            date: formattedDate,
-            amount: expenseData.data.amount,
-            description: expenseData.data.description
-        })
+        if (response.ok) {
+            const expenseData = await response.json()
+            const isoDate = expenseData.data.date
+            const formattedDate = isoDate.split("T")[0];
+            setFormData({
+                id: expenseData.data._id,
+                user: expenseData.data.userId._id,
+                category: expenseData.data.categoryId._id,
+                date: formattedDate,
+                amount: expenseData.data.amount,
+                description: expenseData.data.description
+            })
+        } else {
+            const errorData = await response.json()
+            setDangetAlert({ blockState: false, msg: errorData.message })
+        }
     }
 
     function handleChange(e) {

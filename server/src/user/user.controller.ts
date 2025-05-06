@@ -210,7 +210,6 @@ export class UserController {
       let email = body.parentEmail
       let otp = body.parentotp
       const processOtp = await this.userService.parentProcessOtp(email, otp);
-      console.log(processOtp)
       if (!processOtp) {
         response.message = 'Not found';
         return reply.status(404).send(response);

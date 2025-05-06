@@ -94,7 +94,6 @@ export class CategoryController {
     };
     try {
       const deleteData = await this.categoryService.deleteCategory(id);
-      console.log(deleteData);
       response.data = deleteData;
       return reply.status(200).send(response);
     } catch (error) {

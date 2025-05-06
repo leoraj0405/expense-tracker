@@ -35,8 +35,8 @@ export class GrpMemberService {
           deletedAt: null,
         })
 
-        .populate({ path: 'groupId', select: '-_id name' })
-        .populate({path: 'userId', select: '-_id name'})
+        .populate({ path: 'groupId', select: '_id name' })
+        .populate({path: 'userId', select: '_id name'})
         .exec();
       return getGrpMember;
     } catch (error) {
@@ -81,8 +81,8 @@ export class GrpMemberService {
     try {
       const oneGrpMember = await this.grpMemberModel
         .findOne({ _id: id, deletedAt: null })
-        .populate({ path: 'groupId', select: '-_id name' })
-        .populate({path: 'userId', select: '-_id name'})
+        .populate({ path: 'groupId', select: '_id name' })
+        .populate({path: 'userId', select: '_id name'})
         .exec();
       return oneGrpMember;
     } catch (error) {

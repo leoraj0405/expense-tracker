@@ -19,23 +19,31 @@ function AsideBar() {
         <>
             <nav>
                 <ul className='ul sidebar'>
-                    <li><Link className='li-a text-dark'>DashBoard </Link></li>
-                    <li><Link 
-                    className='li-a text-dark'
-                    to='/myexpense'>My Expense </Link></li>
-                    <li><Link className='li-a text-dark'>Category </Link></li>
+                    <li><Link
+                        to='/home'
+                        className='li-a text-dark'>DashBoard </Link></li>
+                    <li><Link
+                        className='li-a text-dark'
+                        to='/myexpense'>My Expense </Link></li>
+                    <li><Link
+                        className='li-a text-dark'
+                        to='/category'>Category </Link></li>
                     <li>
-                        <Link className='li-a text-dark'>Group
+                        <span 
+                        className='li-a text-dark'>
+                            Group
                             <button
                                 className='btn'
                                 onClick={handleShowList}>
                                 <IoMdArrowDropdown />
                             </button>
-                        </Link>
+                        </span>
                     </li>
                     <li
                         className={showList ? '' : 'd-none'}>
-                        <Link className='li-a text-dark' >Group List</Link>
+                        <Link
+                            to='/group'
+                            className='li-a text-dark' >Group List</Link>
                     </li>
                     <li
                         className={showList ? '' : 'd-none'}>

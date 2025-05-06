@@ -98,6 +98,7 @@ export class UserService {
           email: UserData.email,
           deletedAt: null,
         })
+        .select('_id name password')
         .exec();
 
       if (!validateUser || !validateUser.password) {

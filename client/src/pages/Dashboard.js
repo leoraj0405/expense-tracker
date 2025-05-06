@@ -5,19 +5,18 @@ import Header from '../layouts/Header';
 import Footer from '../layouts/Footer';
 import { Link, useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
-import { getUser, getToken } from '../components/SessionAuth';
+import { getToken } from '../components/SessionAuth';
 
 
 function Dashboard() {
   const isLogged = getToken()
-  const user = getUser()
   const navigate = useNavigate()
-  console.log(user)
   useEffect(() => {
     if (!isLogged) {
       navigate('/login')
     }
   }, [isLogged, navigate])
+
   const data = [
     { name: "Rent", value: 1200 },
     { name: "Food", value: 500 },
