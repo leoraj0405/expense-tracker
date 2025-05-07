@@ -8,6 +8,7 @@ import AddMyExpense from './pages/myExpenses/AddMyExpense';
 import ListMyExpense from './pages/myExpenses/ListMyExpense';
 import CategoryList from './pages/category/CategoryList';
 import GroupList from './pages/group/GroupList';
+import AddGroup from './pages/group/AddGroup';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
         <Route path='/category' element={<CategoryList />} />
         <Route path='/editcategory' element={<CategoryList />} />
         <Route path='/group' element={<GroupList /> } />
+        <Route path='/addgroup' element={<AddGroup /> } />
         {/* <Route path="/error" element={<ErrorPage />} /> */}
       </Routes>
     </Router>
