@@ -89,4 +89,5 @@ export class GrpMemberService {
       throw new InternalServerErrorException(`Error: ${error.message}`);
     }
   }
+
 }

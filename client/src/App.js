@@ -25,6 +25,7 @@ function App() {
         <Route path='/editcategory' element={<CategoryList />} />
         <Route path='/group' element={<GroupList /> } />
         <Route path='/addgroup' element={<AddGroup /> } />
+        <Route path='/editgroup' element={<AddGroup />} />
         {/* <Route path="/error" element={<ErrorPage />} /> */}
       </Routes>
     </Router>

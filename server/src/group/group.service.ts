@@ -3,16 +3,15 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { RequestGroup } from '../request';
 import { Group } from 'src/schemas/group.schma';
+import { GroupMember } from 'src/schemas/groupMember.schema';
 @Injectable()
 export class GroupService {
   constructor(
     @InjectModel(Group.name) private groupModel: Model<Group>,
+    @InjectModel(GroupMember.name) private grpMemberModel: Model<GroupMember>,
   ) {}
 
-  async createGroup({
-    name,
-    createdBy
-  }: RequestGroup) {
+  async createGroup({ name, createdBy }: RequestGroup) {
     try {
       const postExpense = new this.groupModel({
         name,
@@ -41,10 +40,7 @@ export class GroupService {
     }
   }
 
-  async putGroup(
-    id: string,
-    updateData: RequestGroup,
-  ): Promise<Group | null> {
+  async putGroup(id: string, updateData: RequestGroup): Promise<Group | null> {
     try {
       const updateGroup = await this.groupModel
         .findByIdAndUpdate(
@@ -84,5 +80,17 @@ export class GroupService {
     } catch (error) {
       throw new InternalServerErrorException(`Error: ${error.message}`);
     }
+  }
+
+  async userGroups(id: string): Promise<Group[] | null> {
+    const memberships = await this.grpMemberModel
+      .find({ userId: { $eq: id }, deletedAt: null })
+      .exec();
+    const groupIds = memberships.map((member) => member.groupId);
+    const groups = await this.groupModel
+      .find({ _id: { $in: groupIds }, deletedAt: null })
+      .populate({ path: 'createdBy', select: '_id name' })
+      .exec();
+    return groups;
   }
 }

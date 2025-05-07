@@ -29,7 +29,7 @@ export class GroupController {
     try {
       response.data = await this.groupService.createGroup({
         name: body.name,
-        createdBy: body.createdBy
+        createdBy: body.createdBy,
       });
       return reply.status(200).send(response);
     } catch (error) {
@@ -116,10 +116,36 @@ export class GroupController {
         response.message = 'Not found';
         return reply.status(404).send(response);
       } else {
-        response.data = oneGroup
+        response.data = oneGroup;
         return reply.status(200).send(response);
       }
     } catch (error) {
+      response.message = `Error : ${error.message}`;
+      return reply.status(500).send(response);
+    }
+  }
+
+  @Get('/usergroups/:id')
+  async userGroups(
+    @Param('id') id: string,
+    @Res() reply: any,
+  ): Promise<Group | null> {
+    const response: ResponseDto = {
+      message: 'Success',
+      data: null,
+    };
+
+    try {
+      const userGroups = await this.groupService.userGroups(id);
+      if (!userGroups) {
+        response.message = 'Not found';
+        return reply.status(404).send(response);
+      } else {
+        response.data = userGroups;
+        return reply.status(200).send(response);
+      }
+    } catch (error) {
+      console.log(error)
       response.message = `Error : ${error.message}`;
       return reply.status(500).send(response);
     }
