@@ -3,44 +3,50 @@ import { Link, useNavigate } from 'react-router-dom'
 import Profile from '../assets/img/image.png'
 import '../style/Header.css'
 import Logo from '../assets/img/websiteLogo.png'
-import { clearSession, getUser } from '../components/SessionAuth'
+import { useUser } from '../components/Context'
 
 
 function Header() {
   const navigate = useNavigate()
-  const user = getUser()
-  function handleLogout() {
-    clearSession()
-    navigate('/login')
+  const { loginUser, setLoginUser } = useUser();
+
+  async function handleLogout() {
+
+    const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/user/logout`, {
+      method: 'GET',
+      credentials: 'include',
+    })
+    if (response.status === 200) {
+      setLoginUser({
+        isLogged: false,
+        data: null
+      })
+      navigate('/login')
+    }
   }
 
   return (
     <>
-      <div className='right-header'>
-        <h1 className='text-white'><img className='logo' alt='logo' src={Logo} />  Expense Tracker</h1>
-      </div>
-      <div
-        className='left-header d-flex align-items-end '>
-        <p>Welcome <span>Mr. {user.data.name || 'user'} </span></p>
-        <div className='dropdown'>
-          <img
-            src={Profile}
-            className="rounded-circle img-fluid"
-            alt='profile'
-            width="100"
-            height="100"
-            data-bs-toggle="dropdown"
-            style={{ cursor: 'pointer' }}
-          />
+      <nav className="navbar navbar-expand-lg navbar-light bg-primary p-4">
+        <a className="navbar-brand d-flex align-items-center" href="#">
+          <img src={Logo} alt="Logo" width="30" height="30" className="d-inline-block align-top me-2" />
+          <span className='text-white'>Expense Tracker</span>
+        </a>
 
-          <ul className="dropdown-menu dropdown-menu-end">
-            <li><Link className="dropdown-item " to="#">Profile</Link></li>
-            <li><hr className="dropdown-divider" /></li>
-            <li><button className="dropdown-item" onClick={handleLogout}>Logout</button></li>
-          </ul>
-
+        <div className="ms-auto d-flex align-items-center">
+          <span className=" me-3 text-white">
+            Welcome Mr. {loginUser?.data?.name || 'Guest'}
+          </span>
+          <div className="dropdown">
+            <Link className="dropdown-toggle d-flex align-items-center" href="#" role="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              <img src={Profile} alt="User Profile" className="rounded-circle" width="50" height="50" />
+            </Link>
+            <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+              <li><Link className="dropdown-item" onClick={handleLogout}>Logout</Link></li>
+            </ul>
+          </div>
         </div>
-      </div>
+      </nav>
     </>
   )
 }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import Header from '../../layouts/Header'
 import Footer from '../../layouts/Footer'
-import AsideBar from '../../layouts/AsideBar'
+import SideBar from '../../layouts/SideBar'
 import { Link } from 'react-router-dom'
 import { FaEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
@@ -84,95 +84,22 @@ function ListMyExpense() {
 
     return (
         <>
-            <header className='header d-flex justify-content-between text-white'>
+            <header>
                 <Header />
             </header>
-
-            <main className='d-flex justify-content-start'>
-                <aside className='w-25'>
-                    <AsideBar />
+            <div className='d-flex'>
+                <aside>
+                    <SideBar />
                 </aside>
+                <main className='p-3 w-100 bg-light'>
+                    <section className='main' style={{ minHeight: '400px' }}>
 
-                <section className='p-5 w-100'>
-                    {/* Body content */}
-
-                    <div>
-                        <h3>List of all expenses</h3>
-                        <div className='d-flex justify-content-end p-2'>
-                            <Link
-                                className='btn btn-primary'
-                                to='/addmyexpense'
-                            >Add Expenses</Link>
-                        </div>
-                        <table className="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th scope='col'>S.No</th>
-                                    <th scope="col">Category</th>
-                                    <th scope="col">User</th>
-                                    <th scope="col">Amount</th>
-                                    <th scope="col">Date</th>
-                                    <th scope='col'>Description</th>
-                                    <th scope='col'>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className='m-4'>
-                                {expenses.length > 0 ?
-                                    expenses.map(expense => {
-                                        return (
-                                            <tr>
-                                                <th scope="row">{serialNo++}</th>
-                                                <td>{expense.categoryId.name}</td>
-                                                <td>{expense.userId.name}</td>
-                                                <td>{expense.amount}</td>
-                                                <td>{expense.date.split('T')[0]}</td>
-                                                <td>{expense.description}</td>
-                                                <td>
-                                                    <Link
-                                                        style={{ color: 'black' }}
-                                                        to={`/editexpense?mode=edit&expense=${expense._id}`}>
-                                                        <FaEdit />
-                                                    </Link>
-                                                    ||
-                                                    <Link
-                                                        onClick={() => handleDelete(expense._id)}
-                                                        style={{ color: 'red' }}>
-                                                        <MdDelete />
-                                                    </Link>
-                                                </td>
-                                            </tr>
-                                        )
-                                    }) :
-                                    <tr>
-                                        <td
-                                            colSpan={7}
-                                            className='text-center text-secondary'>
-                                            No Expenses founded
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                        <div
-                            className="alert alert-success"
-                            hidden={alert.successBlockState}>
-                            {alert.msg}
-                        </div>
-                        <div
-                            className="alert alert-danger"
-                            hidden={alert.errorBlockState}>
-                            {alert.msg}
-                        </div>
-                    </div>
-
-                    {/* footer */}
-                    <footer className='text-center mt-4'>
+                    </section>
+                    <footer>
                         <Footer />
                     </footer>
-                </section>
-
-            </main >
-
+                </main>
+            </div>
         </>
     )
 }

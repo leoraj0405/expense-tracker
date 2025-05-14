@@ -4,7 +4,6 @@ import { IoMdArrowDropdown } from "react-icons/io";
 import '../style/AsideBar.css'
 
 function AsideBar() {
-
     const [showList, setShowList] = useState(false)
 
     function handleShowList() {
@@ -18,7 +17,7 @@ function AsideBar() {
     return (
         <>
             <nav>
-                <ul className='ul sidebar'>
+                <ul className='ul p-2 vh-100'>
                     <li><Link
                         to='/home'
                         className='li-a text-dark'>DashBoard </Link></li>
@@ -46,6 +45,7 @@ function AsideBar() {
                             className='li-a text-dark' >Group List</Link>
                     </li>
                     <li
+                        to='/groupmember'
                         className={showList ? '' : 'd-none'}>
                         <Link className='li-a text-dark'>Group Members</Link>
                     </li>

@@ -1,7 +1,7 @@
 .header {
   background: #0d6efd;
   color: #fff;
-  width: 100%;
+  width: 100% !important;
   /* Text color for contrast */
 }
 

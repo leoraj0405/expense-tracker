@@ -7,6 +7,7 @@ import {
   Body,
   Res,
   Param,
+  Query,
 } from '@nestjs/common';
 import { ExpenseService } from './expense.service';
 import { RequestExpense } from 'src/request';
@@ -31,7 +32,7 @@ export class ExpenseController {
         userId: body.userId,
         description: body.description,
         amount: body.amount,
-        date:body.date,
+        date: body.date,
         categoryId: body.categoryId,
       });
       return reply.status(200).send(response);
@@ -44,7 +45,6 @@ export class ExpenseController {
       return reply.status(500).send(response);
     }
   }
-
   @Get()
   async getExpense(@Res() reply: any): Promise<void | Expense> {
     const response: ResponseDto = {
@@ -64,7 +64,6 @@ export class ExpenseController {
       reply.status(500).send(response);
     }
   }
-
   @Put('/:id')
   async updateExpense(
     @Param('id') id: string,
@@ -84,7 +83,6 @@ export class ExpenseController {
       return reply.status(500).send(response);
     }
   }
-
   @Delete('/:id')
   async deleteExepense(
     @Param('id') id: string,
@@ -103,7 +101,6 @@ export class ExpenseController {
       return reply.status(500).send(response);
     }
   }
-
   @Get('/:id')
   async getOneExpense(
     @Param('id') id: string,
@@ -119,7 +116,33 @@ export class ExpenseController {
         response.message = 'Not found';
         return reply.status(404).send(response);
       } else {
-        response.data = oneExpense
+        response.data = oneExpense;
+        return reply.status(200).send(response);
+      }
+    } catch (error) {
+      response.message = `Error : ${error.message}`;
+      return reply.status(500).send(response);
+    }
+  }
+
+  @Get('/userexpense/:id')
+  async oneUserExpenses(
+    @Param('id') id: string,
+    @Res() reply: any,
+    @Query('date') date: string,
+  ): Promise<Expense | null> {
+    const response: ResponseDto = {
+      message: '',
+      data: null,
+    };
+    try {
+      const userExpenses = await this.expenseService.userExpenses(id, date);
+      if (!userExpenses) {
+        response.message = 'Not found';
+        return reply.status(404).send(response);
+      } else {
+        response.message = 'success';
+        response.data = userExpenses;
         return reply.status(200).send(response);
       }
     } catch (error) {

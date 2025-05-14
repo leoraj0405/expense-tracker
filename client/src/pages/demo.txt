@@ -1,19 +1,18 @@
-            <header className='header d-flex justify-content-between text-white'>
-                <Header />
-            </header>
-
-            <main className='d-flex justify-content-start'>
-                <aside className='w-25'>
-                    <AsideBar />
-                </aside>
-
-                <section className='p-5 w-100'>
-                    {/* Body content */}
-
-                    {/* footer */}
-                    <footer className='text-center mt-4'>
-                        <Footer />
-                    </footer>
-                </section>
-
-            </main>
+    <>
+    <header>
+    <Header />
+    </header>
+      <div className='d-flex'>
+        <aside>
+          <SideBar />
+        </aside>
+        <main className='p-3 w-100 bg-light'>
+          <section className='main' style={{minHeight: '400px'}}>
+            
+          </section>
+          <footer>
+            <Footer />
+          </footer>
+        </main>
+      </div>
+    </>

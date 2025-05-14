@@ -109,15 +109,38 @@ export class UserController {
       data: null,
     };
     try {
-      const loggedUser = await this.userService.loginUser(body);
+      const loggedUser = await this.userService.loginUser(
+        body.email,
+        body.password,
+      );
       if (loggedUser) {
         request.session.isLogged = true;
-        response.data = loggedUser;
+        request.session.data = loggedUser
         return reply.status(200).send(response);
       } else {
         request.session.isLogged = false;
         request.session.data = null;
         response.message = 'Invalid Email | password';
+        return reply.status(404).send(response);
+      }
+    } catch (error) {
+      response.message = `Error : ${error.message}`;
+      return reply.status(500).send(response);
+    }
+  }
+
+  @Get('/home')
+  async homeUser(@Res() reply: any, @Req() request: any): Promise<void> {
+    const response: ResponseDto = {
+      message: 'Success',
+      data: null,
+    };
+    try {
+      if (request.session.data) {
+        response.data = request.session.data;
+        return reply.status(200).send(response);
+      } else {
+        response.message = 'No session data found';
         return reply.status(404).send(response);
       }
     } catch (error) {
@@ -207,8 +230,8 @@ export class UserController {
       data: null,
     };
     try {
-      let email = body.parentEmail
-      let otp = body.parentotp
+      let email = body.parentEmail;
+      let otp = body.parentotp;
       const processOtp = await this.userService.parentProcessOtp(email, otp);
       if (!processOtp) {
         response.message = 'Not found';

@@ -4,7 +4,6 @@ import '../style/Login.css'
 import { FaAngleDoubleDown } from "react-icons/fa";
 import { FaUser } from "react-icons/fa";
 import { RiLockPasswordFill } from "react-icons/ri";
-import { setUserSession } from '../components/SessionAuth';
 import Footer from '../layouts/Footer'
 
 function Login() {
@@ -31,13 +30,12 @@ function Login() {
       method: "POST",
       headers: myHeaders,
       body: raw,
+      credentials: 'include',
     };
 
     fetch(`${process.env.REACT_APP_FETCH_URL}/user/login`, requestOptions)
       .then(async (response) => {
         if (response.status === 200) {
-          setUserSession(true, await response.json())
-          setDangerAlter(true)
           navigate('/home')
         } else {
           setDangerAlter(false)

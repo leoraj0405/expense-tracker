@@ -16,7 +16,6 @@ export class ExpenseService {
     amount,
     date,
     categoryId,
-
   }: RequestExpense) {
     try {
       const postExpense = new this.expenseModel({
@@ -31,6 +30,7 @@ export class ExpenseService {
       }).save();
       return postExpense;
     } catch (error) {
+      console.log(error);
       throw new InternalServerErrorException(`Error : ${error.message}`);
     }
   }
@@ -94,5 +94,25 @@ export class ExpenseService {
     } catch (error) {
       throw new InternalServerErrorException(`Error: ${error.message}`);
     }
+  }
+
+  async userExpenses(id: string, date: string): Promise<Expense[] | null> {
+    const inputDate = new Date(date);
+    const year = inputDate.getFullYear();
+    const month = inputDate.getMonth() + 1;
+
+    const fromDate = new Date(year, month - 1, 1);
+    const toDate = new Date(year, month, 1);
+
+    const userExpenses = await this.expenseModel
+      .find({
+        userId: id,
+        deletedAt: null,
+        date: { $gte: fromDate, $lt: toDate },
+      })
+      .populate({ path: 'userId', select: '_id name' })
+      .populate({ path: 'categoryId', select: '_id name' })
+      .exec();
+    return userExpenses;
   }
 }

@@ -6,7 +6,8 @@ import { MongooseModule } from "@nestjs/mongoose";
 
 @Module({
     imports: [MongooseModule.forFeature([{
-        name: Category.name, schema: CategorySchema
+        name: Category.name, 
+        schema: CategorySchema
     }])],
     providers: [CategoryService],
     controllers: [CategoryController],

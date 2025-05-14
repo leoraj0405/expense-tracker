@@ -1,0 +1,36 @@
+import React from "react";
+import { Link } from "react-router-dom";
+import { GiExpense } from "react-icons/gi";
+
+
+const SideBar = () => {
+  return (
+    <div className="d-flex flex-column vh-100 p-2 bg-warning" style={{ width: "250px" }}>
+      <ul className="nav nav-pills flex-column">
+        <li className="nav-item mb-2">
+          <Link to="/home" className="nav-link text-dark">
+            <i className="bi bi-house me-2"></i> Home
+          </Link>
+        </li>
+        <li className="nav-item mb-2">
+          <Link to="/expense" className="nav-link text-dark">
+            <GiExpense className="me-2" />Expenses
+          </Link>
+        </li>
+
+
+        <li className="nav-item dropdown">
+          <Link className="nav-link dropdown-toggle text-dark" to="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i className="bi bi-folder me-2"></i> Menu
+          </Link>
+          <ul className="dropdown-menu">
+            <li><Link className="dropdown-item" to="#">Item 1</Link></li>
+            <li><Link className="dropdown-item" to="#">Item 2</Link></li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  );
+};
+
+export default SideBar;

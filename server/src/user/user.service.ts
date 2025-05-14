@@ -91,11 +91,10 @@ export class UserService {
     }
   }
 
-  async loginUser(UserData: LoginUserReq): Promise<User | null> {
-    try {
+  async loginUser(email: string, password: string ): Promise<User | null> {
       const validateUser = await this.userModel
         .findOne({
-          email: UserData.email,
+          email: email,
           deletedAt: null,
         })
         .select('_id name password')
@@ -106,16 +105,12 @@ export class UserService {
       }
 
       const hashedPassword = validateUser?.password;
-      const isMatch = await bcrypt.compare(UserData.password, hashedPassword);
-
+      const isMatch = await bcrypt.compare(password, hashedPassword);
+      
       if (!isMatch) {
         throw new UnauthorizedException('Invalid User');
       }
-
       return validateUser;
-    } catch (error) {
-      throw new InternalServerErrorException(`Error : ${error.message}`);
-    }
   }
 
   async parentGenerateOtp(parentData: LoginParentReq) {

@@ -1,104 +1,144 @@
-import React, { useEffect } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import '../style/Dashboard.css'
-import AsideBar from '../layouts/AsideBar';
+import { useNavigate } from 'react-router-dom';
 import Header from '../layouts/Header';
+import SideBar from '../layouts/SideBar';
 import Footer from '../layouts/Footer';
-import { Link, useNavigate } from 'react-router-dom';
-import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
-import { getToken } from '../components/SessionAuth';
+import { Link } from 'react-router-dom';
+import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts'
+import { useUser } from '../components/Context';
+
 
 
 function Dashboard() {
-  const isLogged = getToken()
   const navigate = useNavigate()
-  useEffect(() => {
-    if (!isLogged) {
+  const [data, setData] = useState([])
+  const [amount, setAmount] = useState(0)
+  const { loginUser, setLoginUser } = useUser();
+  const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#a4de6c"];
+
+
+  async function handleIsLogged() {
+    const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/user/home`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    if (response.status === 200) {
+      const userData = await response.json()
+      setLoginUser(userData)
+    } else {
+      setLoginUser([])
       navigate('/login')
     }
-  }, [isLogged, navigate])
+  }
 
-  const data = [
-    { name: "Rent", value: 1200 },
-    { name: "Food", value: 500 },
-    { name: "Transport", value: 200 },
-    { name: "Entertainment", value: 300 },
-    { name: "Other", value: 150 },
-  ];
-  const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#a4de6c"];
+  async function fetchThisMonthExpense() {
+    const todayDate = new Date('2025-4-21')
+    const year = todayDate.getFullYear();
+    const month = todayDate.getMonth() + 1;
+    const day = todayDate.getDate();
+    const formattedDate = `${year}-${month}-${day}`;
+    let response
+    if (loginUser.data._id) {
+       response = await fetch(`${process.env.REACT_APP_FETCH_URL}/expense/userexpense/${loginUser.data._id}?date=${formattedDate}`)
+    }
+    if (response.ok) {
+      const expenseData = await response.json()
+      const result = expenseData.data.map((item) => ({
+        name: item.description,
+        value: item.amount
+      }))
+      setData(result)
+    } else {
+      setData([])
+    }
+  }
+
+  useEffect(() => {
+    handleIsLogged();
+  }, []);
+
+  useEffect(() => {
+    if (loginUser) {
+      fetchThisMonthExpense();
+    }
+  }, [loginUser]);
+
+  useEffect(() => {
+    if (data.length > 0) {
+      let total = 0;
+      data.forEach(item => {
+        total += Number(item.value);
+      });
+      setAmount(total);
+    } else {
+      setAmount(0)
+    }
+  }, [data])
 
   return (
     <>
-      <header className='header d-flex justify-content-between text-white'>
+      <header>
         <Header />
       </header>
-
-      <main className='d-flex justify-content-start'>
-        <aside className='w-25'>
-          <AsideBar />
+      <div className='d-flex'>
+        <aside>
+          <SideBar />
         </aside>
-
-        <section className='p-5 w-100'>
-          {/* Body content */}
-          <div className='container'>
-            <div className='row' style={{ gap: '50px' }}>
-              <div className='col-lg'>
-                <div className="container">
-                  <div className="rowcolumn">
-                    <div className="col-lg ">
-                      <div class="card  shadow-sm p-3 mb-5 bg-white rounded text-center" >
-                        <div class="card-body">
-                          <h5 class="card-title">Today Total Expenses</h5>
-                          <p class="card-text">₹ 1000</p>
-                          <Link to="/login" class="btn btn-primary">See Today Expenses</Link>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-lg ">
+        <main className='p-3 w-100 bg-light'>
+          <section className='main' style={{ minHeight: '400px' }}>
+            <div className='container mt-3'>
+              <h1 className='ms-2'>Welcome Buddy !</h1>
+              <p className='ms-2'>Track your spending. Control your future.</p>
+              <div className='row mt-3' style={{ gap: '50px' }}>
+                <div className='col-lg'>
+                  <div className="container">
+                    <div className="rowcolumn">
                       <div className="col-lg ">
-                        <div class="card shadow-sm p-3 mb-5 bg-white rounded text-center" >
+                        <div class="card  boxshadow p-3 mb-5 bg-white rounded text-center" >
                           <div class="card-body">
-                            <h5 class="card-title">This month balance Amount</h5>
-                            <p class="card-text">₹ 10000</p>
+                            <h5 class="card-title">Today Total Expenses</h5>
+                            <p class="card-text">₹ {amount}</p>
+                            <Link to="/login" class="btn btn-primary">See Today Expenses</Link>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              <div className='chart col-lg'>
-                <div className="w-full max-w-md mx-auto p-4 bg-white shadow-md rounded-2xl">
-                  <h2 className="text-xl font-semibold text-center mb-4">Monthly Expenses</h2>
-                  <PieChart width={300} height={300}>
-                    <Pie
-                      data={data}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={90}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label
-                    >
-                      {data.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </div>
+                <div className='chart col-lg boxshadow'>
+                  <div className="w-full max-w-md mx-auto p-4 bg-white shadow-md rounded-2xl text-center">
+                    <h2 className="text-xl font-semibold text-center mb-4">This month Expenses Chart</h2>
+                    <div className='d-flex justify-content-center'>
+                      <PieChart width={300} height={300} >
+                        <Pie
+                          data={data}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={90}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label
+                        >
+                          {data.map((_, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                      </PieChart>
+                    </div>
+                  </div>
 
+                </div>
               </div>
             </div>
-          </div>
-          {/* footer */}
-          <footer className='text-center mt-4'>
+          </section>
+          <footer>
             <Footer />
           </footer>
-        </section>
-
-      </main>
-
+        </main>
+      </div>
     </>
   )
 }

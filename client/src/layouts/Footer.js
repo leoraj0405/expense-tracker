@@ -1,11 +1,14 @@
 import React from 'react'
 
 function Footer() {
-    return (
-        <>
-            <p>&copy; {new Date().getFullYear()} All rights reserved. Expense Tracker</p>
-        </>
-    )
+  return (
+    <div className="container my-auto">
+      <div className="copyright text-center my-auto">
+        <hr />
+        <p>Designed by Leo</p>
+      </div>
+    </div>
+  )
 }
 
 export default Footer
