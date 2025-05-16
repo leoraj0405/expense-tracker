@@ -7,6 +7,7 @@ import {
   Body,
   Res,
   Param,
+  Query,
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { RequestCategory } from 'src/request';
@@ -43,14 +44,18 @@ export class CategoryController {
   }
 
   @Get()
-  async getCategory(@Res() reply: any): Promise<void | Category> {
+  async getCategory(
+    @Res() reply: any,
+    @Query('limit') limit: number,
+    @Query('page') page: number,
+  ): Promise<void | Category> {
     const response: ResponseDto = {
       message: 'Success',
       data: null,
     };
     try {
-      const getCategory = await this.categoryService.findAllCategory();
-      if (!getCategory.length) {
+      const getCategory = await this.categoryService.findAllCategory(page, limit);
+      if (!Array(getCategory).length) {
         response.message = 'Not Found';
         return reply.status(404).send(response);
       }

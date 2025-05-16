@@ -23,135 +23,111 @@ export class UserService {
     password,
     parentEmail,
   }: RequestUser): Promise<User> {
-    try {
-      const hashValueLength = 10;
-      const hashedPassword = await bcrypt.hash(password, hashValueLength);
-      const newUser = new this.userModel({
-        name,
-        email,
-        password: hashedPassword,
-        parentEmail,
-        parentOtp: null,
-        otp: null,
-        otpAttempt: null,
-        blockTime: null,
-        createdAt: new Date(),
-        updatedAt: null,
-        deletedAt: null,
-      });
-      return newUser.save();
-    } catch (error) {
-      throw new InternalServerErrorException(`Error : ${error.message}`);
-    }
+    const hashValueLength = 10;
+    const hashedPassword = await bcrypt.hash(password, hashValueLength);
+    const newUser = new this.userModel({
+      name,
+      email,
+      password: hashedPassword,
+      parentEmail,
+      parentOtp: null,
+      otp: null,
+      otpAttempt: null,
+      blockTime: null,
+      createdAt: new Date(),
+      updatedAt: null,
+      deletedAt: null,
+    });
+    return newUser.save();
   }
 
   async findAllUser(): Promise<User[]> {
-    try {
-      const getUser = this.userModel.find({
-        deletedAt: null,
-      });
-      return getUser.exec();
-    } catch (error) {
-      throw new InternalServerErrorException(`Error : ${error.message}`);
-    }
+    const getUser = this.userModel.find({
+      deletedAt: null,
+    });
+    return getUser.exec();
   }
 
   async updateUser(id: string, updateData: RequestUser): Promise<User | null> {
-    try {
-      const updateUser = this.userModel.findByIdAndUpdate(
-        id,
-        { $set: { ...updateData, updatedAt: new Date() } },
-        { new: true },
-      );
-      return updateUser.exec();
-    } catch (error) {
-      throw new InternalServerErrorException(`Error : ${error.message}`);
-    }
+    const updateUser = this.userModel.findByIdAndUpdate(
+      id,
+      { $set: { ...updateData, updatedAt: new Date() } },
+      { new: true },
+    );
+    return updateUser.exec();
   }
 
   async deleteUser(id: string): Promise<User | null> {
-    try {
-      const deleteuser = this.userModel.findByIdAndUpdate(
-        id,
-        { $set: { deletedAt: new Date() } },
-        { new: true },
-      );
-      return deleteuser.exec();
-    } catch (error) {
-      throw new InternalServerErrorException(`Error : ${error.message}`);
-    }
+    const deleteuser = this.userModel.findByIdAndUpdate(
+      id,
+      { $set: { deletedAt: new Date() } },
+      { new: true },
+    );
+    return deleteuser.exec();
   }
 
   async findOneUser(id: string): Promise<User | null> {
-    try {
-      const getOneUser = this.userModel.findOne({ _id: id, deletedAt: null });
-      return getOneUser;
-    } catch (error) {
-      throw new InternalServerErrorException(`Error : ${error.message}`);
-    }
+    const getOneUser = this.userModel.findOne({ _id: id, deletedAt: null });
+    return getOneUser;
   }
 
-  async loginUser(email: string, password: string ): Promise<User | null> {
-      const validateUser = await this.userModel
-        .findOne({
-          email: email,
-          deletedAt: null,
-        })
-        .select('_id name password')
-        .exec();
+  async loginUser(email: string, password: string): Promise<User | null> {
+    const validateUser = await this.userModel
+      .findOne({
+        email: email,
+        deletedAt: null,
+      })
+      .select('_id name password')
+      .exec();
 
-      if (!validateUser || !validateUser.password) {
-        throw new UnauthorizedException('Invalid credentials');
-      }
+    if (!validateUser || !validateUser.password) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
 
-      const hashedPassword = validateUser?.password;
-      const isMatch = await bcrypt.compare(password, hashedPassword);
-      
-      if (!isMatch) {
-        throw new UnauthorizedException('Invalid User');
-      }
-      return validateUser;
+    const hashedPassword = validateUser?.password;
+    const isMatch = await bcrypt.compare(password, hashedPassword);
+
+    if (!isMatch) {
+      throw new UnauthorizedException('Invalid User');
+    }
+    return validateUser;
   }
 
   async parentGenerateOtp(parentData: LoginParentReq) {
-    try {
-      const isParentEmail = await this.userModel
-        .findOne({
-          parentEmail: parentData.parentEmail,
-        })
-        .exec();
+    const isParentEmail = await this.userModel
+      .findOne({
+        parentEmail: parentData.parentEmail,
+      })
+      .exec();
 
-      if (!isParentEmail) {
-        throw new UnauthorizedException('Inavlid Parent Phone Number');
-      }
-      const characters =
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-      let otp = '';
-      let length = 6;
-      for (let i = 0; i < length; i++) {
-        const randomIndex = Math.floor(Math.random() * characters.length);
-        otp += characters[randomIndex];
-      }
-      let mailId = parentData.parentEmail;
-      await this.userModel.findOneAndUpdate(
-        { parentEmail: mailId },
-        { $set: { parentOtp: otp } },
-      );
-      await this.mailerService.sendMail({
-        to: mailId,
-        subject: 'LOGIN AUTHENTICATION',
-        text: `Hi [ Parent ],
+    if (!isParentEmail) {
+      throw new UnauthorizedException('Inavlid Parent Phone Number');
+    }
+    const characters =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let otp = '';
+    let length = 6;
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      otp += characters[randomIndex];
+    }
+    let mailId = parentData.parentEmail;
+    await this.userModel.findOneAndUpdate(
+      { parentEmail: mailId },
+      { $set: { parentOtp: otp } },
+    );
+    await this.mailerService.sendMail({
+      to: mailId,
+      subject: 'LOGIN AUTHENTICATION',
+      text: `Hi [ Parent ],
               Your One-Time Password (OTP) for logging into the Expense Tracker app is:
               🔐 ${otp} 
               Please do not share this code with anyone.
               Thanks you,
               Expense Tracker Team`,
-      });
+    });
 
-      return `Otp sent to the your mail id `;
-    } catch (error) {
-      throw new InternalServerErrorException(`Error : ${error.message}`);
-    }
+    return `Otp sent to the your mail id `;
   }
 
   async parentProcessOtp(email, otp): Promise<User> {

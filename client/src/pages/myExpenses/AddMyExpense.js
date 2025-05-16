@@ -1,29 +1,31 @@
 import React, { useEffect, useState } from 'react'
 import Header from '../../layouts/Header'
 import Footer from '../../layouts/Footer'
-import AsideBar from '../../layouts/AsideBar'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { getToken } from '../../components/SessionAuth';
-
+import SideBar from '../../layouts/SideBar'
+import { useLocation, useNavigate, Link } from 'react-router-dom'
+import { useUser } from '../../components/Context'
 
 function useQuery() {
     return new URLSearchParams(useLocation().search)
 }
 
 function AddMyExpense() {
-    const isLogged = getToken()
+    const location = useLocation();
+    const pathnames = location.pathname.split('/').filter((x) => x);
+
+    const { loginUser } = useUser()
     const navigate = useNavigate()
+
     useEffect(() => {
-        if (!isLogged) {
+        if (!loginUser) {
             navigate('/login')
         }
-    }, [isLogged, navigate])
+    }, [loginUser])
+
     const queryValue = useQuery()
-    const [users, setUsers] = useState([])
     const [categories, setCategories] = useState([])
     const [formData, setFormData] = useState({
         id: '',
-        user: '',
         category: '',
         date: '',
         amount: '',
@@ -33,11 +35,6 @@ function AddMyExpense() {
     const pageMode = queryValue.get('mode')
     const expenseId = queryValue.get('expense')
 
-    async function fetchUser() {
-        const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/user`)
-        const userData = await response.json()
-        setUsers(userData.data)
-    }
 
     async function fetchCategory(id) {
         const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/category`)
@@ -53,7 +50,6 @@ function AddMyExpense() {
             const formattedDate = isoDate.split("T")[0];
             setFormData({
                 id: expenseData.data._id,
-                user: expenseData.data.userId._id,
                 category: expenseData.data.categoryId._id,
                 date: formattedDate,
                 amount: expenseData.data.amount,
@@ -72,7 +68,6 @@ function AddMyExpense() {
 
     function handleSave() {
         const id = formData.id
-        const userId = formData.user
         const categoryId = formData.category
         const amount = formData.amount
         const description = formData.description
@@ -81,10 +76,11 @@ function AddMyExpense() {
         const myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
 
+
         const raw = JSON.stringify({
             "description": description,
-            "amount": amount,
-            "userId": userId,
+            "amount": Number(amount) < 0 ? 0 : amount,
+            "userId": loginUser?.data?._id,
             "categoryId": categoryId,
             "date": date
         });
@@ -93,7 +89,6 @@ function AddMyExpense() {
             headers: myHeaders,
             body: raw,
         };
-
 
         let request
         if (id) {
@@ -106,7 +101,7 @@ function AddMyExpense() {
 
         request.then(async (response) => {
             if (response.status === 200) {
-                navigate('/myexpense')
+                navigate('/expense')
             } else {
                 const errorData = await response.json()
                 setDangetAlert({ blockState: false, msg: errorData.message })
@@ -115,7 +110,6 @@ function AddMyExpense() {
     }
 
     useEffect(() => {
-        fetchUser()
         fetchCategory()
     }, [])
 
@@ -133,120 +127,113 @@ function AddMyExpense() {
 
     return (
         <>
-            <header className='header d-flex justify-content-between text-white'>
+            <header>
                 <Header />
             </header>
-
-            <main className='d-flex justify-content-start'>
-                <aside className='w-25'>
-                    <AsideBar />
+            <div className='d-flex'>
+                <aside>
+                    <SideBar />
                 </aside>
+                <main className='p-3 w-100 bg-light'>
+                    <section className='main' style={{ minHeight: '400px' }}>
+                        <nav className='m-4'>
+                            <ol className="breadcrumb">
+                                <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
+                                {pathnames.map((item, index) => {
+                                    const label = item === 'addexpense' ? 'Add expense' : item === 'editexpense' ? 'Edit expense' : item
+                                    const to = `/${pathnames.slice(0, index + 1).join('/')}`;
+                                    return (
+                                        <li className="breadcrumb-item"><Link className='text-secondary' to={to}>{label}</Link></li>
+                                    )
+                                })}
+                            </ol>
+                        </nav>
+                        <h3 className='m-4'>{pageMode === 'edit'
+                            ? 'Edit My Expenses'
+                            : 'Add My Expenses'}</h3>
+                        <div className="alert alert-danger" hidden={dangerAlert.blockState}>
+                            {dangerAlert.msg}
+                        </div>
+                        <div
+                            className="needs-validation p-4 rounded"
+                            style={{ backgroundColor: '#f1f1f1' }}>
+                            <div className="row">
+                                <div className="col-md-4 mb-3">
+                                    <label htmlFor='category'>Category</label>
+                                    <select
+                                        name="category"
+                                        className="form-control"
+                                        value={formData.category}
+                                        onChange={handleChange}>
+                                        <option>Choose category</option>
+                                        {categories.map(category => {
+                                            return (
+                                                <option
+                                                    key={category._id}
+                                                    value={category._id}>
+                                                    {category.name}
+                                                </option>
+                                            )
+                                        })}
+                                    </select>
+                                </div>
+                                <div className="col-md-4 mb-3">
+                                    <label htmlFor='amount'>Amount</label>
+                                    <input
+                                        type="number"
+                                        name='amount'
+                                        min="0"
+                                        class="form-control"
+                                        value={formData.amount}
+                                        onChange={handleChange}
+                                        required />
+                                </div>
+                                <div className="col-md-4 mb-3">
+                                    <label htmlFor='date'>Date</label>
+                                    <input
+                                        type="date"
+                                        name='date'
+                                        class="form-control"
+                                        value={formData.date}
+                                        onChange={handleChange}
+                                        required />
+                                </div>
+                                <div className="col-md-4 mb-3">
 
-                <section className='p-5 w-100'>
-                    <h3 className='mb-4'>{pageMode === 'edit'
-                        ? 'Edit My Expenses'
-                        : 'Add My Expenses'}</h3>
-                    <div className="alert alert-danger" hidden={dangerAlert.blockState}>
-                        {dangerAlert.msg}
-                    </div>
-                    <div
-                        className="needs-validation p-4 rounded"
-                        style={{ backgroundColor: '#f1f1f1' }}>
-                        <div className="row">
-                            <div className="col-md-4 mb-3">
-                                <label htmlFor='category'>Category</label>
-                                <select
-                                    name="category"
-                                    className="form-control"
-                                    value={formData.category}
-                                    onChange={handleChange}>
-                                    <option>Choose category</option>
-                                    {categories.map(category => {
-                                        return (
-                                            <option
-                                                key={category._id}
-                                                value={category._id}>
-                                                {category.name}
-                                            </option>
-                                        )
-                                    })}
-                                </select>
+                                    <input
+                                        type="hidden"
+                                        name='id'
+                                        class="form-control"
+                                        value={formData.id}
+                                        required />
+                                </div>
                             </div>
-                            <div className="col-md-4 mb-3">
-                                <label htmlFor='user'>User</label>
-                                <select
-                                    name="user"
-                                    className="form-control"
-                                    value={formData.user}
-                                    onChange={handleChange}>
-                                    <option>Choose User</option>
-                                    {users.map(user => {
-                                        return (
-                                            <option
-                                                key={user._id}
-                                                value={user._id}>
-                                                {user.name}
-                                            </option>
-                                        )
-                                    })}
-                                </select>
+                            <div className="form-row">
+                                <div className="col-md-6 mb-3">
+                                    <label htmlFor='description'>Discription</label>
+                                    <textarea
+                                        type="text"
+                                        name='description'
+                                        class="form-control"
+                                        value={formData.description}
+                                        onChange={handleChange}
+                                        required />
+                                </div>
                             </div>
-                            <div className="col-md-4 mb-3">
-                                <label htmlFor='amount'>Amount</label>
-                                <input
-                                    type="number"
-                                    name='amount'
-                                    class="form-control"
-                                    value={formData.amount}
-                                    onChange={handleChange}
-                                    required />
-                            </div>
-                            <div className="col-md-4 mb-3">
-                                <label htmlFor='date'>Date</label>
-                                <input
-                                    type="date"
-                                    name='date'
-                                    class="form-control"
-                                    value={formData.date}
-                                    onChange={handleChange}
-                                    required />
-                            </div>
-                            <div className="col-md-4 mb-3">
-
-                                <input
-                                    type="hidden"
-                                    name='id'
-                                    class="form-control"
-                                    value={formData.id}
-                                    required />
+                            <div className='d-flex justify-content-end'>
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={() => handleSave(expenseId)}>
+                                    Submit
+                                </button>
                             </div>
                         </div>
-                        <div className="form-row">
-                            <div className="col-md-6 mb-3">
-                                <label htmlFor='description'>Discription</label>
-                                <textarea
-                                    type="text"
-                                    name='description'
-                                    class="form-control"
-                                    value={formData.description}
-                                    onChange={handleChange}
-                                    required />
-                            </div>
-                        </div>
-                        <button
-                            className="btn btn-primary"
-                            onClick={() => handleSave(expenseId)}>
-                            Submit form
-                        </button>
-                    </div>
-                    {/* footer */}
-                    <footer className='text-center mt-4'>
+                    </section>
+                    <footer>
                         <Footer />
                     </footer>
-                </section>
-
-            </main>
-
+                </main>
+            </div>
         </>
     )
 }

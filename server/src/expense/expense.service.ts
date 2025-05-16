@@ -18,83 +18,58 @@ export class ExpenseService {
     date,
     categoryId,
   }: RequestExpense) {
-    try {
-      const postExpense = new this.expenseModel({
-        userId,
-        description,
-        amount,
-        date,
-        categoryId,
-        createdAt: new Date(),
-        updatedAt: null,
-        deletedAt: null,
-      }).save();
-      return postExpense;
-    } catch (error) {
-      console.log(error);
-      throw new InternalServerErrorException(`Error : ${error.message}`);
-    }
+    const postExpense = new this.expenseModel({
+      userId,
+      description,
+      amount,
+      date,
+      categoryId,
+      createdAt: new Date(),
+      updatedAt: null,
+      deletedAt: null,
+    }).save();
+    return postExpense;
   }
 
   async findAllExpense(): Promise<Expense[]> {
-    try {
-      const getExpense = await this.expenseModel
-        .find({
-          deletedAt: null,
-        })
-        .populate({ path: 'userId', select: '-_id name' })
-        .populate({ path: 'categoryId', select: '-_id name' })
-        .exec();
-      return getExpense;
-    } catch (error) {
-      throw new InternalServerErrorException(`Error : ${error.message}`);
-    }
+    const getExpense = await this.expenseModel
+      .find({
+        deletedAt: null,
+      })
+      .populate({ path: 'userId', select: '-_id name' })
+      .populate({ path: 'categoryId', select: '-_id name' })
+      .exec();
+    return getExpense;
   }
 
   async putExpense(
     id: string,
     updateData: RequestExpense,
   ): Promise<Expense | null> {
-    try {
-      const updateExpense = await this.expenseModel
-        .findByIdAndUpdate(
-          id,
-          { $set: { ...updateData, updatedAt: new Date() } },
-          { new: true },
-        )
-        .exec();
-      return updateExpense;
-    } catch (error) {
-      throw new InternalServerErrorException(`Error: ${error.message}`);
-    }
+    const updateExpense = await this.expenseModel
+      .findByIdAndUpdate(
+        id,
+        { $set: { ...updateData, updatedAt: new Date() } },
+        { new: true },
+      )
+      .exec();
+    return updateExpense;
   }
 
   async deleteExpense(id: string): Promise<Expense | null> {
-    try {
-      const delExpense = await this.expenseModel
-        .findByIdAndUpdate(
-          id,
-          { $set: { deletedAt: new Date() } },
-          { new: true },
-        )
-        .exec();
-      return delExpense;
-    } catch (error) {
-      throw new InternalServerErrorException(`Error: ${error.message}`);
-    }
+    const delExpense = await this.expenseModel
+      .findByIdAndUpdate(id, { $set: { deletedAt: new Date() } }, { new: true })
+      .exec();
+    return delExpense;
   }
 
   async singleExpense(id: string): Promise<Expense | null> {
-    try {
-      const oneExpense = await this.expenseModel
-        .findOne({ _id: id, deletedAt: null })
-        .populate({ path: 'userId', select: '_id name' })
-        .populate({ path: 'categoryId', select: '_id name' })
-        .exec();
-      return oneExpense;
-    } catch (error) {
-      throw new InternalServerErrorException(`Error: ${error.message}`);
-    }
+    const oneExpense = await this.expenseModel
+      .findOne({ _id: id, deletedAt: null })
+      .populate({ path: 'userId', select: '_id name' })
+      .populate({ path: 'categoryId', select: '_id name' })
+      .exec();
+    return oneExpense;
   }
 
   async userExpenses(
@@ -103,12 +78,11 @@ export class ExpenseService {
     limit: number,
     page: number,
   ): Promise<Expense | {}> {
-
     let userExpenses;
     let totalCount;
     let filter;
 
-    const limitNo = limit ?? 10;
+    const limitNo = limit ?? 5;
     const pageNo = page ?? 1;
     const skip = (pageNo - 1) * limitNo;
 
@@ -149,6 +123,8 @@ export class ExpenseService {
           userId: id,
           deletedAt: null,
         })
+        .skip(skip)
+        .limit(limitNo)
         .populate({ path: 'userId', select: '_id name' })
         .populate({ path: 'categoryId', select: '_id name' })
         .exec();

@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { GiExpense } from "react-icons/gi";
+import { MdOutlineCategory } from "react-icons/md";
 
 
 const SideBar = () => {
@@ -17,7 +18,11 @@ const SideBar = () => {
             <GiExpense className="me-2" />Expenses
           </Link>
         </li>
-
+        <li className="nav-item mb-2">
+          <Link to="/category" className="nav-link text-dark">
+            <MdOutlineCategory className="me-2" />Category
+          </Link>
+        </li>
 
         <li className="nav-item dropdown">
           <Link className="nav-link dropdown-toggle text-dark" to="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../layouts/Header';
 import SideBar from '../layouts/SideBar';
 import Footer from '../layouts/Footer';
-import { Link } from 'react-router-dom';
+import { Link, } from 'react-router-dom';
 import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts'
 import { useUser } from '../components/Context';
 
@@ -16,6 +16,7 @@ function Dashboard() {
   const [amount, setAmount] = useState(0)
   const { loginUser, setLoginUser } = useUser();
   const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#a4de6c"];
+
 
   async function handleIsLogged() {
     const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/user/home`, {
@@ -31,6 +32,7 @@ function Dashboard() {
     }
   }
 
+
   async function fetchThisMonthExpense() {
     const todayDate = new Date()
     const year = todayDate.getFullYear();
@@ -38,10 +40,11 @@ function Dashboard() {
     const day = todayDate.getDate();
     const formattedDate = `${year}-${month}-${day}`;
     let response
+
     if (loginUser?.data?._id) {
       response = await fetch(`${process.env.REACT_APP_FETCH_URL}/expense/userexpense/${loginUser.data._id}?date=${formattedDate}`)
     }
-    if (response.ok) {
+    if (response.status === 200) {
       const expenseData = await response.json()
       const result = expenseData.data.userExpenseData.map((item) => ({
         name: item.description,
@@ -55,6 +58,8 @@ function Dashboard() {
 
   useEffect(() => {
     handleIsLogged();
+    if (!loginUser?.data?._id) return;
+
   }, []);
 
   useEffect(() => {
@@ -88,6 +93,11 @@ function Dashboard() {
         </aside>
         <main className='p-3 w-100 bg-light'>
           <section className='main' style={{ minHeight: '400px' }}>
+            <nav className='m-4'>
+              <ol className="breadcrumb">
+                <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
+              </ol>
+            </nav>
             <div className='container mt-3'>
               <h1 className='ms-2'>Welcome Buddy !</h1>
               <p className='ms-2'>Track your spending. Control your future.</p>

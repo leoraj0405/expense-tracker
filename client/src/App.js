@@ -6,6 +6,7 @@ import ParentLogin from './pages/ParentLogin';
 import SignupPage from './pages/SignupPage';
 import AddMyExpense from './pages/myExpenses/AddMyExpense';
 import ListMyExpense from './pages/myExpenses/ListMyExpense';
+import CategoryList from './pages/category/CategoryList';
 
 
 function App() {
@@ -17,6 +18,10 @@ function App() {
         <Route path='/home' element={<Dashboard />} />
         <Route path='/expense' element={<ListMyExpense />} />
         <Route path='/thismonthexpense' element={<ListMyExpense />} />
+        <Route path='/addexpense' element={<AddMyExpense />} />
+        <Route path='/editexpense' element={<AddMyExpense />} />
+        <Route path='/category' element={<CategoryList />} />
+
         {/* <Route path="/error" element={<ErrorPage />} /> */}
       </Routes>
     </Router>

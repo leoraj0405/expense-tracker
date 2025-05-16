@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import Header from '../../layouts/Header'
 import Footer from '../../layouts/Footer'
 import SideBar from '../../layouts/SideBar'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { FaEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { useNavigate } from 'react-router-dom'
@@ -11,6 +11,10 @@ import { useUser } from '../../components/Context'
 function ListMyExpense() {
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
+    const pathnames = location.pathname.split('/').filter((x) => x);
+    const [searchParams, setSearchParams] = useSearchParams();
+
+
     const queryDate = queryParams.get('date');
     const { loginUser } = useUser()
     const navigate = useNavigate()
@@ -34,16 +38,17 @@ function ListMyExpense() {
         setDate(e.target.value)
     }
 
-
     async function fetchExpenses() {
         if (queryDate) {
             setDate(queryDate)
         }
         let response
         if (date) {
-            response = await fetch(`${process.env.REACT_APP_FETCH_URL}/expense/userexpense/${loginUser.data._id}?date=${date}`)
+            response = await fetch(`${process.env.REACT_APP_FETCH_URL}/expense/userexpense/${loginUser.data._id}?date=${date}&page=${currentPage}`)
+            searchParams.delete('date');
+            setSearchParams(searchParams);
         } else {
-            response = await fetch(`${process.env.REACT_APP_FETCH_URL}/expense/userexpense/${loginUser.data._id}`)
+            response = await fetch(`${process.env.REACT_APP_FETCH_URL}/expense/userexpense/${loginUser.data._id}?page=${currentPage}`)
 
         }
         if (response.ok) {
@@ -107,6 +112,7 @@ function ListMyExpense() {
                 });
         }
     }
+
     return (
         <>
             <header>
@@ -118,14 +124,26 @@ function ListMyExpense() {
                 </aside>
                 <main className='p-3 w-100 bg-light'>
                     <section className='main' style={{ minHeight: '400px' }}>
-                        <h2 className='mt-3'>Expenses</h2>
-                        <div className='d-flex flex-column mt-4'>
+                        <nav className='m-4'>
+                            <ol className="breadcrumb">
+                                <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
+                                {pathnames.map((item, index) => {
+                                   const label = item === 'thismonthexpense' ? 'This month expense' : item
+                                   const to = `/${pathnames.slice(0, index + 1).join('/')}`;
+                                    return (
+                                        <li className="breadcrumb-item"><Link className='text-secondary' to={to}>{label}</Link></li>
+                                    )
+                                })}
+                            </ol>
+                        </nav>
+                        <h2 className='m-4'>Expenses</h2>
+                        <div className='d-flex flex-column m-4'>
                             <div className='d-flex flex-row justify-content-between pb-4'>
                                 <div>
                                     <p>Filter by month : </p>
                                     <input type="month" onChange={handleOnChange} name='date' value={date} className='form-control' />
                                 </div>
-                                <Link className='btn btn-primary h-25'>Add New Expense</Link>
+                                <Link className='btn btn-primary h-25' to={'/addexpense'}>Add New Expense</Link>
                             </div>
                             <div className='table-responsive'>
                                 <table className="table table-striped">
@@ -149,7 +167,7 @@ function ListMyExpense() {
                                                     <td>{item.date.split('T')[0]}</td>
                                                     <td>{item.amount}</td>
                                                     <td>
-                                                        <Link to={`/edit-expense/${item._id}`} className='btn btn-sm btn-warning me-2'><FaEdit /></Link>
+                                                        <Link to={`/editexpense?mode=edit&expense=${item._id}`} className='btn btn-sm btn-warning me-2'><FaEdit /></Link>
                                                         <button className='btn btn-sm btn-danger' onClick={() => handleDelete(item._id)}><MdDelete /></button>
                                                     </td>
                                                 </tr>
@@ -168,13 +186,15 @@ function ListMyExpense() {
                                             <nav>
                                                 <ul className="pagination">
                                                     <li className="page-item">
-                                                        <button className="page-link" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>Previous</button>
+                                                        <button className="page-link" onClick={() => goToPage(Number(currentPage) - 1)} >Previous</button>
                                                     </li>
                                                     {Array.from({ length: totalPages }).map((_, i) => (
-                                                        <li className="page-item" key={i}><button className={currentPage === i + 1 ? "page-link active" : "page-link"} onClick={() => goToPage(i + 1)}>{i + 1}</button></li>
+                                                        <li className="page-item" key={i}>
+                                                            <button className={currentPage === i + 1 ? "page-link active" : "page-link"} onClick={() => goToPage(i + 1)}>{i + 1}</button>
+                                                        </li>
                                                     ))}
                                                     <li class="page-item">
-                                                        <button className='page-link' onClick={() => goToPage(currentPage + 1)} disabled={true}>Next</button>
+                                                        <button className='page-link' onClick={() => goToPage(Number(currentPage) + 1)}>Next</button>
                                                     </li>
                                                 </ul>
                                             </nav>

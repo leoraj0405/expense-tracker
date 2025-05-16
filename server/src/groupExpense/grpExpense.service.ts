@@ -7,7 +7,8 @@ import { GroupExpense } from 'src/schemas/groupExpense.schema';
 @Injectable()
 export class GrpExpenseService {
   constructor(
-    @InjectModel(GroupExpense.name) private grpExpenseModel: Model<GroupExpense>,
+    @InjectModel(GroupExpense.name)
+    private grpExpenseModel: Model<GroupExpense>,
   ) {}
 
   async createGrpExpense({
@@ -15,86 +16,62 @@ export class GrpExpenseService {
     description,
     amount,
     userId,
-    categoryId
+    categoryId,
   }: RequestGrpExpense) {
-    try {
-      const postGrpExpense = new this.grpExpenseModel({
-        groupId,
-        description,
-        amount,
-        userId,
-        categoryId,
-        createdAt: new Date(),
-        updatedAt: null,
-        deletedAt: null,
-      }).save();
-      return postGrpExpense;
-    } catch (error) {
-      throw new InternalServerErrorException(`Error : ${error.message}`);
-    }
+    const postGrpExpense = new this.grpExpenseModel({
+      groupId,
+      description,
+      amount,
+      userId,
+      categoryId,
+      createdAt: new Date(),
+      updatedAt: null,
+      deletedAt: null,
+    }).save();
+    return postGrpExpense;
   }
 
   async findAllGrpExpense(): Promise<GroupExpense[]> {
-    try {
-      const getGrpExpense = await this.grpExpenseModel
-        .find({
-          deletedAt: null,
-        })
+    const getGrpExpense = await this.grpExpenseModel
+      .find({
+        deletedAt: null,
+      })
 
-        .populate({ path: 'groupId', select: '-_id name' })
-        .populate({path: 'userId', select: '-_id name'})
-        .populate({path: 'categoryId', select: '-_id name'})
-        .exec();
-      return getGrpExpense;
-    } catch (error) {
-      throw new InternalServerErrorException(`Error : ${error.message}`);
-    }
+      .populate({ path: 'groupId', select: '-_id name' })
+      .populate({ path: 'userId', select: '-_id name' })
+      .populate({ path: 'categoryId', select: '-_id name' })
+      .exec();
+    return getGrpExpense;
   }
 
   async putGrpExpense(
     id: string,
     updateData: RequestGrpExpense,
   ): Promise<GroupExpense | null> {
-    try {
-      const updateGrpExpense = await this.grpExpenseModel
-        .findByIdAndUpdate(
-          id,
-          { $set: { ...updateData, updatedAt: new Date() } },
-          { new: true },
-        )
-        .exec();
-      return updateGrpExpense;
-    } catch (error) {
-      throw new InternalServerErrorException(`Error: ${error.message}`);
-    }
+    const updateGrpExpense = await this.grpExpenseModel
+      .findByIdAndUpdate(
+        id,
+        { $set: { ...updateData, updatedAt: new Date() } },
+        { new: true },
+      )
+      .exec();
+    return updateGrpExpense;
   }
 
   async deleteGrpExpense(id: string): Promise<GroupExpense | null> {
-    try {
-      const delGrpExpense = await this.grpExpenseModel
-        .findByIdAndUpdate(
-          id,
-          { $set: { deletedAt: new Date() } },
-          { new: true },
-        )
-        .exec();
-      return delGrpExpense;
-    } catch (error) {
-      throw new InternalServerErrorException(`Error: ${error.message}`);
-    }
+    const delGrpExpense = await this.grpExpenseModel
+      .findByIdAndUpdate(id, { $set: { deletedAt: new Date() } }, { new: true })
+      .exec();
+    return delGrpExpense;
   }
 
   async singleGrpExpense(id: string): Promise<GroupExpense | null> {
-    try {
-      const oneGrpExpense = await this.grpExpenseModel
-        .findOne({ _id: id, deletedAt: null })
-        .populate({ path: 'groupId', select: '-_id name' })
-        .populate({path: 'userId', select: '-_id name'})
-        .populate({path: 'categoryId', select: '-_id name'})
-        .exec();
-      return oneGrpExpense;
-    } catch (error) {
-      throw new InternalServerErrorException(`Error: ${error.message}`);
-    }
+    const oneGrpExpense = await this.grpExpenseModel
+      .findOne({ _id: id, deletedAt: null })
+      .populate({ path: 'groupId', select: '-_id name' })
+      .populate({ path: 'userId', select: '-_id name' })
+      .populate({ path: 'categoryId', select: '-_id name' })
+      .exec();
+    return oneGrpExpense;
   }
 }
