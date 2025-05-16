@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { RequestExpense } from '../request';
 import { Expense } from 'src/schemas/expense.schma';
+import { from } from 'rxjs';
 
 @Injectable()
 export class ExpenseService {
@@ -96,23 +97,69 @@ export class ExpenseService {
     }
   }
 
-  async userExpenses(id: string, date: string): Promise<Expense[] | null> {
-    const inputDate = new Date(date);
-    const year = inputDate.getFullYear();
-    const month = inputDate.getMonth() + 1;
+  async userExpenses(
+    id: string,
+    date: string,
+    limit: number,
+    page: number,
+  ): Promise<Expense | {}> {
 
-    const fromDate = new Date(year, month - 1, 1);
-    const toDate = new Date(year, month, 1);
+    let userExpenses;
+    let totalCount;
+    let filter;
 
-    const userExpenses = await this.expenseModel
-      .find({
+    const limitNo = limit ?? 10;
+    const pageNo = page ?? 1;
+    const skip = (pageNo - 1) * limitNo;
+
+    if (date) {
+      const inputDate = new Date(date);
+      const year = inputDate.getFullYear();
+      const month = inputDate.getMonth() + 1;
+
+      const fromDate = new Date(year, month - 1, 1);
+      const toDate = new Date(year, month, 1);
+
+      filter = {
         userId: id,
         deletedAt: null,
         date: { $gte: fromDate, $lt: toDate },
-      })
-      .populate({ path: 'userId', select: '_id name' })
-      .populate({ path: 'categoryId', select: '_id name' })
-      .exec();
-    return userExpenses;
+      };
+
+      userExpenses = await this.expenseModel
+        .find({
+          userId: id,
+          deletedAt: null,
+          date: { $gte: fromDate, $lt: toDate },
+        })
+        .skip(skip)
+        .limit(limitNo)
+        .populate({ path: 'userId', select: '_id name' })
+        .populate({ path: 'categoryId', select: '_id name' })
+        .exec();
+
+      totalCount = await this.expenseModel.countDocuments(filter);
+    } else {
+      filter = {
+        userId: id,
+        deletedAt: null,
+      };
+      userExpenses = await this.expenseModel
+        .find({
+          userId: id,
+          deletedAt: null,
+        })
+        .populate({ path: 'userId', select: '_id name' })
+        .populate({ path: 'categoryId', select: '_id name' })
+        .exec();
+
+      totalCount = await this.expenseModel.countDocuments(filter);
+    }
+    return {
+      limit: limitNo,
+      page: pageNo,
+      total: totalCount,
+      userExpenseData: userExpenses,
+    };
   }
 }

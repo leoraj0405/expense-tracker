@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Profile from '../assets/img/image.png'
 import '../style/Header.css'
@@ -9,6 +9,12 @@ import { useUser } from '../components/Context'
 function Header() {
   const navigate = useNavigate()
   const { loginUser, setLoginUser } = useUser();
+
+  useEffect(() => {
+    if (!loginUser) {
+      navigate('/login')
+    }
+  }, [loginUser])
 
   async function handleLogout() {
 
@@ -35,7 +41,7 @@ function Header() {
 
         <div className="ms-auto d-flex align-items-center">
           <span className=" me-3 text-white">
-            Welcome Mr. {loginUser?.data?.name || 'Guest'}
+            Welcome Mr. {loginUser?.data?.name}
           </span>
           <div className="dropdown">
             <Link className="dropdown-toggle d-flex align-items-center" href="#" role="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">

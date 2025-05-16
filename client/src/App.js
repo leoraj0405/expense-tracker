@@ -6,10 +6,7 @@ import ParentLogin from './pages/ParentLogin';
 import SignupPage from './pages/SignupPage';
 import AddMyExpense from './pages/myExpenses/AddMyExpense';
 import ListMyExpense from './pages/myExpenses/ListMyExpense';
-import CategoryList from './pages/category/CategoryList';
-import GroupList from './pages/group/GroupList';
-import AddGroup from './pages/group/AddGroup';
-import GrpMember from './pages/grpMember/GrpMember';
+
 
 function App() {
   return (
@@ -19,6 +16,7 @@ function App() {
         <Route path='/parentlogin' element={<ParentLogin />} />
         <Route path='/home' element={<Dashboard />} />
         <Route path='/expense' element={<ListMyExpense />} />
+        <Route path='/thismonthexpense' element={<ListMyExpense />} />
         {/* <Route path="/error" element={<ErrorPage />} /> */}
       </Routes>
     </Router>

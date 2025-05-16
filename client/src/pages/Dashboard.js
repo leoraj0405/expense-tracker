@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import '../style/Dashboard.css'
 import { useNavigate } from 'react-router-dom';
 import Header from '../layouts/Header';
@@ -17,7 +17,6 @@ function Dashboard() {
   const { loginUser, setLoginUser } = useUser();
   const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#a4de6c"];
 
-
   async function handleIsLogged() {
     const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/user/home`, {
       method: 'GET',
@@ -33,18 +32,18 @@ function Dashboard() {
   }
 
   async function fetchThisMonthExpense() {
-    const todayDate = new Date('2025-4-21')
+    const todayDate = new Date()
     const year = todayDate.getFullYear();
     const month = todayDate.getMonth() + 1;
     const day = todayDate.getDate();
     const formattedDate = `${year}-${month}-${day}`;
     let response
-    if (loginUser.data._id) {
-       response = await fetch(`${process.env.REACT_APP_FETCH_URL}/expense/userexpense/${loginUser.data._id}?date=${formattedDate}`)
+    if (loginUser?.data?._id) {
+      response = await fetch(`${process.env.REACT_APP_FETCH_URL}/expense/userexpense/${loginUser.data._id}?date=${formattedDate}`)
     }
     if (response.ok) {
       const expenseData = await response.json()
-      const result = expenseData.data.map((item) => ({
+      const result = expenseData.data.userExpenseData.map((item) => ({
         name: item.description,
         value: item.amount
       }))
@@ -75,6 +74,8 @@ function Dashboard() {
       setAmount(0)
     }
   }, [data])
+  const date = new Date();
+  const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
   return (
     <>
@@ -97,9 +98,9 @@ function Dashboard() {
                       <div className="col-lg ">
                         <div class="card  boxshadow p-3 mb-5 bg-white rounded text-center" >
                           <div class="card-body">
-                            <h5 class="card-title">Today Total Expenses</h5>
+                            <h5 class="card-title">Month Total Expenses</h5>
                             <p class="card-text">₹ {amount}</p>
-                            <Link to="/login" class="btn btn-primary">See Today Expenses</Link>
+                            <Link to={`/thismonthexpense?date=${yearMonth}`} class="btn btn-primary">See This month Expenses</Link>
                           </div>
                         </div>
                       </div>

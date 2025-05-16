@@ -130,13 +130,15 @@ export class ExpenseController {
     @Param('id') id: string,
     @Res() reply: any,
     @Query('date') date: string,
+    @Query('limit') limit: number,
+    @Query('page') page: number,
   ): Promise<Expense | null> {
     const response: ResponseDto = {
       message: '',
       data: null,
     };
     try {
-      const userExpenses = await this.expenseService.userExpenses(id, date);
+      const userExpenses = await this.expenseService.userExpenses(id, date, limit, page);
       if (!userExpenses) {
         response.message = 'Not found';
         return reply.status(404).send(response);

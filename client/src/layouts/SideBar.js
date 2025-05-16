@@ -5,7 +5,7 @@ import { GiExpense } from "react-icons/gi";
 
 const SideBar = () => {
   return (
-    <div className="d-flex flex-column vh-100 p-2 bg-warning" style={{ width: "250px" }}>
+    <div className="d-flex flex-column h-100 p-2 bg-warning" style={{ width: "250px" }}>
       <ul className="nav nav-pills flex-column">
         <li className="nav-item mb-2">
           <Link to="/home" className="nav-link text-dark">
