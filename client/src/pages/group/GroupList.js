@@ -1,27 +1,35 @@
 import React, { useEffect, useState } from 'react'
 import Header from '../../layouts/Header'
 import Footer from '../../layouts/Footer'
-import AsideBar from '../../layouts/AsideBar'
+import SideBar from '../../layouts/SideBar'
 import { FaEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
-import { Link } from 'react-router-dom';
-import { getUser } from '../../components/SessionAuth';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useUser } from '../../components/Context';
 
 
 function GroupList() {
+    const location = useLocation();
+    const pathnames = location.pathname.split('/').filter((x) => x);
+    const { loginUser } = useUser()
+    const navigate = useNavigate()
     const [alertBlock, setAlertBlock] = useState({
         blockState: true,
         msg: ''
     })
     const [userGrps, setUserGrps] = useState([])
-    const user = getUser()
     var sno = 1
 
-    function fetchUserGrp(id) {
+    useEffect(() => {
+        if (!loginUser) {
+            navigate('/login')
+        }
+    }, [loginUser])
 
+    function fetchUserGrp(id) {
         fetch(`${process.env.REACT_APP_FETCH_URL}/group/usergroups/${id}`, { method: "GET" })
             .then(async (response) => {
-                if (response.ok) {
+                if (response.status === 200) {
                     const userGrpData = await response.json()
                     setUserGrps(userGrpData.data)
                 } else {
@@ -33,7 +41,6 @@ function GroupList() {
                 }
             });
     }
-
 
     function hanldeDelete(id) {
         if (window.confirm('Are you sure to delete this record ?')) {
@@ -53,7 +60,7 @@ function GroupList() {
     }
 
     useEffect(() => {
-        fetchUserGrp(user.data._id)
+        fetchUserGrp(loginUser?.data?._id)
     }, [])
 
     useEffect(() => {
@@ -67,95 +74,107 @@ function GroupList() {
 
     return (
         <>
-            <header className='header d-flex justify-content-between text-white'>
+            <header>
                 <Header />
             </header>
-
-            <main className='d-flex justify-content-start'>
-                <aside className='w-25'>
-                    <AsideBar />
+            <div className='d-flex'>
+                <aside>
+                    <SideBar />
                 </aside>
+                <main className='p-3 w-100 bg-light'>
+                    <section className='main' style={{ minHeight: '400px' }}>
 
-                <section className='p-5 w-100'>
-                    {/* Body content */}
+                        <nav className='m-4'>
+                            <ol className="breadcrumb">
+                                <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
+                                {pathnames.map((item, index) => {
+                                    const to = `/${pathnames.slice(0, index + 1).join('/')}`;
+                                    return (
+                                        <li className="breadcrumb-item"><Link className='text-secondary' to={to}>{item}</Link></li>
+                                    )
+                                })}
+                            </ol>
+                        </nav>
 
-                    <div className='d-flex justify-content-end'>
-                        <Link
-                            to={'/addgroup'}
-                            className='btn btn-primary' x>
-                            Create new group
-                        </Link>
-                    </div>
+                        <div className='m-4'>
+                            <div className='d-flex justify-content-between mb-2'>
+                            <h2>Your group list</h2>
+                                <Link
+                                    to={'/addgroup'}
+                                    className='btn btn-primary'>
+                                    Create new group
+                                </Link>
+                            </div>
 
-                    <div
-                        className="alert alert-danger"
-                        hidden={alertBlock.blockState}>
-                        {alertBlock.msg}
-                    </div>
+                            <div
+                                className="alert alert-danger m-2"
+                                hidden={alertBlock.blockState}>
+                                {alertBlock.msg}
+                            </div>
 
-                    <h2>Your group list</h2>
+                            <div className='table-responsive'>
+                                <table className="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Sno</th>
+                                            <th scope="col">Group Name</th>
+                                            <th scope='col'>Created By</th>
+                                            <th scope="col" className='text-center'>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {userGrps.length > 0 ? userGrps.map(userGrp => {
+                                            return (
+                                                <tr>
+                                                    <th scope="row">{sno++}</th>
+                                                    <td>{userGrp.name}</td>
+                                                    <td>{userGrp.createdBy.name}</td>
+                                                    <td
+                                                        className='d-flex'
+                                                        style={{ gap: '30px' }}>
+                                                        <Link
+                                                            to={`/groupmembers?grpId=${userGrp._id}`}
+                                                            className='btn btn-link'>
+                                                            View this group members
+                                                        </Link>
+                                                        <Link
+                                                            to={`/groupexpenses?grpId=${userGrp._id}`}
+                                                            className='btn btn-link'>
+                                                            View this group expenses
+                                                        </Link>
+                                                        <Link
+                                                            to={`/editgroup?mode=edit&group=${userGrp._id}`}
+                                                            style={{ color: 'black', fontSize: '20px' }}>
+                                                            <FaEdit />
+                                                        </Link>
+                                                        <Link
+                                                            onClick={() => hanldeDelete(userGrp._id)}
+                                                            style={{ color: 'red', fontSize: '20px' }}>
+                                                            <MdDelete />
+                                                        </Link>
+                                                    </td>
+                                                </tr>
+                                            )
+                                        }) :
+                                            <tr>
+                                                <td
+                                                    colSpan={4}
+                                                    className='text-center text-secondary'>
+                                                    No Groups founded
+                                                </td>
+                                            </tr>}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
 
-                    <table className="table table-striped">
-                        <thead>
-                            <tr>
-                                <th scope="col">Sno</th>
-                                <th scope="col">Group Name</th>
-                                <th scope='col'>Created By</th>
-                                <th scope="col" className='text-center'>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {userGrps.length > 0 ? userGrps.map(userGrp => {
-                                return (
-                                    <tr>
-                                        <th scope="row">{sno++}</th>
-                                        <td>{userGrp.name}</td>
-                                        <td>{userGrp.createdBy.name}</td>
-                                        <td
-                                            className='d-flex'
-                                            style={{ gap: '30px' }}>
-                                            <Link
-                                                to={`/groupmembers?grpId=${userGrp._id}`}
-                                                className='btn btn-warning'>
-                                                View this group members
-                                            </Link>
-                                            <Link
-                                                to={`/groupexpenses?grpId=${userGrp._id}`}
-                                                className='btn btn-warning'>
-                                                View this group expenses
-                                            </Link>
-                                            <Link
-                                                to={`/editgroup?mode=edit&group=${userGrp._id}`}
-                                                style={{ color: 'black', fontSize: '20px' }}>
-                                                <FaEdit />
-                                            </Link>
-                                            <Link
-                                                onClick={() => hanldeDelete(userGrp._id)}
-                                                style={{ color: 'red', fontSize: '20px' }}>
-                                                <MdDelete />
-                                            </Link>
-                                        </td>
-                                    </tr>
-                                )
-                            }) :
-                                <tr>
-                                    <td
-                                        colSpan={4}
-                                        className='text-center text-secondary'>
-                                        No Groups founded
-                                    </td>
-                                </tr>}
-                        </tbody>
-                    </table>
 
-                    {/* footer */}
-                    <footer className='text-center mt-4'>
+                    </section>
+                    <footer>
                         <Footer />
                     </footer>
-                </section>
-
-            </main>
-
+                </main>
+            </div>
         </>
     )
 }

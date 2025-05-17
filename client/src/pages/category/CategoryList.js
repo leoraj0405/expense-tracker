@@ -4,9 +4,12 @@ import Footer from '../../layouts/Footer'
 import SideBar from '../../layouts/SideBar'
 import { FaEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useUser } from '../../components/Context';
 
 function CategoryList() {
+    const { loginUser } = useUser()
+    const navigate = useNavigate()
     const location = useLocation();
     const pathnames = location.pathname.split('/').filter((x) => x);
     const [categories, setCategories] = useState([])
@@ -20,7 +23,13 @@ function CategoryList() {
     let serialNo = 1
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    
+
+    useEffect(() => {
+        if (!loginUser) {
+            navigate('/login')
+        }
+    }, [loginUser])
+
     function goToPage(page) {
         if (page < 1 || page > totalPages) return;
         setCurrentPage(page);
@@ -157,11 +166,11 @@ function CategoryList() {
                 </aside>
                 <main className='p-3 w-100 bg-light'>
                     <section className='main' style={{ minHeight: '400px' }}>
-                    <nav className='m-4'>
+                        <nav className='m-4'>
                             <ol className="breadcrumb">
                                 <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
                                 {pathnames.map((item, index) => {
-                                   const to = `/${pathnames.slice(0, index + 1).join('/')}`;
+                                    const to = `/${pathnames.slice(0, index + 1).join('/')}`;
                                     return (
                                         <li className="breadcrumb-item"><Link className='text-secondary' to={to}>{item}</Link></li>
                                     )
@@ -242,7 +251,7 @@ function CategoryList() {
                                             </tr>}
                                     </tbody>
                                 </table>
-                                {categories.categoryData?.length > 0  ?
+                                {categories.categoryData?.length > 0 ?
                                     <div className='card'>
                                         <div className='card-body d-flex justify-content-center'>
                                             <nav>

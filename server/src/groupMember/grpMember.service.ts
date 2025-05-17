@@ -62,4 +62,13 @@ export class GrpMemberService {
       .exec();
     return oneGrpMember;
   }
+
+  async oneGroupMembers(id: string): Promise<GroupMember | null> {
+    const oneGrpMember = await this.grpMemberModel
+      .findOne({ groupId: id, deletedAt: null })
+      .populate({ path: 'groupId', select: '_id name' })
+      .populate({ path: 'userId', select: '_id name' })
+      .exec();
+    return oneGrpMember;
+  }
 }

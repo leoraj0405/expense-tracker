@@ -2,6 +2,8 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { GiExpense } from "react-icons/gi";
 import { MdOutlineCategory } from "react-icons/md";
+import { MdGroups2 } from "react-icons/md";
+
 
 
 const SideBar = () => {
@@ -26,11 +28,12 @@ const SideBar = () => {
 
         <li className="nav-item dropdown">
           <Link className="nav-link dropdown-toggle text-dark" to="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <i className="bi bi-folder me-2"></i> Menu
+            <MdGroups2 className="me-2"/> Group
           </Link>
           <ul className="dropdown-menu">
-            <li><Link className="dropdown-item" to="#">Item 1</Link></li>
-            <li><Link className="dropdown-item" to="#">Item 2</Link></li>
+          <li><Link className="dropdown-item" to="/group">My groups list</Link></li>
+            <li><Link className="dropdown-item" to="/groupexpenses">Group Expenses</Link></li>
+            <li><Link className="dropdown-item" to="/groupmember">Group Members</Link></li>
           </ul>
         </li>
       </ul>

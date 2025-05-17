@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { RequestGroup } from '../request';
 import { Group } from 'src/schemas/group.schma';
 import { GroupMember } from 'src/schemas/groupMember.schema';
+import { Types } from 'mongoose';
 @Injectable()
 export class GroupService {
   constructor(
@@ -62,6 +63,7 @@ export class GroupService {
     const memberships = await this.grpMemberModel
       .find({ userId: { $eq: id }, deletedAt: null })
       .exec();
+
     const groupIds = memberships.map((member) => member.groupId);
     const groups = await this.groupModel
       .find({ _id: { $in: groupIds }, deletedAt: null })
