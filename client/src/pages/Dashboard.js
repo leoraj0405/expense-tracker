@@ -31,8 +31,7 @@ function Dashboard() {
       navigate('/login')
     }
   }
-
-
+  
   async function fetchThisMonthExpense() {
     const todayDate = new Date()
     const year = todayDate.getFullYear();
@@ -58,8 +57,6 @@ function Dashboard() {
 
   useEffect(() => {
     handleIsLogged();
-    if (!loginUser?.data?._id) return;
-
   }, []);
 
   useEffect(() => {

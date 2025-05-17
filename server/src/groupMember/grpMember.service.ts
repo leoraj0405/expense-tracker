@@ -63,9 +63,9 @@ export class GrpMemberService {
     return oneGrpMember;
   }
 
-  async oneGroupMembers(id: string): Promise<GroupMember | null> {
+  async oneGroupMembers(id: string): Promise<GroupMember[] | null> {
     const oneGrpMember = await this.grpMemberModel
-      .findOne({ groupId: id, deletedAt: null })
+      .find({ groupId: id, deletedAt: null })
       .populate({ path: 'groupId', select: '_id name' })
       .populate({ path: 'userId', select: '_id name' })
       .exec();

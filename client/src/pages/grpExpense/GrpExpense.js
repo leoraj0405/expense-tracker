@@ -10,9 +10,7 @@ import { MdDelete } from "react-icons/md";
 function useQuery() {
     return new URLSearchParams(useLocation().search)
 }
-
-
-function GrpMember() {
+function GrpExpense() {
     const location = useLocation();
     const pathnames = location.pathname.split('/').filter((x) => x);
     const { loginUser } = useUser();
@@ -24,10 +22,9 @@ function GrpMember() {
         msg: ''
     })
     const [groups, setGroups] = useState([])
-    const [groupMembers, setGroupMembers] = useState([])
+    const [groupExpenses, setGroupExpenses] = useState([])
     const [grpId, setGrpId] = useState('')
     const [searchParams, setSearchParams] = useSearchParams();
-
 
     useEffect(() => {
         if (!loginUser) {
@@ -35,16 +32,16 @@ function GrpMember() {
         }
     }, [])
 
-    async function fetchGroupMembers() {
+    async function fetchGroupExpenses() {
         if (groupId) {
             setGrpId(groupId)
             searchParams.delete('grpId');
             setSearchParams(searchParams);
         }
-        const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/groupmember/onegroup/${grpId}`)
+        const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/groupexpense/onegroup/${grpId}`)
         if (response.status === 200) {
-            const grpMembersData = await response.json()
-            setGroupMembers(grpMembersData.data)
+            const responseData = await response.json()
+            setGroupExpenses(responseData.data)
         } else {
             const errorInfo = await response.json()
             setAlertBlock({
@@ -70,10 +67,10 @@ function GrpMember() {
 
     function hanldeDelete(id) {
         if (window.confirm('Are you sure to delete this record ?')) {
-            let request = fetch(`${process.env.REACT_APP_FETCH_URL}/groupmember/${id}`, { method: "DELETE" })
+            let request = fetch(`${process.env.REACT_APP_FETCH_URL}/groupexpense/${id}`, { method: "DELETE" })
             request.then(async (response) => {
                 if (response.status === 200) {
-                    fetchGroupMembers()
+                    fetchGroupExpenses()
                 } else {
                     const errorInfo = await response.json()
                     setAlertBlock({
@@ -90,7 +87,7 @@ function GrpMember() {
     }, [])
 
     useEffect(() => {
-        fetchGroupMembers()
+        fetchGroupExpenses()
     }, [grpId])
 
     useEffect(() => {
@@ -101,7 +98,6 @@ function GrpMember() {
             })
         }, 5000)
     }, [alertBlock])
-
     return (
         <>
             <header>
@@ -120,7 +116,7 @@ function GrpMember() {
                                 <li className="breadcrumb-item"><Link className='text-secondary' to="/group">Group</Link></li>
                                 {pathnames.map((item, index) => {
                                     const to = `/${pathnames.slice(0, index + 1).join('/')}`;
-                                    const label = item === 'groupmember' ? 'Group Member' : item
+                                    const label = item === 'groupexpense' ? 'Group Expense' : item
                                     return (
                                         <li className="breadcrumb-item"><Link className='text-secondary' to={to}>{label}</Link></li>
                                     )
@@ -150,15 +146,15 @@ function GrpMember() {
                                         })}
                                     </select>
                                     <div className='text-center pt-4'>
-                                        <button onClick={fetchGroupMembers} className="btn btn-primary">Submit</button>
+                                        <button onClick={fetchGroupExpenses} className="btn btn-primary">Submit</button>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <div className='d-flex justify-content-between m-4'>
-                            <h3>Group Members</h3>
-                            <Link className='btn btn-primary' to={`/addgroupmember`}>Add Members</Link>
+                            <h3>Group Expenses</h3>
+                            <Link className='btn btn-primary' to={`/addgroupexpense`}>Add Expenses</Link>
                         </div>
 
                         <div className='table-responsive m-4'>
@@ -167,21 +163,27 @@ function GrpMember() {
                                     <tr>
                                         <th scope="col">S No</th>
                                         <th scope="col">Group Name</th>
-                                        <th scope="col">Member</th>
-                                        <th scope="col">Actions</th>
+                                        <th scope='col'>User</th>
+                                        <th scope="col">Description</th>
+                                        <th scope="col">Amount</th>
+                                        <th scope='col'>Category</th>
+                                        <th scope='col'>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {groupMembers.length > 0 ?
-                                        groupMembers.map((item, index) => {
+                                    {groupExpenses.length > 0 ?
+                                        groupExpenses.map((item, index) => {
                                             return (
                                                 <tr key={index}>
                                                     <td>{index + 1}</td>
                                                     <td>{item.groupId.name}</td>
                                                     <td>{item.userId.name}</td>
+                                                    <td>{item.description}</td>
+                                                    <td>{item.amount}</td>
+                                                    <td>{item.categoryId.name}</td>
                                                     <td>
                                                         <Link
-                                                            to={`/editgroupmember?grpmemid=${item._id}`}
+                                                            to={`/editgroupexpense?grpexpid=${item._id}`}
                                                             className='btn btn-sm btn-warning me-2'>
                                                             <FaEdit />
                                                         </Link>
@@ -195,12 +197,11 @@ function GrpMember() {
                                             )
                                         }) :
                                         <tr>
-                                            <td colSpan={4} className='text-center text-secondary'>No Members</td>
+                                            <td colSpan={7} className='text-center text-secondary'>No Expenses</td>
                                         </tr>}
                                 </tbody>
                             </table>
                         </div>
-
                     </section>
                     <footer>
                         <Footer />
@@ -211,4 +212,4 @@ function GrpMember() {
     )
 }
 
-export default GrpMember
+export default GrpExpense

@@ -133,23 +133,23 @@ function GroupList() {
                                                         className='d-flex'
                                                         style={{ gap: '30px' }}>
                                                         <Link
-                                                            to={`/groupmembers?grpId=${userGrp._id}`}
+                                                            to={`/groupmember?grpId=${userGrp._id}`}
                                                             className='btn btn-link'>
                                                             View this group members
                                                         </Link>
                                                         <Link
-                                                            to={`/groupexpenses?grpId=${userGrp._id}`}
+                                                            to={`/groupexpense?grpId=${userGrp._id}`}
                                                             className='btn btn-link'>
                                                             View this group expenses
                                                         </Link>
                                                         <Link
                                                             to={`/editgroup?mode=edit&group=${userGrp._id}`}
-                                                            style={{ color: 'black', fontSize: '20px' }}>
+                                                            className='btn btn-sm btn-warning me-2'>
                                                             <FaEdit />
                                                         </Link>
                                                         <Link
                                                             onClick={() => hanldeDelete(userGrp._id)}
-                                                            style={{ color: 'red', fontSize: '20px' }}>
+                                                            className='btn btn-sm btn-danger'>
                                                             <MdDelete />
                                                         </Link>
                                                     </td>

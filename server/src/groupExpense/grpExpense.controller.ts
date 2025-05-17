@@ -125,4 +125,28 @@ export class GrpExpenseController {
       return reply.status(500).send(response);
     }
   }
+
+    @Get('/onegroup/:id')
+  async oneGroupExpenses(
+    @Param('id') id: string,
+    @Res() reply: any,
+  ): Promise<GroupExpense | null> {
+    const response: ResponseDto = {
+      message: 'Success',
+      data: null,
+    };
+    try {
+      const oneGrpExpenses = await this.grpExpenseService.oneGrpExpenses(id);
+      if (!oneGrpExpenses) {
+        response.message = 'Not found';
+        return reply.status(404).send(response);
+      } else {
+        response.data = oneGrpExpenses
+        return reply.status(200).send(response);
+      }
+    } catch (error) {
+      response.message = `Error : ${error.message}`;
+      return reply.status(500).send(response);
+    }
+  }
 }

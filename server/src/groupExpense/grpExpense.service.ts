@@ -37,9 +37,9 @@ export class GrpExpenseService {
         deletedAt: null,
       })
 
-      .populate({ path: 'groupId', select: '-_id name' })
-      .populate({ path: 'userId', select: '-_id name' })
-      .populate({ path: 'categoryId', select: '-_id name' })
+      .populate({ path: 'groupId', select: '_id name' })
+      .populate({ path: 'userId', select: '_id name' })
+      .populate({ path: 'categoryId', select: '_id name' })
       .exec();
     return getGrpExpense;
   }
@@ -68,9 +68,19 @@ export class GrpExpenseService {
   async singleGrpExpense(id: string): Promise<GroupExpense | null> {
     const oneGrpExpense = await this.grpExpenseModel
       .findOne({ _id: id, deletedAt: null })
-      .populate({ path: 'groupId', select: '-_id name' })
-      .populate({ path: 'userId', select: '-_id name' })
-      .populate({ path: 'categoryId', select: '-_id name' })
+      .populate({ path: 'groupId', select: '_id name' })
+      .populate({ path: 'userId', select: '_id name' })
+      .populate({ path: 'categoryId', select: '_id name' })
+      .exec();
+    return oneGrpExpense;
+  }
+
+  async oneGrpExpenses(id: string): Promise<GroupExpense[] | null> {
+    const oneGrpExpense = await this.grpExpenseModel
+      .find({ groupId: id, deletedAt: null })
+      .populate({ path: 'groupId', select: '_id name' })
+      .populate({ path: 'userId', select: '_id name' })
+      .populate({ path: 'categoryId', select: '_id name' })
       .exec();
     return oneGrpExpense;
   }

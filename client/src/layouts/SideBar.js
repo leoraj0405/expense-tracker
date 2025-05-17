@@ -32,7 +32,7 @@ const SideBar = () => {
           </Link>
           <ul className="dropdown-menu">
           <li><Link className="dropdown-item" to="/group">My groups list</Link></li>
-            <li><Link className="dropdown-item" to="/groupexpenses">Group Expenses</Link></li>
+            <li><Link className="dropdown-item" to="/groupexpense">Group Expenses</Link></li>
             <li><Link className="dropdown-item" to="/groupmember">Group Members</Link></li>
           </ul>
         </li>
