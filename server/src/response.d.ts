@@ -24,4 +24,5 @@ export interface ResponseDto {
     | GroupMember[]
     | Admin
     | Amdin[];
+    profileUrl?: string
 }

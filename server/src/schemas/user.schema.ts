@@ -27,6 +27,9 @@ export class User extends Document {
   @Prop({type: Date, required: false})
   blockTime: Date;
 
+  @Prop({required: false})
+  profileImage: string;
+
   @Prop({ type: Date, required: false })
   createdAt: Date;
 

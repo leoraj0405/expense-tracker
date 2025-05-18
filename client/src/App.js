@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from "./pages/Login";
 import Dashboard from './pages/Dashboard';
-// import ErrorPage from './pages/ErrorPage';
 import ParentLogin from './pages/ParentLogin';
 import SignupPage from './pages/SignupPage';
 import AddMyExpense from './pages/myExpenses/AddMyExpense';
@@ -13,6 +12,7 @@ import GrpMember from './pages/grpMember/GrpMember';
 import AddGrpMember from './pages/grpMember/AddGrpMember';
 import GrpExpense from './pages/grpExpense/GrpExpense';
 import AddGrpExpense from './pages/grpExpense/AddGrpExpense';
+import Profile from './pages/Profile';
 
 function App() {
   return (
@@ -36,8 +36,7 @@ function App() {
         <Route path='/groupexpense' element={<GrpExpense />} />
         <Route path='/addgroupexpense' element={<AddGrpExpense />} />
         <Route path='/editgroupexpense' element={<AddGrpExpense />} />
-
-        {/* <Route path="/error" element={<ErrorPage />} /> */}
+        <Route path='/userprofile' element={<Profile />} />
       </Routes>
     </Router>
   );

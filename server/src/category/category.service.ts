@@ -20,7 +20,7 @@ export class CategoryService {
     return postCategory;
   }
 
-  async findAllCategory(page: number, limit: number): Promise<Category | {}> {
+  async findAllCategory(page: number, limit: number): Promise<Category[] | {}> {
     let category;
     let totalCount;
     let filter;

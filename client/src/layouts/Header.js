@@ -10,12 +10,6 @@ function Header() {
   const navigate = useNavigate()
   const { loginUser, setLoginUser } = useUser();
 
-  useEffect(() => {
-    if (!loginUser) {
-      navigate('/login')
-    }
-  }, [loginUser])
-
   async function handleLogout() {
 
     const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/user/logout`, {
@@ -34,7 +28,7 @@ function Header() {
   return (
     <>
       <nav className="navbar navbar-expand-lg navbar-light bg-primary p-4">
-        <a className="navbar-brand d-flex align-items-center" href="#">
+        <a className="navbar-brand d-flex align-items-center">
           <img src={Logo} alt="Logo" width="30" height="30" className="d-inline-block align-top me-2" />
           <span className='text-white'>Expense Tracker</span>
         </a>
@@ -45,9 +39,15 @@ function Header() {
           </span>
           <div className="dropdown">
             <Link className="dropdown-toggle d-flex align-items-center" href="#" role="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-              <img src={Profile} alt="User Profile" className="rounded-circle" width="50" height="50" />
+              <img 
+              src={`${process.env.REACT_APP_FETCH_URL}${loginUser?.profileUrl}`} 
+              alt="User Profile" 
+              className="rounded-circle" 
+              style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+              />
             </Link>
             <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+              <li><Link className="dropdown-item" to={`/userprofile`}>Profile</Link></li>
               <li><Link className="dropdown-item" onClick={handleLogout}>Logout</Link></li>
             </ul>
           </div>

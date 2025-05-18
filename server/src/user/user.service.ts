@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from '../schemas/user.schema';
@@ -15,12 +12,10 @@ export class UserService {
     @InjectModel(User.name) private userModel: Model<User>,
     private readonly mailerService: MailerService,
   ) {}
-  async createUser({
-    name,
-    email,
-    password,
-    parentEmail,
-  }: RequestUser): Promise<User> {
+  async createUser(
+    { name, email, password, parentEmail }: RequestUser,
+    file: Express.Multer.File,
+  ): Promise<User> {
     const hashValueLength = 10;
     const hashedPassword = await bcrypt.hash(password, hashValueLength);
     const newUser = new this.userModel({
@@ -32,6 +27,7 @@ export class UserService {
       otp: null,
       otpAttempt: null,
       blockTime: null,
+      profileImage: file?.filename || null,
       createdAt: new Date(),
       updatedAt: null,
       deletedAt: null,
@@ -46,7 +42,10 @@ export class UserService {
     return getUser.exec();
   }
 
-  async updateUser(id: string, updateData: RequestUser): Promise<User | null> {
+  async updateUser(
+  { id, updateData }: { id: string; updateData: RequestUser },
+    file: Express.Multer.File,
+  ): Promise<User | null> {
     const updateUser = this.userModel.findByIdAndUpdate(
       id,
       { $set: { ...updateData, updatedAt: new Date() } },
@@ -75,7 +74,7 @@ export class UserService {
         email: email,
         deletedAt: null,
       })
-      .select('_id name password')
+      .select('_id name password profileImage')
       .exec();
 
     if (!validateUser || !validateUser.password) {

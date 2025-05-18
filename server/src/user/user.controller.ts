@@ -8,17 +8,34 @@ import {
   Param,
   Delete,
   Req,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import type { LoginParentReq, LoginUserReq, RequestUser } from '../request';
 import { ResponseDto } from '../response';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
+  @UseInterceptors(
+    FileInterceptor('profileImage', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, `${uniqueName}${extname(file.originalname)}`);
+        },
+      }),
+    }),
+  )
   async createUser(
+    @UploadedFile() file: Express.Multer.File,
     @Body() body: RequestUser,
     @Res() reply: any,
   ): Promise<void> {
@@ -27,12 +44,15 @@ export class UserController {
       data: null,
     };
     try {
-      response.data = await this.userService.createUser({
-        name: body.name,
-        email: body.email,
-        password: body.password,
-        parentEmail: body.parentEmail,
-      });
+      response.data = await this.userService.createUser(
+        {
+          name: body.name,
+          email: body.email,
+          password: body.password,
+          parentEmail: body.parentEmail,
+        },
+        file,
+      );
       return reply.status(200).send(response);
     } catch (error) {
       response.message = `Error : ${error.message}`;
@@ -65,17 +85,29 @@ export class UserController {
   }
 
   @Put('/:id')
+  @UseInterceptors(
+    FileInterceptor('profileImage', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, `${uniqueName}${extname(file.originalname)}`);
+        },
+      }),
+    }),
+  )
   async updateUser(
     @Body() body: RequestUser,
     @Param('id') id: any,
     @Res() reply: any,
+    @UploadedFile() file: Express.Multer.File,
   ): Promise<void> {
     const response: ResponseDto = {
       message: 'Success',
       data: null,
     };
     try {
-      response.data = await this.userService.updateUser(id, body);
+      response.data = await this.userService.updateUser({id, updateData: body}, file);
       reply.status(200).send(response);
     } catch (error) {
       response.message = `Error : ${error.message}`;
@@ -115,7 +147,7 @@ export class UserController {
       );
       if (loggedUser) {
         request.session.isLogged = true;
-        request.session.data = loggedUser
+        request.session.data = loggedUser;
         return reply.status(200).send(response);
       } else {
         request.session.isLogged = false;
@@ -138,6 +170,13 @@ export class UserController {
     try {
       if (request.session.data) {
         response.data = request.session.data;
+        const userProfile = request.session.data.profileImage;
+        if (!userProfile) {
+          response.message = 'User or profile image not found';
+          response.profileUrl = '';
+          return reply.status(404).send(response);
+        }
+        response.profileUrl = `/uploads/${userProfile}`;
         return reply.status(200).send(response);
       } else {
         response.message = 'No session data found';
@@ -184,9 +223,10 @@ export class UserController {
     try {
       const oneUser = await this.userService.findOneUser(id);
       if (!oneUser) {
-        response.message = 'Not found';
+        response.message = 'User not found';
         return reply.status(404).send(response);
       } else {
+        response.profileUrl = `/uploads/${oneUser.profileImage}`;
         response.data = oneUser;
         return reply.status(200).send(response);
       }

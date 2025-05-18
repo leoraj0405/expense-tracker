@@ -10,17 +10,12 @@ function useQuery() {
 }
 
 function AddMyExpense() {
+
     const location = useLocation();
     const pathnames = location.pathname.split('/').filter((x) => x);
 
     const { loginUser } = useUser()
     const navigate = useNavigate()
-
-    useEffect(() => {
-        if (!loginUser) {
-            navigate('/login')
-        }
-    }, [loginUser])
 
     const queryValue = useQuery()
     const [categories, setCategories] = useState([])
@@ -36,12 +31,31 @@ function AddMyExpense() {
     const expenseId = queryValue.get('expense')
 
 
-    async function fetchCategory(id) {
-        const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/category`)
-        const categoryData = await response.json()
-        setCategories(categoryData.data)
+    useEffect(() => {
+        if (!loginUser) {
+            navigate('/login')
+        }
+    }, [loginUser])
+
+    async function fetchCategory() {
+        try {
+            const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/category`)
+            if (response.status === 200) {
+                const categoryData = await response.json()
+                setCategories(categoryData.data)
+            } else {
+                const errorData = await response.json()
+                setDangetAlert({ blockState: false, msg: errorData.message })
+            }
+        } catch (error) {
+            setDangetAlert({ blockState: false, msg: error.message })
+        }
     }
 
+useEffect(() => {
+    fetchCategory();
+}, []);
+    
     async function fetchExpense(id) {
         const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/expense/${id}`)
         if (response.ok) {
@@ -109,9 +123,6 @@ function AddMyExpense() {
         });
     }
 
-    useEffect(() => {
-        fetchCategory()
-    }, [])
 
     useEffect(() => {
         if (expenseId) {
@@ -120,10 +131,17 @@ function AddMyExpense() {
     }, [expenseId])
 
 
-    setTimeout(() => {
-        setDangetAlert({ blockState: true, msg: '' })
-    }, 5000)
+    useEffect(() => {
+        setTimeout(() => {
+            setDangetAlert({ blockState: true, msg: '' })
+        }, 5000)
+    }, [])
 
+    useEffect(() => {
+        console.log('hello')
+    }, [])
+
+    console.log(categories)
 
     return (
         <>
@@ -143,7 +161,7 @@ function AddMyExpense() {
                                     const label = item === 'addexpense' ? 'Add expense' : item === 'editexpense' ? 'Edit expense' : item
                                     const to = `/${pathnames.slice(0, index + 1).join('/')}`;
                                     return (
-                                        <li className="breadcrumb-item"><Link className='text-secondary' to={to}>{label}</Link></li>
+                                        <li key={index} className="breadcrumb-item"><Link className='text-secondary' to={to}>{label}</Link></li>
                                     )
                                 })}
                             </ol>
@@ -151,11 +169,11 @@ function AddMyExpense() {
                         <h3 className='m-4'>{pageMode === 'edit'
                             ? 'Edit My Expenses'
                             : 'Add My Expenses'}</h3>
-                        <div className="alert alert-danger" hidden={dangerAlert.blockState}>
+                        <div className="m-4 alert alert-danger" hidden={dangerAlert.blockState}>
                             {dangerAlert.msg}
                         </div>
                         <div
-                            className="needs-validation p-4 rounded"
+                            className="m-4 needs-validation p-4 rounded"
                             style={{ backgroundColor: '#f1f1f1' }}>
                             <div className="row">
                                 <div className="col-md-4 mb-3">
@@ -166,7 +184,7 @@ function AddMyExpense() {
                                         value={formData.category}
                                         onChange={handleChange}>
                                         <option>Choose category</option>
-                                        {categories.map(category => {
+                                        {categories.categoryData.map(category => {
                                             return (
                                                 <option
                                                     key={category._id}

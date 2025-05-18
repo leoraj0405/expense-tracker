@@ -5,7 +5,7 @@ export interface RequestUser {
     name: User.name,
     email: User.email,
     password: User.password,
-    parentEmail: User.parentEmail
+    parentEmail: User.parentEmail,
 }
 
 export interface RequestCategory {

@@ -17,7 +17,6 @@ function Dashboard() {
   const { loginUser, setLoginUser } = useUser();
   const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#a4de6c"];
 
-
   async function handleIsLogged() {
     const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/user/home`, {
       method: 'GET',
@@ -43,7 +42,7 @@ function Dashboard() {
     if (loginUser?.data?._id) {
       response = await fetch(`${process.env.REACT_APP_FETCH_URL}/expense/userexpense/${loginUser.data._id}?date=${formattedDate}`)
     }
-    if (response.status === 200) {
+    if (response && response.status === 200) {
       const expenseData = await response.json()
       const result = expenseData.data.userExpenseData.map((item) => ({
         name: item.description,
