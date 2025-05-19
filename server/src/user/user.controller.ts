@@ -17,12 +17,13 @@ import { ResponseDto } from '../response';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
+import { request } from 'http';
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post()
+  @Post('/')
   @UseInterceptors(
     FileInterceptor('profileImage', {
       storage: diskStorage({
@@ -59,8 +60,7 @@ export class UserController {
       return reply.status(500).send(response);
     }
   }
-
-  @Get()
+  @Get('/')
   async findAllUser(@Res() reply: any): Promise<void> {
     const response: ResponseDto = {
       message: 'Success',
@@ -83,7 +83,6 @@ export class UserController {
       return reply.status(500).send(response);
     }
   }
-
   @Put('/:id')
   @UseInterceptors(
     FileInterceptor('profileImage', {
@@ -107,14 +106,16 @@ export class UserController {
       data: null,
     };
     try {
-      response.data = await this.userService.updateUser({id, updateData: body}, file);
+      response.data = await this.userService.updateUser(
+        { id, updateData: body },
+        file,
+      );
       reply.status(200).send(response);
     } catch (error) {
       response.message = `Error : ${error.message}`;
       reply.status(500).send(response);
     }
   }
-
   @Delete('/:id')
   async deleteUser(@Param('id') id: any, @Res() reply: any): Promise<void> {
     const response: ResponseDto = {
@@ -129,7 +130,6 @@ export class UserController {
       reply.status(500).send(response);
     }
   }
-
   @Post('/login')
   async loginUser(
     @Res() reply: any,
@@ -160,7 +160,26 @@ export class UserController {
       return reply.status(500).send(response);
     }
   }
-
+  @Get('/parenthome')
+  async parentHome(@Res() reply: any, @Req() request: any): Promise<void> {
+    const response: ResponseDto = {
+      message: 'Success',
+      data: null,
+    };
+    try {
+      if (request.session.parentIsLogged) {
+        response.data = request.session.parentData;
+        return reply.status(200).send(response);
+      } else {
+        response.message = 'First you need to login.';
+        response.data = [];
+        return reply.status(400).send(response);
+      }
+    } catch (error) {
+      response.message = `Error : ${error.message}`;
+      return reply.status(500).send(response);
+    }
+  }
   @Get('/home')
   async homeUser(@Res() reply: any, @Req() request: any): Promise<void> {
     const response: ResponseDto = {
@@ -171,9 +190,9 @@ export class UserController {
       if (request.session.data) {
         response.data = request.session.data;
         const userProfile = request.session.data.profileImage;
-        if (!userProfile) {
+        if (!request.session.isLogged) {
           response.message = 'User or profile image not found';
-          response.profileUrl = '';
+          response.profileUrl = undefined;
           return reply.status(404).send(response);
         }
         response.profileUrl = `/uploads/${userProfile}`;
@@ -187,7 +206,6 @@ export class UserController {
       return reply.status(500).send(response);
     }
   }
-
   @Get('/logout')
   async logoutUser(@Res() reply: any, @Req() request: any): Promise<void> {
     const response: ResponseDto = {
@@ -213,7 +231,6 @@ export class UserController {
       return reply.status(500).send(response);
     }
   }
-
   @Get('/:id')
   async findOneUser(@Res() reply: any, @Param('id') id: string): Promise<void> {
     const response: ResponseDto = {
@@ -235,7 +252,6 @@ export class UserController {
       return reply.status(500).send(response);
     }
   }
-
   @Post('/parentgenerateotp')
   async findParent(
     @Res() reply: any,
@@ -259,11 +275,11 @@ export class UserController {
       return reply.status(500).send(response);
     }
   }
-
   @Post('/parentproccessotp')
   async processOtp(
     @Res() reply: any,
     @Body() body: LoginParentReq,
+    @Req() request: any,
   ): Promise<void> {
     const response: ResponseDto = {
       message: 'Success',
@@ -275,9 +291,14 @@ export class UserController {
       const processOtp = await this.userService.parentProcessOtp(email, otp);
       if (!processOtp) {
         response.message = 'Not found';
+        request.session.parentIsLogged = false;
+        request.session.parentData = [];
+
         return reply.status(404).send(response);
       } else {
-        response.data = processOtp;
+        request.session.parentIsLogged = true;
+        request.session.parentData = processOtp;
+        response.data = 'You succesfully logged';
         return reply.status(200).send(response);
       }
     } catch (error) {

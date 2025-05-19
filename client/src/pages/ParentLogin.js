@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import '../style/Login.css'
 import { FaUser } from "react-icons/fa";
 import { RiLockPasswordFill } from "react-icons/ri";
@@ -12,28 +12,29 @@ function ParentLogin() {
     const [dangerAlert, setDangerAlter] = useState(true)
     const [spinner, setSpinner] = useState(true)
     const [btnDisabled, setBtnDisabled] = useState(true)
+    const navigate = useNavigate()
 
     function handleChange2(e) {
         setParentForm({ ...parentForm, [e.target.name]: e.target.value })
     }
     function handleGenerateOtp() {
-        const myHeaders = new Headers();
-        myHeaders.append("Content-Type", "application/json");
-
-        const email = parentForm.email
-
-        const raw = JSON.stringify({
-            "parentEmail": email
-        });
-
-        const requestOptions = {
-            method: "POST",
-            headers: myHeaders,
-            body: raw,
-        };
-
         try {
+            const myHeaders = new Headers();
+            myHeaders.append("Content-Type", "application/json");
+
+            const raw = JSON.stringify({
+                "parentEmail": parentForm.email
+            });
+
+            const requestOptions = {
+                method: "POST",
+                headers: myHeaders,
+                body: raw,
+                Credential: true
+            };
+
             setSpinner(false)
+
             fetch(`${process.env.REACT_APP_FETCH_URL}/user/parentgenerateotp`, requestOptions)
                 .then(async (response) => {
                     if (response.status === 200) {
@@ -41,13 +42,14 @@ function ParentLogin() {
                         setDisbledInput(true)
                         setSpinner(true)
                         setDangerAlter(true)
-                        alert('parent login OTP sent to ' + email)
                     } else {
                         setSpinner(true)
                         setDangerAlter(false)
                     }
-                });
-        } catch (error) {
+                })
+        }
+
+        catch (error) {
             setSpinner(true)
         }
     }
@@ -56,28 +58,24 @@ function ParentLogin() {
         const myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
 
-        const email = parentForm.email
-        const otp = parentForm.otp
-
         const raw = JSON.stringify({
-            "parentEmail": email,
-            "parentOtp": otp
+            "parentEmail": parentForm.email,
+            "parentOtp": parentForm.otp
         });
 
         const requestOptions = {
             method: "POST",
             headers: myHeaders,
             body: raw,
-            redirect: "follow"
+            credentials: 'include'
         };
 
         fetch(`${process.env.REACT_APP_FETCH_URL}/user/parentproccessotp`, requestOptions)
-            .then(async (response) => {
-                if (response.status === 200) {
-                    console.log(await response.json())
-                    alert('Parent Logged')
-                } else {
-                    alert('Parent Login Failed')
+            .then((response) => {
+                if(response.status === 200) {
+                    navigate('/parenthome')
+                }else {
+                    setDangerAlter(false)
                 }
             });
     }
@@ -126,7 +124,7 @@ function ParentLogin() {
                                 </Link>
                             </div>
                             <div className="alert alert-danger h-10" hidden={dangerAlert}>
-                                Invalid Email
+                                Error Try again.
                             </div>
 
                             <div

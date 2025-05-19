@@ -136,7 +136,6 @@ function Dashboard() {
                       </PieChart>
                     </div>
                   </div>
-
                 </div>
               </div>
             </div>

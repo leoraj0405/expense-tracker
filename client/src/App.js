@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import Login from "./pages/Login";
 import Dashboard from './pages/Dashboard';
 import ParentLogin from './pages/ParentLogin';
@@ -13,6 +15,7 @@ import AddGrpMember from './pages/grpMember/AddGrpMember';
 import GrpExpense from './pages/grpExpense/GrpExpense';
 import AddGrpExpense from './pages/grpExpense/AddGrpExpense';
 import Profile from './pages/Profile';
+import ParentHome from './pages/ParentHome';
 
 function App() {
   return (
@@ -20,8 +23,9 @@ function App() {
       <Routes>
         <Route path='/login' element={<Login />} />
         <Route path='/parentlogin' element={<ParentLogin />} />
+        <Route path='/parenthome' element={<ParentHome />} />
         <Route path='/home' element={<Dashboard />} />
-        <Route path='/registration' element={<SignupPage/>} />
+        <Route path='/registration' element={<SignupPage />} />
         <Route path='/expense' element={<ListMyExpense />} />
         <Route path='/thismonthexpense' element={<ListMyExpense />} />
         <Route path='/addexpense' element={<AddMyExpense />} />
@@ -37,6 +41,7 @@ function App() {
         <Route path='/addgroupexpense' element={<AddGrpExpense />} />
         <Route path='/editgroupexpense' element={<AddGrpExpense />} />
         <Route path='/userprofile' element={<Profile />} />
+
       </Routes>
     </Router>
   );

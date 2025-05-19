@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import Header from '../layouts/Header'
 import Footer from '../layouts/Footer'
 import SideBar from '../layouts/SideBar'
 import { useUser } from '../components/Context'
+import defaultImage from '../assets/img/profile.png'
 import { useLocation, Link, useNavigate } from 'react-router-dom'
 
 function Profile() {
@@ -11,16 +12,24 @@ function Profile() {
     const { loginUser } = useUser()
     const navigate = useNavigate()
     const [user, setUser] = useState([])
-    const [dangerAlert, setDangetAlert] = useState({ blockState: true, msg: '' })
+    const [dangerAlert, setDangetAlert] = useState({ blockState: true, msg: '', suceessState: true })
     const [form, setFormData] = useState({ userName: '', email: '', parentEmail: '', profile: '' })
 
+    const [showDiv, setShowDiv] = useState(false);
+    const divRef = useRef(null);
 
     useEffect(() => {
-        if(!loginUser) {
-            navigate('/')
+        if (showDiv && divRef.current) {
+            divRef.current.focus();
+        }
+    }, [showDiv]);
+
+    useEffect(() => {
+        if (!loginUser) {
+            navigate('/login')
         }
     }, [loginUser])
-    
+
     function handleChange(e) {
         const { name, value, files } = e.target;
         if (name === 'profile') {
@@ -44,7 +53,8 @@ function Profile() {
             })
         } else {
             const errorData = await response.json()
-            setDangetAlert({ blockState: false, msg: errorData.message })
+            setShowDiv(true)    
+            setDangetAlert({ blockState: true, suceessState: false, msg: errorData.message })
         }
     }
 
@@ -58,19 +68,20 @@ function Profile() {
         formdata.append("parentEmail", form.parentEmail);
         formdata.append("profileImage", form.profile);
 
-
+        console.log(form)
         const requestOptions = {
             method: "PUT",
             body: formdata,
         };
 
         fetch(`${process.env.REACT_APP_FETCH_URL}/user/${id}`, requestOptions)
-            .then(async(response) => {
+            .then(async (response) => {
                 if (response.status === 200) {
+                    setDangetAlert({ blockState: true, msg: '', suceessState: false })
                     fetchUser()
                 } else {
                     const errorData = await response.json()
-                    setDangetAlert({ blockState: false, msg: errorData.message })
+                    setDangetAlert({ blockState: false, msg: errorData.message, suceessState: true })
 
                 }
             });
@@ -104,7 +115,11 @@ function Profile() {
                                 })}
                             </ol>
                         </nav>
-                        <div className="m-4 alert alert-danger" hidden={dangerAlert.blockState}>
+                        <div
+                            className="m-4 alert alert-danger"
+                            ref={divRef}
+                            tabIndex={-1} 
+                            hidden={dangerAlert.blockState}>
                             {dangerAlert.msg}
                         </div>
                         <div>
@@ -116,9 +131,6 @@ function Profile() {
                                                 <div className='d-flex'>
                                                     <p className='p-2 
                                                         text-primary fw-bold'
-                                                        role='button'
-                                                        data-bs-toggle="collapse"
-                                                        data-bs-target="#overview"
                                                     >
                                                         Over View</p>
                                                     <p
@@ -131,10 +143,12 @@ function Profile() {
                                                         Edit Info</p>
                                                 </div>
                                                 <hr />
-                                                <div className='collapse mt-4' id='overview'>
+                                                <div className='mt-4'>
                                                     <div className="text-center mb-4 ">
                                                         <img
-                                                            src={`${process.env.REACT_APP_FETCH_URL}${user?.profileUrl}`}
+                                                            src={user?.profileUrl && user.profileUrl !== '/uploads/null'
+                                                                ? `${process.env.REACT_APP_FETCH_URL}${user.profileUrl}`
+                                                                : defaultImage}
                                                             alt="Profile"
                                                             style={{ width: '120px', height: '120px', objectFit: 'cover' }}
                                                             className="rounded-circle"
@@ -176,8 +190,22 @@ function Profile() {
                                                             <label for="profileImage" className="form-label">Profile Image</label>
                                                             <input className="form-control" onChange={handleChange} type="file" name="profile" />
                                                         </div>
+                                                        <div className='mb-3'>
+                                                            {form.profile instanceof File && (
+                                                                <div className="mb-3">
+                                                                    <img
+                                                                        src={URL.createObjectURL(form.profile)}
+                                                                        alt="Preview"
+                                                                        style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        </div>
 
                                                         <button className="btn btn-primary" onClick={() => { handleSubmit(loginUser?.data?._id) }}>Submit</button>
+                                                        <div className="alert alert-success mt-4" hidden={dangerAlert.suceessState} role="alert">
+                                                            Data updated after some times
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>

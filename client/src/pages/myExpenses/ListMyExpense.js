@@ -49,8 +49,8 @@ function ListMyExpense() {
             setSearchParams(searchParams);
         } else {
             response = await fetch(`${process.env.REACT_APP_FETCH_URL}/expense/userexpense/${loginUser.data._id}?page=${currentPage}`)
-
         }
+        console.log(response)
         if (response.ok) {
             const expenseData = await response.json()
             setExpenses(expenseData.data)

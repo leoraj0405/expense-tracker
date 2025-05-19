@@ -52,10 +52,6 @@ function AddMyExpense() {
         }
     }
 
-useEffect(() => {
-    fetchCategory();
-}, []);
-    
     async function fetchExpense(id) {
         const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/expense/${id}`)
         if (response.ok) {
@@ -123,6 +119,10 @@ useEffect(() => {
         });
     }
 
+    useEffect(() => {
+        fetchCategory();
+    }, [])
+
 
     useEffect(() => {
         if (expenseId) {
@@ -136,13 +136,7 @@ useEffect(() => {
             setDangetAlert({ blockState: true, msg: '' })
         }, 5000)
     }, [])
-
-    useEffect(() => {
-        console.log('hello')
-    }, [])
-
-    console.log(categories)
-
+    const today = new Date().toISOString().split('T')[0];
     return (
         <>
             <header>
@@ -157,6 +151,8 @@ useEffect(() => {
                         <nav className='m-4'>
                             <ol className="breadcrumb">
                                 <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
+                                <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Expense</Link></li>
+
                                 {pathnames.map((item, index) => {
                                     const label = item === 'addexpense' ? 'Add expense' : item === 'editexpense' ? 'Edit expense' : item
                                     const to = `/${pathnames.slice(0, index + 1).join('/')}`;
@@ -175,7 +171,7 @@ useEffect(() => {
                         <div
                             className="m-4 needs-validation p-4 rounded"
                             style={{ backgroundColor: '#f1f1f1' }}>
-                            <div className="row">
+                            <div className="column">
                                 <div className="col-md-4 mb-3">
                                     <label htmlFor='category'>Category</label>
                                     <select
@@ -184,7 +180,7 @@ useEffect(() => {
                                         value={formData.category}
                                         onChange={handleChange}>
                                         <option>Choose category</option>
-                                        {categories.categoryData.map(category => {
+                                        {Array.isArray(categories?.categoryData) && categories?.categoryData.map(category => {
                                             return (
                                                 <option
                                                     key={category._id}
@@ -213,6 +209,7 @@ useEffect(() => {
                                         name='date'
                                         class="form-control"
                                         value={formData.date}
+                                        max={today}
                                         onChange={handleChange}
                                         required />
                                 </div>
@@ -239,6 +236,10 @@ useEffect(() => {
                                 </div>
                             </div>
                             <div className='d-flex justify-content-end'>
+                                <Link
+                                    className='btn btn-warning me-4'
+                                    to={'/expense'}
+                                >back</Link>
                                 <button
                                     className="btn btn-primary"
                                     onClick={() => handleSave(expenseId)}>

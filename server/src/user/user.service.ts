@@ -43,12 +43,18 @@ export class UserService {
   }
 
   async updateUser(
-  { id, updateData }: { id: string; updateData: RequestUser },
+    { id, updateData }: { id: string; updateData: RequestUser },
     file: Express.Multer.File,
   ): Promise<User | null> {
     const updateUser = this.userModel.findByIdAndUpdate(
       id,
-      { $set: { ...updateData, updatedAt: new Date() } },
+      {
+        $set: {
+          ...updateData,
+          updatedAt: new Date(),
+          profileImage: file?.filename || null,
+        },
+      },
       { new: true },
     );
     return updateUser.exec();
@@ -92,13 +98,11 @@ export class UserService {
 
   async parentGenerateOtp(parentData: LoginParentReq) {
     const isParentEmail = await this.userModel
-      .findOne({
-        parentEmail: parentData.parentEmail,
-      })
+      .find({ parentEmail: parentData.parentEmail })
       .exec();
 
     if (!isParentEmail) {
-      throw new UnauthorizedException('Inavlid Parent Phone Number');
+      throw new UnauthorizedException('Inavlid Parent Email Address');
     }
     const characters =
       'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -109,7 +113,7 @@ export class UserService {
       otp += characters[randomIndex];
     }
     let mailId = parentData.parentEmail;
-    await this.userModel.findOneAndUpdate(
+    await this.userModel.updateMany(
       { parentEmail: mailId },
       { $set: { parentOtp: otp } },
     );
@@ -124,10 +128,10 @@ export class UserService {
               Expense Tracker Team`,
     });
 
-    return `Otp sent to the your mail id `;
+    return `Otp sent to the your mail id.`;
   }
 
-  async parentProcessOtp(email, otp): Promise<User> {
+  async parentProcessOtp(email, otp): Promise<User[]> {
     const parentInfo = await this.userModel
       .findOne({
         parentEmail: email,
@@ -135,8 +139,9 @@ export class UserService {
       })
       .exec();
     let parentSavedOtp = parentInfo?.parentOtp;
-    if (parentSavedOtp == otp) {
-      return email;
+    if (parentSavedOtp === otp) {
+      const parentData = await this.userModel.find({ parentEmail: email });
+      return parentData;
     } else {
       throw new UnauthorizedException('Invalid Email or Wrong OTP');
     }

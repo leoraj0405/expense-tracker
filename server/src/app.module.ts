@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Inject, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserModule } from './user/user.module';
 import { CategoryModule } from './category/category.module';
@@ -29,7 +29,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         },
       }),
     }),
-    MongooseModule.forRoot('mongodb://localhost:27017/expenseTracker'),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (config: ConfigService) => ({
+        uri: config.get<string>('MONGO_URL'),
+      }),
+    }),
     UserModule,
     CategoryModule,
     ExpenseModule,

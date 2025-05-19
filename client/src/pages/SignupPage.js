@@ -9,13 +9,20 @@ function SignupPage() {
         name: '',
         email: '',
         password: '',
-        parentEmail: ''
+        parentEmail: '',
+        profile: ''
     })
     const navigate = useNavigate()
     const [errorBlock, setErrorBlock] = useState({ state: true, msg: '' })
 
     function handleChange(e) {
-        setUserForm({ ...userForm, [e.target.name]: e.target.value })
+        const { name, value, files } = e.target;
+
+        if (name === 'profile') {
+            setUserForm({ ...userForm, profile: files[0] });
+        } else {
+            setUserForm({ ...userForm, [name]: value });
+        }
     }
 
     function handleSaveUser() {
@@ -23,22 +30,20 @@ function SignupPage() {
         const email = userForm.email
         const parentEmail = userForm.parentEmail
         const password = userForm.password
+        const profile = userForm.profile
 
-        const myHeaders = new Headers();
-        myHeaders.append("Content-Type", "application/json");
+        const formdata = new FormData();
+        formdata.append("name", name);
+        formdata.append("email", email);
+        formdata.append("password", password);
+        formdata.append("parentEmail", parentEmail);
+        formdata.append("profileImage", profile);
 
-        const raw = JSON.stringify({
-            "name": name,
-            "email": email,
-            "password": password,
-            "parentEmail": parentEmail
-        });
+        console.log(profile)
 
         const requestOptions = {
             method: "POST",
-            headers: myHeaders,
-            body: raw,
-            redirect: "follow"
+            body: formdata,
         };
 
         fetch(`${process.env.REACT_APP_FETCH_URL}/user`, requestOptions)
@@ -51,8 +56,6 @@ function SignupPage() {
                 }
             });
     }
-
-    console.log(errorBlock.state)
 
     return (
         <>
@@ -69,8 +72,6 @@ function SignupPage() {
                                 Name
                             </label>
                             <div className="input-group mb-3">
-                                <span className='input-group-text'>
-                                </span>
                                 <input
                                     type="text"
                                     name="name"
@@ -84,8 +85,6 @@ function SignupPage() {
                                 Email address
                             </label>
                             <div className="input-group mb-3">
-                                <span className='input-group-text'>
-                                </span>
                                 <input
                                     type="email"
                                     name="email"
@@ -99,8 +98,6 @@ function SignupPage() {
                                 Parent email address
                             </label>
                             <div className="input-group mb-3">
-                                <span className='input-group-text'>
-                                </span>
                                 <input
                                     type="email"
                                     name="parentEmail"
@@ -114,14 +111,36 @@ function SignupPage() {
                                 Password
                             </label>
                             <div className="input-group mb-3">
-                                <span className='input-group-text'>
-                                </span>
                                 <input
                                     type="password"
                                     name="password"
                                     className='form-control'
                                     value={userForm.password}
                                     onChange={handleChange} />
+                            </div>
+                            <label
+                                htmlFor="password"
+                                className='form-label'>
+                                Profile Image
+                            </label>
+                            <div className="input-group mb-3">
+                                <input
+                                    type="file"
+                                    name="profile"
+                                    className='form-control'
+                                    onChange={handleChange} />
+                            </div>
+
+                            <div className='text-center'>
+                                {userForm.profile && (
+                                    <div className="mb-3">
+                                        <img
+                                            src={URL.createObjectURL(userForm.profile)}
+                                            alt="Preview"
+                                            style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+                                        />
+                                    </div>
+                                )}
                             </div>
                             <div className='text-center'>
                                 <button

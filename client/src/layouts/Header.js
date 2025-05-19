@@ -1,10 +1,9 @@
 import React, { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import Profile from '../assets/img/image.png'
 import '../style/Header.css'
 import Logo from '../assets/img/websiteLogo.png'
 import { useUser } from '../components/Context'
-
+import defaultImage from '../assets/img/profile.png'
 
 function Header() {
   const navigate = useNavigate()
@@ -39,11 +38,14 @@ function Header() {
           </span>
           <div className="dropdown">
             <Link className="dropdown-toggle d-flex align-items-center" href="#" role="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-              <img 
-              src={`${process.env.REACT_APP_FETCH_URL}${loginUser?.profileUrl}`} 
-              alt="User Profile" 
-              className="rounded-circle" 
-              style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+              <img
+                src={loginUser?.profileUrl && loginUser.profileUrl !== '/uploads/null'
+                  ? `${process.env.REACT_APP_FETCH_URL}${loginUser.profileUrl}`
+                  : defaultImage
+                }
+                alt="User Profile"
+                className="rounded-circle"
+                style={{ width: '50px', height: '50px', objectFit: 'cover' }}
               />
             </Link>
             <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
