@@ -163,7 +163,7 @@ function ParentLogin() {
                                 <button
                                     className='btn btn-warning m-2'
                                     onClick={refreshPage}>
-                                    Cencel
+                                    Back
                                 </button>
                                 <button
                                     className={

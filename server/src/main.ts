@@ -5,7 +5,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
-import * as mongoose from 'mongoose';
+// import * as mongoose from 'mongoose';
 
 
 const PORT = 1000;
@@ -13,7 +13,7 @@ const SESSION_TIME = 30 * 60 * 1000;
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  mongoose.set('debug', true); // Enable Mongoose debug mode
+  // mongoose.set('debug', true); // Enable Mongoose debug mode
 
   const config = new DocumentBuilder()
     .setTitle('Expense tracker API')

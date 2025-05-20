@@ -6,7 +6,6 @@ import { ExpenseModule } from './expense/expense.module';
 import { GroupModule } from './group/group.module';
 import { GroupExpenseModule } from './groupExpense/grpExpense.module';
 import { GroupMemberModule } from './groupMember/grpMember.module';
-import { AdminModule } from './admin/admin.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
@@ -42,7 +41,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     GroupModule,
     GroupExpenseModule,
     GroupMemberModule,
-    AdminModule,
   ],
 })
 export class AppModule {}

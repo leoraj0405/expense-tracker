@@ -8,6 +8,7 @@ import SignupPage from './pages/SignupPage';
 import AddMyExpense from './pages/myExpenses/AddMyExpense';
 import ListMyExpense from './pages/myExpenses/ListMyExpense';
 import CategoryList from './pages/category/CategoryList';
+import AddCategory from './pages/category/AddCategory';
 import GroupList from './pages/group/GroupList';
 import AddGroup from './pages/group/AddGroup';
 import GrpMember from './pages/grpMember/GrpMember';
@@ -31,12 +32,14 @@ function App() {
         <Route path='/addexpense' element={<AddMyExpense />} />
         <Route path='/editexpense' element={<AddMyExpense />} />
         <Route path='/category' element={<CategoryList />} />
+        <Route path='/category/addcategory' element={<AddCategory />} />
+        <Route path='/category/editcategory/:id' element={<AddCategory />} />
         <Route path='/group' element={<GroupList />} />
-        <Route path='/addgroup' element={<AddGroup />} />
-        <Route path='/editgroup' element={<AddGroup />} />
-        <Route path='/groupmember' element={<GrpMember />} />
-        <Route path='/addgroupmember' element={<AddGrpMember />} />
-        <Route path='/editgroupmember' element={<AddGrpMember />} />
+        <Route path='/group/addgroup' element={<AddGroup />} />
+        <Route path='/group/editgroup' element={<AddGroup />} />
+        <Route path='/group/groupmember' element={<GrpMember />} />
+        <Route path='/group/groupmember/addgroupmember' element={<AddGrpMember />} />
+        <Route path='/group/groupmember/editgroupmember' element={<AddGrpMember />} />
         <Route path='/groupexpense' element={<GrpExpense />} />
         <Route path='/addgroupexpense' element={<AddGrpExpense />} />
         <Route path='/editgroupexpense' element={<AddGrpExpense />} />

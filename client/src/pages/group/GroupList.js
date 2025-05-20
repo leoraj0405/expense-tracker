@@ -60,7 +60,9 @@ function GroupList() {
     }
 
     useEffect(() => {
-        fetchUserGrp(loginUser?.data?._id)
+        if (loginUser?.data?._id) {
+            fetchUserGrp(loginUser?.data?._id)
+        }
     }, [])
 
     useEffect(() => {
@@ -84,23 +86,33 @@ function GroupList() {
                 <main className='p-3 w-100 bg-light'>
                     <section className='main' style={{ minHeight: '400px' }}>
 
-                        <nav className='m-4'>
-                            <ol className="breadcrumb">
-                                <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
-                                {pathnames.map((item, index) => {
-                                    const to = `/${pathnames.slice(0, index + 1).join('/')}`;
-                                    return (
-                                        <li className="breadcrumb-item"><Link className='text-secondary' to={to}>{item}</Link></li>
-                                    )
-                                })}
-                            </ol>
-                        </nav>
+                        <div className='d-flex justify-content-between m-4'>
+                            <h2>Your group list</h2>
+                            <nav className='me-3'>
+                                <ol className="breadcrumb">
+                                    <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
+                                    {pathnames.map((item, index) => {
+                                        const to = `/${pathnames.slice(0, index + 1).join('/')}`;
+                                        const label = item === 'group' ? 'Group' : item 
+                                        const isLast = index === pathnames.length - 1
+                                        return (
+                                            <li className='breadcrumb-item'>
+                                                {isLast ? (
+                                                    <p className='text-secondary' style={{ whiteSpace: 'nowrap' }} >{label}</p>
+                                                ) : (
+                                                    <Link className='text-secondary' to={to}>{label}</Link>
+                                                )}
+                                            </li>
+                                        )
+                                    })}
+                                </ol>
+                            </nav>
+                        </div>
 
                         <div className='m-4'>
-                            <div className='d-flex justify-content-between mb-2'>
-                            <h2>Your group list</h2>
+                            <div className='d-flex justify-content-end mb-2'>
                                 <Link
-                                    to={'/addgroup'}
+                                    to={'addgroup'}
                                     className='btn btn-primary'>
                                     Create new group
                                 </Link>
@@ -112,8 +124,8 @@ function GroupList() {
                                 {alertBlock.msg}
                             </div>
 
-                            <div className='table-responsive'>
-                                <table className="table table-striped">
+                            <div className='table-responsive mt-4'>
+                                <table className="table table-bordered">
                                     <thead>
                                         <tr>
                                             <th scope="col">Sno</th>
@@ -126,21 +138,21 @@ function GroupList() {
                                         {userGrps.length > 0 ? userGrps.map(userGrp => {
                                             return (
                                                 <tr>
-                                                    <th scope="row">{sno++}</th>
+                                                    <td scope="row">{sno++}</td>
                                                     <td>{userGrp.name}</td>
                                                     <td>{userGrp.createdBy.name}</td>
                                                     <td
                                                         className='d-flex'
                                                         style={{ gap: '30px' }}>
                                                         <Link
-                                                            to={`/groupmember?grpId=${userGrp._id}`}
+                                                            to={`/group/groupmember?grpid=${userGrp._id}&grpname=${userGrp.name}`}
                                                             className='btn btn-link'>
-                                                            View this group members
+                                                            Manage Members
                                                         </Link>
                                                         <Link
-                                                            to={`/groupexpense?grpId=${userGrp._id}`}
+                                                            to={`/group/groupexpense?grpid=${userGrp._id}&grpname=${userGrp.name}`}
                                                             className='btn btn-link'>
-                                                            View this group expenses
+                                                            Manage Expenses
                                                         </Link>
                                                         <Link
                                                             to={`/editgroup?mode=edit&group=${userGrp._id}`}

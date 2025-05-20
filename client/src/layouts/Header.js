@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import '../style/Header.css'
 import Logo from '../assets/img/websiteLogo.png'
 import { useUser } from '../components/Context'
 import defaultImage from '../assets/img/profile.png'

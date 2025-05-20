@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react'
-import '../style/Dashboard.css'
 import { useNavigate } from 'react-router-dom';
 import Header from '../layouts/Header';
 import SideBar from '../layouts/SideBar';
@@ -89,11 +88,6 @@ function Dashboard() {
         </aside>
         <main className='p-3 w-100 bg-light'>
           <section className='main' style={{ minHeight: '400px' }}>
-            <nav className='m-4'>
-              <ol className="breadcrumb">
-                <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
-              </ol>
-            </nav>
             <div className='container mt-3'>
               <h1 className='ms-2'>Welcome Buddy !</h1>
               <p className='ms-2'>Track your spending. Control your future.</p>

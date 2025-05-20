@@ -13,13 +13,10 @@ function CategoryList() {
     const location = useLocation();
     const pathnames = location.pathname.split('/').filter((x) => x);
     const [categories, setCategories] = useState([])
-    const [block, setBlock] = useState(true)
-    const [formData, setFormData] = useState({ id: '', categoryName: '' })
     const [alertBlock, setAlertBlock] = useState({
         blockState: true,
         msg: ''
     })
-    const [formName, setFormName] = useState('Add')
     let serialNo = 1
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -34,28 +31,6 @@ function CategoryList() {
         if (page < 1 || page > totalPages) return;
         setCurrentPage(page);
     }
-
-
-    async function editCategory(id) {
-        const singleCategory = await fetch(`${process.env.REACT_APP_FETCH_URL}/category/${id}`)
-        if (singleCategory.ok) {
-            const categoryData = await singleCategory.json()
-            setFormData({
-                id: categoryData.data._id,
-                categoryName: categoryData.data.name
-            })
-            setFormName('Edit')
-            setBlock(false)
-        } else {
-            const errorInfo = await singleCategory.json()
-            setAlertBlock({
-                blockState: false,
-                msg: errorInfo.message
-            })
-        }
-
-    }
-
     async function fetchCategories() {
         const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/category?page=${currentPage}`)
         if (response.status === 200) {
@@ -71,50 +46,6 @@ function CategoryList() {
             })
         }
     }
-
-    function handleChange(e) {
-        setFormData({ ...formData, [e.target.name]: e.target.value })
-    }
-
-    const handleSave = () => {
-        const name = formData.categoryName
-        const id = formData.id
-        const myHeaders = new Headers();
-        myHeaders.append("Content-Type", "application/json");
-
-        const raw = JSON.stringify({
-            "name": name
-        });
-
-        const requestOptions = {
-            headers: myHeaders,
-            body: raw,
-            redirect: "follow"
-        };
-        let request
-        if (id) {
-            request = fetch(`${process.env.REACT_APP_FETCH_URL}/category/${id}`,
-                { ...requestOptions, method: "PUT" })
-
-        } else {
-            request = fetch(`${process.env.REACT_APP_FETCH_URL}/category`,
-                { ...requestOptions, method: "POST" })
-        }
-
-        request.then(async (response) => {
-            if (response.status === 200) {
-                fetchCategories()
-                setBlock(true)
-            } else {
-                const errorInfo = await response.json()
-                setAlertBlock({
-                    blockState: false,
-                    msg: errorInfo.message
-                })
-            }
-        })
-    }
-
     function handleDelete(id) {
         if (window.confirm('Are you sure to delete this record ? ')) {
             const requestOptions = {
@@ -136,17 +67,10 @@ function CategoryList() {
                 });
         }
     }
-
-    function handleOpenBlock() {
-        if (block) {
-            setBlock(false)
-        } else {
-            setBlock(true)
-        }
-    }
-
     useEffect(() => {
+        if(currentPage) {
         fetchCategories()
+        }
     }, [currentPage])
 
     setTimeout(() => {
@@ -154,7 +78,7 @@ function CategoryList() {
             blockState: true,
             msg: ''
         })
-    }, 5000)
+    }, 10000)
     return (
         <>
             <header>
@@ -166,54 +90,35 @@ function CategoryList() {
                 </aside>
                 <main className='p-3 w-100 bg-light'>
                     <section className='main' style={{ minHeight: '400px' }}>
-                        <nav className='m-4'>
-                            <ol className="breadcrumb">
-                                <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
-                                {pathnames.map((item, index) => {
-                                    const to = `/${pathnames.slice(0, index + 1).join('/')}`;
-                                    return (
-                                        <li className="breadcrumb-item"><Link className='text-secondary' to={to}>{item}</Link></li>
-                                    )
-                                })}
-                            </ol>
-                        </nav>
-                        <div className='m-4'>
-                            <div className='d-flex justify-content-between p-2'>
-                                <h3>Category List</h3>
-                                <button
+                        <div className='d-flex justify-content-between m-4'>
+                            <h3>Category List</h3>
+                            <nav>
+                                <ol className="breadcrumb">
+                                    <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
+                                    {pathnames.map((item, index) => {
+                                        const to = `/${pathnames.slice(0, index + 1).join('/')}`;
+                                        const label = item === 'category' ? 'Category' : item
+                                        return (
+                                            <li className="breadcrumb-item"><Link className='text-secondary' to={to}>{label}</Link></li>
+                                        )
+                                    })}
+                                </ol>
+                            </nav>
+                        </div>
+                        <div className='me-4 ms-4'>
+                            <div className='d-flex justify-content-end'>
+                                <Link
                                     className='btn btn-primary'
-                                    onClick={handleOpenBlock}>Add Category</button>
+                                    to={'addcategory'}>Add Category</Link>
                             </div>
-                            <div hidden={block}>
-                                <div className='d-flex justify-content-center'>
-                                    <div className='w-50 d-flex flex-column p-1'
-                                        style={{ gap: '20px ' }}>
-                                        <h4>{formName} Category</h4>
-                                        <label htmlFor="categoryName">Category Name</label>
-                                        <input
-                                            type="hidden"
-                                            className='form-control'
-                                            onChange={handleChange}
-                                            value={formData.id} />
-                                        <input
-                                            type="text"
-                                            className='form-control'
-                                            name='categoryName'
-                                            onChange={handleChange}
-                                            value={formData.categoryName} />
-                                        <button
-                                            className='btn btn-primary'
-                                            onClick={handleSave}>Submit</button>
-                                    </div>
-                                </div>
-                            </div>
+
                             <div
                                 className="alert alert-danger w-50"
                                 hidden={alertBlock.blockState}>
                                 ERROR : {alertBlock.msg}
                             </div>
-                            <div className="table-responsive">
-                                <table className="table table-striped">
+                            <div className="table-responsive mt-4">
+                                <table className="table table-bordered">
                                     <thead>
                                         <tr>
                                             <th scope="col">S.No</th>
@@ -229,11 +134,11 @@ function CategoryList() {
                                                         <td key={category._id}>{serialNo++}</td>
                                                         <td>{category.name}</td>
                                                         <td>
-                                                            <button
-                                                                className='btn btn-sm btn-warning me-2'
-                                                                onClick={() => editCategory(category._id)}>
+                                                            <Link
+                                                                to={`editcategory/${category._id}`}
+                                                                className='btn btn-sm btn-warning me-2'>
                                                                 <FaEdit />
-                                                            </button>
+                                                            </Link>
                                                             <button
                                                                 onClick={() => handleDelete(category._id)}
                                                                 className='btn btn-sm btn-danger'>

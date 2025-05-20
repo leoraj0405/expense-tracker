@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
-import '../style/Login.css'
 import { FaAngleDoubleDown } from "react-icons/fa";
 import { FaUser } from "react-icons/fa";
 import { RiLockPasswordFill } from "react-icons/ri";
@@ -8,7 +7,7 @@ import Footer from '../layouts/Footer'
 
 function Login() {
 
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [formData, setFormData] = useState({ email: "leoraj04065@gmail.com", password: "123" });
   const [dangerAlert, setDangerAlter] = useState(true)
   const navigate = useNavigate()
 

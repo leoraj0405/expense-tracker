@@ -124,20 +124,23 @@ function ListMyExpense() {
                 </aside>
                 <main className='p-3 w-100 bg-light'>
                     <section className='main' style={{ minHeight: '400px' }}>
-                        <nav className='m-4'>
-                            <ol className="breadcrumb">
-                                <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
-                                {pathnames.map((item, index) => {
-                                   const label = item === 'thismonthexpense' ? 'This month expense' : item
-                                   const to = `/${pathnames.slice(0, index + 1).join('/')}`;
-                                    return (
-                                        <li className="breadcrumb-item"><Link className='text-secondary' to={to}>{label}</Link></li>
-                                    )
-                                })}
-                            </ol>
-                        </nav>
-                        <h2 className='m-4'>Expenses</h2>
-                        <div className='d-flex flex-column m-4'>
+                        <div className='me-4 ms-4 d-flex justify-content-between'>
+                            <h2>Expenses</h2>
+                            <nav>
+                                <ol className="breadcrumb">
+                                    <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
+                                    {pathnames.map((item, index) => {
+                                        const label = item === 'thismonthexpense' ? 'This Month Expense' : item  === 'expense' ? 'Expense' : item
+                                        const to = `/${pathnames.slice(0, index + 1).join('/')}`;
+                                        return (
+                                            <li className="breadcrumb-item"><Link className='text-secondary' to={to}>{label}</Link></li>
+                                        )
+                                    })}
+                                </ol>
+                            </nav>
+
+                        </div>
+                        <div className='d-flex flex-column me-4 ms-4 mt-4'>
                             <div className='d-flex flex-row justify-content-between pb-4'>
                                 <div>
                                     <p>Filter by month : </p>
@@ -146,13 +149,13 @@ function ListMyExpense() {
                                 <Link className='btn btn-primary h-25' to={'/addexpense'}>Add New Expense</Link>
                             </div>
                             <div className='table-responsive'>
-                                <table className="table table-striped">
+                                <table className="table table-bordered">
                                     <thead>
                                         <tr>
                                             <th scope="col">S No</th>
                                             <th scope="col">Description</th>
                                             <th scope="col">Category</th>
-                                            <th scope="col">date</th>
+                                            <th scope="col">Date</th>
                                             <th scope='col'>Amount</th>
                                             <th scope='col'>Actions</th>
                                         </tr>
@@ -163,7 +166,7 @@ function ListMyExpense() {
                                                 <tr key={item._id}>
                                                     <td>{index + 1}</td>
                                                     <td>{item.description}</td>
-                                                    <td>{item.categoryId?.name}</td>
+                                                    <td>{item.category[0]?.name}</td>
                                                     <td>{item.date.split('T')[0]}</td>
                                                     <td>{item.amount}</td>
                                                     <td>

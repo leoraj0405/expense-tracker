@@ -1,10 +1,9 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { RequestExpense } from '../request';
 import { Expense } from 'src/schemas/expense.schma';
-import { from } from 'rxjs';
-
+import { Types } from 'mongoose';
 @Injectable()
 export class ExpenseService {
   constructor(
@@ -36,8 +35,6 @@ export class ExpenseService {
       .find({
         deletedAt: null,
       })
-      .populate({ path: 'userId', select: '-_id name' })
-      .populate({ path: 'categoryId', select: '-_id name' })
       .exec();
     return getExpense;
   }
@@ -78,8 +75,6 @@ export class ExpenseService {
     limit: number,
     page: number,
   ): Promise<Expense | {}> {
-    let userExpenses;
-    let totalCount;
     let filter;
 
     const limitNo = limit ?? 5;
@@ -95,47 +90,52 @@ export class ExpenseService {
       const toDate = new Date(year, month, 1);
 
       filter = {
-        userId: id,
-        deletedAt: null,
         date: { $gte: fromDate, $lt: toDate },
       };
-
-      userExpenses = await this.expenseModel
-        .find({
-          userId: id,
-          deletedAt: null,
-          date: { $gte: fromDate, $lt: toDate },
-        })
-        .skip(skip)
-        .limit(limitNo)
-        .populate({ path: 'userId', select: '_id name' })
-        .populate({ path: 'categoryId', select: '_id name' })
-        .exec();
-
-      totalCount = await this.expenseModel.countDocuments(filter);
-    } else {
-      filter = {
-        userId: id,
-        deletedAt: null,
-      };
-      userExpenses = await this.expenseModel
-        .find({
-          userId: id,
-          deletedAt: null,
-        })
-        .skip(skip)
-        .limit(limitNo)
-        .populate({ path: 'userId', select: '_id name' })
-        .populate({ path: 'categoryId', select: '_id name' })
-        .exec();
-
-      totalCount = await this.expenseModel.countDocuments(filter);
     }
+
+    const expenses = await this.expenseModel.aggregate([
+      {
+        $match: { ...filter, userId: new Types.ObjectId(id), deletedAt: null },
+      },
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'categoryId',
+          foreignField: '_id',
+          as: 'category',
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      { $skip: skip },
+      { $limit: limitNo },
+      {
+        $project: {
+          amount: 1,
+          description: 1,
+          date: 1,
+          'category.name': 1,
+          'category._id': 1,
+          'user.name': 1,
+          'user._id': 1,
+          createdAt: 1,
+        },
+      },
+    ]);
+
+    const totalCount = await this.expenseModel.countDocuments(filter);
     return {
       limit: limitNo,
       page: pageNo,
       total: totalCount,
-      userExpenseData: userExpenses,
+      userExpenseData: expenses,
     };
   }
 }

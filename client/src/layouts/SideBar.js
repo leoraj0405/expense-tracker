@@ -25,16 +25,10 @@ const SideBar = () => {
             <MdOutlineCategory className="me-2" />Category
           </Link>
         </li>
-
-        <li className="nav-item dropdown">
-          <Link className="nav-link dropdown-toggle text-dark" to="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <MdGroups2 className="me-2"/> Group
+        <li className="nav-item mb-2">
+          <Link to="/group" className="nav-link text-dark">
+            <MdGroups2 className="me-2" /> Group
           </Link>
-          <ul className="dropdown-menu">
-          <li><Link className="dropdown-item" to="/group">My groups list</Link></li>
-            <li><Link className="dropdown-item" to="/groupexpense">Group Expenses</Link></li>
-            <li><Link className="dropdown-item" to="/groupmember">Group Members</Link></li>
-          </ul>
         </li>
       </ul>
     </div>

@@ -54,8 +54,8 @@ export class ExpenseController {
     try {
       const getExpense = await this.expenseService.findAllExpense();
       if (!getExpense.length) {
-        response.message = 'Not Found';
-        return reply.status(404).send(response);
+        response.message = 'The expense data is empty';
+        return reply.status(200).send(response);
       }
       response.data = getExpense;
       return reply.status(200).send(response);
@@ -140,8 +140,8 @@ export class ExpenseController {
     try {
       const userExpenses = await this.expenseService.userExpenses(id, date, limit, page);
       if (!userExpenses) {
-        response.message = 'Not found';
-        return reply.status(404).send(response);
+        response.message = 'The expense data is empty';
+        return reply.status(200).send(response);
       } else {
         response.message = 'success';
         response.data = userExpenses;

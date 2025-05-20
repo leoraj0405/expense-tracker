@@ -17,10 +17,12 @@ function AddGrpMember() {
     const navigate = useNavigate()
     const queryValue = useQuery()
     const grpMemberId = queryValue.get('grpmemid')
+    const grpId = queryValue.get('grpid')
+    const grpName = queryValue.get('grpname')
 
-    const [form, setForm] = useState({ id: '', groupId: '', userId: '' });
+
+    const [form, setForm] = useState({ id: '', groupId: grpId, userId: '' });
     const [users, setUsers] = useState([])
-    const [groups, setGroups] = useState([])
     const [alertBlock, setAlertBlock] = useState({
         blockState: true,
         msg: ''
@@ -61,7 +63,7 @@ function AddGrpMember() {
         }
         request.then(async (response) => {
             if (response.status === 200) {
-                navigate('/groupmember')
+                navigate(`/group/groupmember?grpid=${grpId}&grpName=${grpName}`)
             } else {
                 const errorInfo = await response.json()
                 setAlertBlock({
@@ -102,22 +104,7 @@ function AddGrpMember() {
         }
     }
 
-    async function fetchGroups() {
-        const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/group`)
-        if (response.status === 200) {
-            const responseData = await response.json()
-            setGroups(responseData.data)
-        } else {
-            const errorInfo = await response.json()
-            setAlertBlock({
-                blockState: false,
-                msg: errorInfo.message
-            })
-        }
-    }
-
     useEffect(() => {
-        fetchGroups()
         fetchUsers()
     }, [])
 
@@ -150,45 +137,53 @@ function AddGrpMember() {
                 <main className='p-3 w-100 bg-light'>
                     <section className='main' style={{ minHeight: '400px' }}>
 
-                        <nav className='m-4'>
-                            <ol className="breadcrumb">
-                                <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
-                                <li className="breadcrumb-item"><Link className='text-secondary' to="/group">Group</Link></li>
-                                {pathnames.map((item, index) => {
-                                    const to = `/${pathnames.slice(0, index + 1).join('/')}`;
-                                    const label = item === 'addgroupmember' ? 'Add group member' : item === 'editgroupmember' ? 'Edit group member' : item
-                                    return (
-                                        <li className="breadcrumb-item"><Link className='text-secondary' to={to}>{label}</Link></li>
-                                    )
-                                })}
-                            </ol>
-                        </nav>
+                        <div className='d-flex justify-content-between m-4'>
+                            <h2>{grpMemberId ? 'Edit' : 'Add'} Group Member</h2>
+                            <nav className='me-3'>
+                                <ol className="breadcrumb">
+                                    <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
+                                    {pathnames.map((item, index) => {
+                                        let to = `/${pathnames.slice(0, index + 1).join('/')}`;
+                                        let label
+                                        const isLast = index === pathnames.length - 1;
 
+                                        if (item === 'group') {
+                                            label = 'Group'
+                                        }
+                                        if (item === 'groupmember') {
+                                            label = 'Group Member'
+                                            to += `?grpid=${grpId}&grpname=${grpName}`
+                                        }
+                                        if (item === 'addgroupmember') {
+                                            label = 'Add Group Member'
+                                        }
+                                        if (item === 'editgroupmember') {
+                                            label = 'Edit Group Member'
+                                        }
+
+                                        return (
+                                            <li className='breadcrumb-item'>
+                                                {isLast ? (
+                                                    <p className='text-secondary' style={{ whiteSpace: 'nowrap' }} >{label}</p>
+                                                ) : (
+                                                    <Link className='text-secondary' to={to}>{label}</Link>
+                                                )}
+                                            </li>
+                                        )
+                                    })}
+                                </ol>
+                            </nav>
+                        </div>
                         <div
                             className="alert alert-danger m-4"
                             hidden={alertBlock.blockState}>
                             {alertBlock.msg}
                         </div>
 
-                        <div className="p-3 m-4 w-50">
+                        <div className="p-3 w-50">
                             <div className="mb-3">
                                 <input type="hidden" name='id' value={form.id} />
-                                <label className="form-label">Group</label>
-                                <select
-                                    value={form.groupId._id}
-                                    className="form-select"
-                                    name="groupId"
-                                    onChange={handleChange}
-                                >
-                                    <option>Select group</option>
-                                    {groups.map((item, index) => {
-                                        return (
-                                            <option key={index} value={item._id}>{item.name}</option>
-                                        )
-                                    })}
-                                </select>
                             </div>
-
                             <div className="mb-3">
                                 <label className="form-label">Member</label>
                                 <select

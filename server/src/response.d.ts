@@ -4,10 +4,9 @@ import { Expense } from './schemas/expense.schma';
 import { Group } from './schemas/group.schma';
 import { GroupExpense } from './schemas/groupExpense.schema';
 import { GroupMember } from './schemas/groupMember.schema';
-import { Admin } from './schemas/admin.schema';
 
 export interface ResponseDto {
-  message: string;
+  message: string
   data:
     | null
     | User
@@ -22,7 +21,5 @@ export interface ResponseDto {
     | GroupExpense[]
     | GroupMember
     | GroupMember[]
-    | Admin
-    | Amdin[];
     profileUrl?: string
 }

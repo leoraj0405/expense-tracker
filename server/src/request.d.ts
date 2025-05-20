@@ -38,12 +38,6 @@ export interface RequestGrpMember {
     userId: string
 }
 
-export interface RequsetAdmin {
-    name: string,
-    email: string,
-    password: string
-}
-
 export interface LoginUserReq {
     email: string,
     password: string

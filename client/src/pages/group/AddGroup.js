@@ -74,11 +74,11 @@ function AddGroup() {
                 const requestOptions = {
                     method: "POST",
                     headers: {
-                      "Content-Type": "application/json"
+                        "Content-Type": "application/json"
                     },
                     body: raw,
-                  };
-                  
+                };
+
 
                 console.log(requestOptions)
                 fetch(`${process.env.REACT_APP_FETCH_URL}/groupmember`, requestOptions)
@@ -146,28 +146,30 @@ function AddGroup() {
                 <main className='p-3 w-100 bg-light'>
                     <section className='main' style={{ minHeight: '400px' }}>
 
-                        <nav className='m-4'>
-                            <ol className="breadcrumb">
-                                <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
-                                {pathnames.map((item, index) => {
-                                    const to = `/${pathnames.slice(0, index + 1).join('/')}`;
-                                    const label = item === 'addgroup' ? 'Add group' : item === 'editgroup' ? 'Edit group' : item
-                                    return (
-                                        <li className="breadcrumb-item"><Link className='text-secondary' to={to}>{label}</Link></li>
-                                    )
-                                })}
-                            </ol>
-                        </nav>
+                        <div className='d-flex justify-content-between m-4'>
+                            <h2>{pageName === 'edit' ? 'Edit Group' : 'Create Group'}</h2>
+                            <nav>
+                                <ol className="breadcrumb">
+                                    <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
 
+                                    {pathnames.map((item, index) => {
+                                        const to = `/${pathnames.slice(0, index + 1).join('/')}`;
+                                        const label = item === 'addgroup' ? 'Add group' : item === 'editgroup' ? 'Edit group' : item === 'group' ? 'Group' : item
+                                        return (
+                                            <li className="breadcrumb-item"><Link className='text-secondary' to={to}>{label}</Link></li>
+                                        )
+                                    })}
+                                </ol>
+                            </nav>
+                        </div>
                         <div
                             className="alert alert-danger m-4"
                             hidden={alertBlock.blockState}>
                             {alertBlock.msg}
                         </div>
 
-                        <div className='m-4'>
-                            <h2>{pageName === 'edit' ? 'Edit Group' : 'Create Group'}</h2>
-                            <div className='w-50'>
+                        <div className='m-4 w-100'>
+                            <div className='d-flex flex-column align-content-center'>
                                 <div className="form-group col-md-6">
                                     <label htmlFor="grpName">Name</label>
                                     <input
@@ -186,8 +188,8 @@ function AddGroup() {
                                         name='grpId' />
                                 </div>
                                 <div
-                                    className='m-3 d-flex justify-content-start'
-                                    style={{ gap: '30px' }}>
+                                    className='mt-4 w-50 d-flex justify-content-end'>
+                                    <Link className='btn btn-warning me-4' to={`/group`}>Back</Link>
                                     <button
                                         onClick={handleSubmit}
                                         className="btn btn-primary">Submit</button>

@@ -83,7 +83,7 @@ function ParentHome() {
             }))
             setData(result)
         } else {
-            navigate('/parentlogin')
+            console.log(await response.json())
         }
     };
 
