@@ -31,4 +31,3 @@ export class GroupMember extends Document {
 
 export const GroupMemberSchema = SchemaFactory.createForClass(GroupMember);
 GroupMemberSchema.index({ groupId: 1, userId: 1 }, { unique: true });
-

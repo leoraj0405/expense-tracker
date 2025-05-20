@@ -53,7 +53,7 @@ function Profile() {
             })
         } else {
             const errorData = await response.json()
-            setShowDiv(true)    
+            setShowDiv(true)
             setDangetAlert({ blockState: true, suceessState: false, msg: errorData.message })
         }
     }
@@ -92,6 +92,12 @@ function Profile() {
         fetchUser()
     }, [])
 
+    useEffect(() => {
+        setTimeout(() => {
+            setDangetAlert({ blockState: true, msg: '', suceessState: false })
+        }, 10000)
+    }, [dangerAlert])
+
     return (
         <>
             <header>
@@ -103,29 +109,39 @@ function Profile() {
                 </aside>
                 <main className='p-3 w-100 bg-light'>
                     <section className='main' style={{ minHeight: '400px' }}>
-                        <nav className='m-4'>
-                            <ol className="breadcrumb">
-                                <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
-                                {pathnames.map((item, index) => {
-                                    const label = item === 'userprofile' ? 'User Profile' : item
-                                    const to = `/${pathnames.slice(0, index + 1).join('/')}`;
-                                    return (
-                                        <li key={index} className="breadcrumb-item"><Link className='text-secondary' to={to}>{label}</Link></li>
-                                    )
-                                })}
-                            </ol>
-                        </nav>
+                        <div className='d-flex justify-content-between me-4 ms-4 mt-4'>
+                            <h4>Profile</h4>
+                            <nav className='me-4'>
+                                <ol className="breadcrumb">
+                                    <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
+                                    {pathnames.map((item, index) => {
+                                        const label = item === 'userprofile' ? 'User Profile' : item
+                                        const to = `/${pathnames.slice(0, index + 1).join('/')}`;
+                                        const isLast = index === pathnames.length - 1
+                                        return (
+                                            <li className='breadcrumb-item'>
+                                                {isLast ? (
+                                                    <p className='text-secondary' style={{ whiteSpace: 'nowrap' }} >{label}</p>
+                                                ) : (
+                                                    <Link className='text-secondary' to={to}>{label}</Link>
+                                                )}
+                                            </li>
+                                        )
+                                    })}
+                                </ol>
+                            </nav>
+                        </div>
                         <div
                             className="m-4 alert alert-danger"
                             ref={divRef}
-                            tabIndex={-1} 
+                            tabIndex={-1}
                             hidden={dangerAlert.blockState}>
                             {dangerAlert.msg}
                         </div>
                         <div>
-                            <div className="container mt-5">
-                                <div className="row justify-content-center">
-                                    <div className="col-md-8">
+                            <div className="container">
+                                <div className="d-flex justify-content-around">
+                                    <div className="col-md-8 w-50">
                                         <div className="card shadow border-0">
                                             <div className="card-body">
                                                 <div className='d-flex'>
@@ -169,7 +185,13 @@ function Profile() {
                                                     </div>
                                                 </div>
                                                 <hr />
-                                                <div className='collapse mt-4' id='editInfo'>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className='col-md-8 ms-4 w-50 collapse' id='editInfo'>
+                                        <div className="card shadow border-0">
+                                            <div className='card-body pb-5'>
+                                                <div className='mt-4' >
                                                     <div>
                                                         <div className="mb-3">
                                                             <label for="userName" className="form-label">Name</label>
@@ -188,7 +210,7 @@ function Profile() {
 
                                                         <div class="mb-3">
                                                             <label for="profileImage" className="form-label">Profile Image</label>
-                                                            <input className="form-control" onChange={handleChange} type="file" name="profile" />
+                                                            <input className="form-control" onChange={handleChange} type="file" name="profile" required={true} />
                                                         </div>
                                                         <div className='mb-3'>
                                                             {form.profile instanceof File && (
@@ -201,10 +223,10 @@ function Profile() {
                                                                 </div>
                                                             )}
                                                         </div>
-
-                                                        <button className="btn btn-primary" onClick={() => { handleSubmit(loginUser?.data?._id) }}>Submit</button>
-                                                        <div className="alert alert-success mt-4" hidden={dangerAlert.suceessState} role="alert">
-                                                            Data updated after some times
+                                                        <div className='d-flex justify-content-end'>
+                                                            <button className="btn btn-warning mt-2 me-3" data-bs-toggle="collapse"
+                                                                data-bs-target="#editInfo">Back</button>
+                                                            <button className="btn btn-primary mt-2" onClick={() => { handleSubmit(loginUser?.data?._id) }}>Submit</button>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -212,6 +234,11 @@ function Profile() {
                                         </div>
                                     </div>
                                 </div>
+
+                            </div>
+
+                            <div className="alert alert-success mt-5" hidden={dangerAlert.suceessState} role="alert">
+                                Data updated after login
                             </div>
                         </div>
                     </section>

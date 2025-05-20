@@ -12,7 +12,6 @@ function ListMyExpense() {
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
     const pathnames = location.pathname.split('/').filter((x) => x);
-    const [searchParams, setSearchParams] = useSearchParams();
 
 
     const queryDate = queryParams.get('date');
@@ -27,6 +26,7 @@ function ListMyExpense() {
     const [date, setDate] = useState('')
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const queryArr = [`page=${currentPage}`,]
 
     useEffect(() => {
         if (!loginUser) {
@@ -38,19 +38,18 @@ function ListMyExpense() {
         setDate(e.target.value)
     }
 
-    async function fetchExpenses() {
+    useEffect(() => {
         if (queryDate) {
             setDate(queryDate)
         }
-        let response
+    }, [queryDate])
+
+    async function fetchExpenses() {
         if (date) {
-            response = await fetch(`${process.env.REACT_APP_FETCH_URL}/expense/userexpense/${loginUser.data._id}?date=${date}&page=${currentPage}`)
-            searchParams.delete('date');
-            setSearchParams(searchParams);
-        } else {
-            response = await fetch(`${process.env.REACT_APP_FETCH_URL}/expense/userexpense/${loginUser.data._id}?page=${currentPage}`)
+            queryArr.push(`date=${date}`)
         }
-        console.log(response)
+        const queryOptions = queryArr.join('&')
+        let response = await fetch(`${process.env.REACT_APP_FETCH_URL}/expense/userexpense/${loginUser.data._id}?${queryOptions}`)
         if (response.ok) {
             const expenseData = await response.json()
             setExpenses(expenseData.data)
@@ -126,14 +125,21 @@ function ListMyExpense() {
                     <section className='main' style={{ minHeight: '400px' }}>
                         <div className='me-4 ms-4 d-flex justify-content-between'>
                             <h2>Expenses</h2>
-                            <nav>
+                            <nav className='me-4'>
                                 <ol className="breadcrumb">
                                     <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
                                     {pathnames.map((item, index) => {
-                                        const label = item === 'thismonthexpense' ? 'This Month Expense' : item  === 'expense' ? 'Expense' : item
+                                        const label = item === 'thismonthexpense' || item === 'expense' ? 'Expense' : item
                                         const to = `/${pathnames.slice(0, index + 1).join('/')}`;
+                                        const isLast = index === pathnames.length - 1;
                                         return (
-                                            <li className="breadcrumb-item"><Link className='text-secondary' to={to}>{label}</Link></li>
+                                            <li className='breadcrumb-item'>
+                                                {isLast ? (
+                                                    <p className='text-secondary' style={{ whiteSpace: 'nowrap' }} >{label}</p>
+                                                ) : (
+                                                    <Link className='text-secondary' to={to}>{label}</Link>
+                                                )}
+                                            </li>
                                         )
                                     })}
                                 </ol>
@@ -146,7 +152,7 @@ function ListMyExpense() {
                                     <p>Filter by month : </p>
                                     <input type="month" onChange={handleOnChange} name='date' value={date} className='form-control' />
                                 </div>
-                                <Link className='btn btn-primary h-25' to={'/addexpense'}>Add New Expense</Link>
+                                <Link className='btn btn-primary h-25' to={'/expense/addexpense'}>Add New Expense</Link>
                             </div>
                             <div className='table-responsive'>
                                 <table className="table table-bordered">

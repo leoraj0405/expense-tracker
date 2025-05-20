@@ -74,6 +74,8 @@ function GroupList() {
         }, 5000)
     }, [alertBlock])
 
+    console.log(userGrps)
+
     return (
         <>
             <header>

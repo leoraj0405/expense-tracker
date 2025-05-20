@@ -16,10 +16,13 @@ function AddGrpExpense() {
     const navigate = useNavigate()
     const queryValue = useQuery()
     const grpExpenseId = queryValue.get('grpexpid')
+    const grpId = queryValue.get('grpid')
+    const grpName = queryValue.get('grpname')
+
 
     const [form, setForm] = useState({
         id: '',
-        groupId: '',
+        groupId: grpId,
         userId: '',
         description: '',
         amount: '',
@@ -27,7 +30,6 @@ function AddGrpExpense() {
     });
 
     const [users, setUsers] = useState([])
-    const [groups, setGroups] = useState([])
     const [categories, setCategories] = useState([])
     const [alertBlock, setAlertBlock] = useState({
         blockState: true,
@@ -75,7 +77,7 @@ function AddGrpExpense() {
         }
         request.then(async (response) => {
             if (response.status === 200) {
-                navigate('/groupexpense')
+                navigate(`/group/groupexpense?grpid=${grpId}&grpname=${grpName}`)
             } else {
                 const errorInfo = await response.json()
                 setAlertBlock({
@@ -105,25 +107,11 @@ function AddGrpExpense() {
         }
     }
 
-    async function fetchUsers(){
-        const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/user`)
+    async function fetchUsers() {
+        const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/groupmember/onegroup/${grpId}`)
         if (response.status === 200) {
             const responseData = await response.json()
             setUsers(responseData.data)
-        } else {
-            const errorInfo = await response.json()
-            setAlertBlock({
-                blockState: false,
-                msg: errorInfo.message
-            })
-        }
-    }
-
-    async function fetchGroups() {
-        const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/group`)
-        if (response.status === 200) {
-            const responseData = await response.json()
-            setGroups(responseData.data)
         } else {
             const errorInfo = await response.json()
             setAlertBlock({
@@ -148,7 +136,6 @@ function AddGrpExpense() {
     }
 
     useEffect(() => {
-        fetchGroups()
         fetchUsers()
         fetchCategory()
     }, [])
@@ -166,10 +153,10 @@ function AddGrpExpense() {
                 blockState: true,
                 msg: ''
             })
-        }, 5000)
+        }, 10000)
     }, [alertBlock])
 
-    console.log(form)
+    console.log(users)
 
     return (
         <>
@@ -183,19 +170,43 @@ function AddGrpExpense() {
                 <main className='p-3 w-100 bg-light'>
                     <section className='main' style={{ minHeight: '400px' }}>
 
-                        <nav className='m-4'>
-                            <ol className="breadcrumb">
-                                <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
-                                <li className="breadcrumb-item"><Link className='text-secondary' to="/group">Group</Link></li>
-                                {pathnames.map((item, index) => {
-                                    const to = `/${pathnames.slice(0, index + 1).join('/')}`;
-                                    const label = item === 'addgroupexpense' ? 'Add Group Expense' : item === 'editgroupexpense' ? 'Edit Group Expense' : item
-                                    return (
-                                        <li className="breadcrumb-item"><Link className='text-secondary' to={to}>{label}</Link></li>
-                                    )
-                                })}
-                            </ol>
-                        </nav>
+                        <div className='d-flex justify-content-between m-4'>
+                            <h2>{grpExpenseId ? 'Edit' : 'Add'} Group Expense</h2>
+                            <nav className='me-3'>
+                                <ol className="breadcrumb">
+                                    <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
+                                    {pathnames.map((item, index) => {
+                                        let to = `/${pathnames.slice(0, index + 1).join('/')}`;
+                                        let label
+                                        const isLast = index === pathnames.length - 1;
+
+                                        if (item === 'group') {
+                                            label = 'Group'
+                                        }
+                                        if (item === 'groupexpense') {
+                                            label = 'Group Expense'
+                                            to += `?grpid=${grpId}&grpname=${grpName}`
+                                        }
+                                        if (item === 'addgroupexpense') {
+                                            label = 'Add Group Expense'
+                                        }
+                                        if (item === 'editgroupexpense') {
+                                            label = 'Edit Group Expense'
+                                        }
+
+                                        return (
+                                            <li className='breadcrumb-item'>
+                                                {isLast ? (
+                                                    <p className='text-secondary' style={{ whiteSpace: 'nowrap' }} >{label}</p>
+                                                ) : (
+                                                    <Link className='text-secondary' to={to}>{label}</Link>
+                                                )}
+                                            </li>
+                                        )
+                                    })}
+                                </ol>
+                            </nav>
+                        </div>
 
                         <div
                             className="alert alert-danger m-4"
@@ -207,20 +218,7 @@ function AddGrpExpense() {
                             <input type="hidden" name='id' value={form.id} />
 
                             <div className="mb-3">
-                                <label className="form-label">Group</label>
-                                <select
-                                    value={form.groupId._id}
-                                    className="form-select"
-                                    name="groupId"
-                                    onChange={handleChange}
-                                >
-                                    <option>Select group</option>
-                                    {groups.map((item, index) => {
-                                        return (
-                                            <option key={index} value={item._id}>{item.name}</option>
-                                        )
-                                    })}
-                                </select>
+                                <h4 className='text-secondary'>Group {grpName} : </h4>
                             </div>
 
                             <div className="mb-3">
@@ -234,7 +232,7 @@ function AddGrpExpense() {
                                     <option>Select member</option>
                                     {users.map((item, index) => {
                                         return (
-                                            <option key={index} value={item._id}>{item.name}</option>
+                                            <option key={index} value={item?.userId?._id}>{item?.userId?.name}</option>
                                         )
                                     })}
                                 </select>
@@ -268,6 +266,7 @@ function AddGrpExpense() {
                             </div>
 
                             <div className='d-flex justify-content-end'>
+                                <Link className='btn btn-warning me-3' to={`/group/groupexpense?grpid=${grpId}&grpname=${grpName}`}>Back</Link>
                                 <button onClick={handleSubmit} className="btn btn-primary">
                                     Submit
                                 </button>

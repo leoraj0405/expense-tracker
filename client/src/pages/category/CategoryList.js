@@ -68,8 +68,8 @@ function CategoryList() {
         }
     }
     useEffect(() => {
-        if(currentPage) {
-        fetchCategories()
+        if (currentPage) {
+            fetchCategories()
         }
     }, [currentPage])
 
@@ -92,14 +92,22 @@ function CategoryList() {
                     <section className='main' style={{ minHeight: '400px' }}>
                         <div className='d-flex justify-content-between m-4'>
                             <h3>Category List</h3>
-                            <nav>
+                            <nav className='me-3'>
                                 <ol className="breadcrumb">
                                     <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
                                     {pathnames.map((item, index) => {
                                         const to = `/${pathnames.slice(0, index + 1).join('/')}`;
                                         const label = item === 'category' ? 'Category' : item
+                                        const isLast = index === pathnames.length - 1;
+
                                         return (
-                                            <li className="breadcrumb-item"><Link className='text-secondary' to={to}>{label}</Link></li>
+                                            <li className='breadcrumb-item'>
+                                                {isLast ? (
+                                                    <p className='text-secondary' style={{ whiteSpace: 'nowrap' }} >{label}</p>
+                                                ) : (
+                                                    <Link className='text-secondary' to={to}>{label}</Link>
+                                                )}
+                                            </li>
                                         )
                                     })}
                                 </ol>

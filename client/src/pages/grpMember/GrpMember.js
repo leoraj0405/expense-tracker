@@ -125,7 +125,6 @@ function GrpMember() {
                                 <thead>
                                     <tr>
                                         <th scope="col">S No</th>
-                                        <th scope="col">Group Name</th>
                                         <th scope="col">Member</th>
                                         <th scope="col">Actions</th>
                                     </tr>
@@ -136,7 +135,6 @@ function GrpMember() {
                                             return (
                                                 <tr key={index}>
                                                     <td>{index + 1}</td>
-                                                    <td>{item.groupId.name}</td>
                                                     <td>{item.userId.name}</td>
                                                     <td>
                                                         <Link

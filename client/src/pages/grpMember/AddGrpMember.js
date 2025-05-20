@@ -85,6 +85,7 @@ function AddGrpMember() {
             };
             setForm(edited);
         } else {
+
             const errorInfo = await response.json();
             setAlertBlock({ blockState: false, msg: errorInfo.message });
         }
@@ -184,6 +185,9 @@ function AddGrpMember() {
                             <div className="mb-3">
                                 <input type="hidden" name='id' value={form.id} />
                             </div>
+                            <div className='mb-3'>
+                                <h4 className='text-secondary'>Group Name : {grpName}</h4>
+                            </div>
                             <div className="mb-3">
                                 <label className="form-label">Member</label>
                                 <select
@@ -202,6 +206,7 @@ function AddGrpMember() {
                             </div>
 
                             <div className='d-flex justify-content-end'>
+                                <Link className='btn btn-warning me-3' to={`/group/groupmember?grpid=${grpId}&grpname=${grpName}`}>Back</Link>
                                 <button onClick={handleSubmit} className="btn btn-primary">
                                     Submit
                                 </button>

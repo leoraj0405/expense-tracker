@@ -29,7 +29,7 @@ function App() {
         <Route path='/registration' element={<SignupPage />} />
         <Route path='/expense' element={<ListMyExpense />} />
         <Route path='/thismonthexpense' element={<ListMyExpense />} />
-        <Route path='/addexpense' element={<AddMyExpense />} />
+        <Route path='/expense/addexpense' element={<AddMyExpense />} />
         <Route path='/editexpense' element={<AddMyExpense />} />
         <Route path='/category' element={<CategoryList />} />
         <Route path='/category/addcategory' element={<AddCategory />} />
@@ -40,9 +40,9 @@ function App() {
         <Route path='/group/groupmember' element={<GrpMember />} />
         <Route path='/group/groupmember/addgroupmember' element={<AddGrpMember />} />
         <Route path='/group/groupmember/editgroupmember' element={<AddGrpMember />} />
-        <Route path='/groupexpense' element={<GrpExpense />} />
-        <Route path='/addgroupexpense' element={<AddGrpExpense />} />
-        <Route path='/editgroupexpense' element={<AddGrpExpense />} />
+        <Route path='/group/groupexpense' element={<GrpExpense />} />
+        <Route path='/group/groupexpense/addgroupexpense' element={<AddGrpExpense />} />
+        <Route path='/group/groupexpense/editgroupexpense' element={<AddGrpExpense />} />
         <Route path='/userprofile' element={<Profile />} />
 
       </Routes>

@@ -103,7 +103,7 @@ function AddCategory() {
                     <section className='main' style={{ minHeight: '400px' }}>
                         <div className='d-flex justify-content-between m-4'>
                             <h4> {id ? 'Edit' : 'Add'} Category</h4>
-                            <nav>
+                            <nav className='me-3'>
                                 <ol className="breadcrumb">
                                     <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
                                     {pathnames.map((item, index) => {
@@ -115,14 +115,21 @@ function AddCategory() {
                                         } else if (item === 'editcategory') {
                                             label = 'Edit Category'
                                             to = ''
-                                        }else if (item === 'category') {
+                                        } else if (item === 'category') {
                                             label = 'Category'
-                                        }else if (item === id) {
+                                        } else if (item === id) {
                                             label = ''
-                                            to =+ `/${id}`
+                                            to = + `/${id}`
                                         }
+                                        const isLast = index === pathnames.length - 1
                                         return (
-                                            <li className="breadcrumb-item"><Link className='text-secondary' to={to}>{label}</Link></li>
+                                            <li className='breadcrumb-item'>
+                                                {isLast ? (
+                                                    <p className='text-secondary' style={{ whiteSpace: 'nowrap' }} >{label}</p>
+                                                ) : (
+                                                    <Link className='text-secondary' to={to}>{label}</Link>
+                                                )}
+                                            </li>
                                         )
                                     })}
                                 </ol>

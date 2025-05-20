@@ -148,23 +148,38 @@ function AddMyExpense() {
                 </aside>
                 <main className='p-3 w-100 bg-light'>
                     <section className='main' style={{ minHeight: '400px' }}>
-                        <nav className='m-4'>
-                            <ol className="breadcrumb">
-                                <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
-                                <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Expense</Link></li>
+                        <div className='d-flex justify-content-between m-3'>
+                            <h3 className='ms-2'>{pageMode === 'edit'
+                                ? 'Edit My Expenses'
+                                : 'Add My Expenses'}</h3>
+                            <nav className='me-4'>
+                                <ol className="breadcrumb">
+                                    <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
 
-                                {pathnames.map((item, index) => {
-                                    const label = item === 'addexpense' ? 'Add expense' : item === 'editexpense' ? 'Edit expense' : item
-                                    const to = `/${pathnames.slice(0, index + 1).join('/')}`;
-                                    return (
-                                        <li key={index} className="breadcrumb-item"><Link className='text-secondary' to={to}>{label}</Link></li>
-                                    )
-                                })}
-                            </ol>
-                        </nav>
-                        <h3 className='m-4'>{pageMode === 'edit'
-                            ? 'Edit My Expenses'
-                            : 'Add My Expenses'}</h3>
+                                    {pathnames.map((item, index) => {
+                                        const label = item === 'addexpense'
+                                            ? 'Add expense'
+                                            : item === 'editexpense'
+                                                ? 'Edit expense'
+                                                : item === 'expense'
+                                                    ? 'Expense'
+                                                    : item
+                                        const to = `/${pathnames.slice(0, index + 1).join('/')}`;
+                                        const isLast = index === pathnames.length - 1;
+
+                                        return (
+                                            <li className='breadcrumb-item'>
+                                                {isLast ? (
+                                                    <p className='text-secondary' style={{ whiteSpace: 'nowrap' }} >{label}</p>
+                                                ) : (
+                                                    <Link className='text-secondary' to={to}>{label}</Link>
+                                                )}
+                                            </li>
+                                        )
+                                    })}
+                                </ol>
+                            </nav>
+                        </div>
                         <div className="m-4 alert alert-danger" hidden={dangerAlert.blockState}>
                             {dangerAlert.msg}
                         </div>

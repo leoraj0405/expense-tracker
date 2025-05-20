@@ -69,13 +69,19 @@ export class CategoryService {
       categoryId: id,
       deletedAt: null,
     });
-    const isUsedInGrpExp = await this.expenseModel.exists({
+    const isUsedInGrpExp = await this.groupExpenseModel.exists({
       categoryId: id,
       deletedAt: null,
     });
     if (isUsedInExp) {
       throw new BadRequestException(
-        'Category is used in your expense and cannot be deleted.',
+        'Category is used in your group expense and cannot be deleted.',
+      );
+    }
+
+    if (isUsedInGrpExp) {
+      throw new BadRequestException(
+        'Category is used in your group expense and cannot be deleted.',
       );
     }
 

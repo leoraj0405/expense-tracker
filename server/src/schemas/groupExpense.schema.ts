@@ -44,3 +44,4 @@ export class GroupExpense extends Document {
 }
 
 export const GroupExpenseSchema = SchemaFactory.createForClass(GroupExpense);
+GroupExpenseSchema.index({ groupId: 1, userId: 1 }, { unique: true });
