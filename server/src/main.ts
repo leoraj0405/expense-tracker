@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as session from 'express-session';
+import * as FileStore from 'session-file-store';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -14,6 +15,8 @@ const SESSION_TIME = 30 * 60 * 1000;
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   // mongoose.set('debug', true); // Enable Mongoose debug mode
+
+  const FileStoreSession = FileStore(session);
 
   const config = new DocumentBuilder()
     .setTitle('Expense tracker API')
@@ -29,6 +32,10 @@ async function bootstrap() {
 
   app.use(
     session({
+      store: new FileStoreSession({
+        path: './sessions',
+        retries: 1,
+      }),
       secret: 'expense-tracker',
       resave: false,
       saveUninitialized: false,

@@ -41,7 +41,7 @@ export class UserService {
     });
     return getUser.exec();
   }
-
+  
   async updateUser(
     { id, updateData }: { id: string; updateData: RequestUser },
     file: Express.Multer.File,

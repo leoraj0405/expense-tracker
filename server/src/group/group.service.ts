@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { RequestGroup } from '../request';
@@ -7,6 +7,7 @@ import { GroupMember } from 'src/schemas/groupMember.schema';
 import { Types } from 'mongoose';
 @Injectable()
 export class GroupService {
+  private readonly logger = new Logger(Group.name);
   constructor(
     @InjectModel(Group.name) private groupModel: Model<Group>,
     @InjectModel(GroupMember.name) private grpMemberModel: Model<GroupMember>,
@@ -20,20 +21,14 @@ export class GroupService {
       updatedAt: null,
       deletedAt: null,
     }).save();
+    this.logger.log(`The ${name} group was created by ${createdBy}`);
     return postExpense;
   }
 
-  async findAllGroup(): Promise<Group[]> {
-    const getGroup = await this.groupModel
-      .find({
-        deletedAt: null,
-      })
-      .populate({ path: 'createdBy', select: '_id name' })
-      .exec();
-    return getGroup;
-  }
-
-  async putGroup(id: string, updateData: RequestGroup): Promise<Group | null> {
+  async updateGroupById(
+    id: string,
+    updateData: RequestGroup,
+  ): Promise<Group | null> {
     const updateGroup = await this.groupModel
       .findByIdAndUpdate(
         id,
@@ -41,6 +36,7 @@ export class GroupService {
         { new: true },
       )
       .exec();
+    this.logger.log(`The ${id} Group was updated update data : ${updateData}`);
     return updateGroup;
   }
 
@@ -48,27 +44,64 @@ export class GroupService {
     const delGroup = await this.groupModel
       .findByIdAndUpdate(id, { $set: { deletedAt: new Date() } }, { new: true })
       .exec();
+    this.logger.warn(`The ${id} Group was delete(soft delete)`);
     return delGroup;
   }
 
-  async singleGroup(id: string): Promise<Group | null> {
-    const oneGroup = await this.groupModel
-      .findOne({ _id: id, deletedAt: null })
-      .populate({ path: 'createdBy', select: '-_id name' })
-      .exec();
+  async fetchGroupById(id: string): Promise<Group[] | null> {
+    const oneGroup = await this.groupModel.aggregate([
+      { $match: { _id: id, deletedAt: null } },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'createdBy',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          'user.name': 1,
+          name: 1,
+        },
+      },
+    ]);
+    this.logger.log(`The expense fetch by Id : ${id}`);
     return oneGroup;
   }
 
-  async userGroups(id: string): Promise<Group[] | null> {
+  async fetchGroupByUserId(id: string): Promise<Group[] | null> {
     const memberships = await this.grpMemberModel
       .find({ userId: { $eq: id }, deletedAt: null })
       .exec();
 
     const groupIds = memberships.map((member) => member.groupId);
-    const groups = await this.groupModel
-      .find({ _id: { $in: groupIds }, deletedAt: null })
-      .populate({ path: 'createdBy', select: '_id name' })
-      .exec();
+    const groups = await this.groupModel.aggregate([
+      {
+        $match: {
+          _id: { $in: groupIds.map((id) => id) },
+          deletedAt: null,
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'createdBy',
+          foreignField: '_id',
+          as: 'createdBy',
+        },
+      },
+      { $unwind: '$createdBy' },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          '$createdBy.name' : 1,
+        },
+      },
+    ]);
+    this.logger.log(`The group fetch by user Id : ${id}`)
     return groups;
   }
 }

@@ -6,7 +6,6 @@ import { GroupExpense } from './schemas/groupExpense.schema';
 import { GroupMember } from './schemas/groupMember.schema';
 
 export interface ResponseDto {
-  message: string
   data:
     | null
     | User

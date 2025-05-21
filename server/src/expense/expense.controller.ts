@@ -19,12 +19,11 @@ export class ExpenseController {
   constructor(private readonly expenseService: ExpenseService) {}
 
   @Post()
-  async postExpense(
+  async createExpense(
     @Body() body: RequestExpense,
     @Res() reply: any,
   ): Promise<void | Expense> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
@@ -35,121 +34,91 @@ export class ExpenseController {
         date: body.date,
         categoryId: body.categoryId,
       });
-      return reply.status(200).send(response);
+      reply.status(200).send(response);
     } catch (error) {
       if (error.name === 'ValidationError') {
-        response.message = 'Invalid user or expense category';
-      } else {
-        response.message = `Error : ${error.message}`;
-      }
-      return reply.status(500).send(response);
-    }
-  }
-  @Get()
-  async getExpense(@Res() reply: any): Promise<void | Expense> {
-    const response: ResponseDto = {
-      message: 'Success',
-      data: null,
-    };
-    try {
-      const getExpense = await this.expenseService.findAllExpense();
-      if (!getExpense.length) {
-        response.message = 'The expense data is empty';
-        return reply.status(200).send(response);
-      }
-      response.data = getExpense;
-      return reply.status(200).send(response);
-    } catch (error) {
-      response.message = `Error : ${error.message}`;
+        return reply.status(401).send(response);
+      } 
       reply.status(500).send(response);
     }
   }
   @Put('/:id')
-  async updateExpense(
+  async updateExpenseById(
     @Param('id') id: string,
     @Res() reply: any,
     @Body() body: RequestExpense,
-  ): Promise<Expense | null> {
+  ): Promise<Expense | void> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
-      const putExpense = await this.expenseService.putExpense(id, body);
+      const putExpense = await this.expenseService.updateExpense(id, body);
       response.data = putExpense;
-      return reply.status(200).send(response);
+      reply.status(200).send(response);
     } catch (error) {
-      response.message = `Error : ${error.message}`;
-      return reply.status(500).send(response);
+      reply.status(500).send(response);
     }
   }
   @Delete('/:id')
-  async deleteExepense(
+  async deleteExepenseById(
     @Param('id') id: string,
     @Res() reply: any,
-  ): Promise<Expense | null> {
-    const response: ResponseDto = {
-      message: 'Success',
-      data: null,
-    };
+  ): Promise<Expense | void> {
+    const response : ResponseDto = {
+      data: null
+    }
     try {
       const deleteData = await this.expenseService.deleteExpense(id);
       response.data = deleteData;
-      return reply.status(200).send(response);
+      reply.status(200).send(response);
     } catch (error) {
-      response.message = `Error : ${error.message}`;
-      return reply.status(500).send(response);
+      reply.status(500).send(response);
     }
   }
   @Get('/:id')
-  async getOneExpense(
+  async fetchOneExpenseById(
     @Param('id') id: string,
     @Res() reply: any,
-  ): Promise<Expense | null> {
+  ): Promise<Expense[] | void> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
-      const oneExpense = await this.expenseService.singleExpense(id);
-      if (!oneExpense) {
-        response.message = 'Not found';
+      const userExpense = await this.expenseService.fetchExpense(id);
+      if (!userExpense?.length) {
         return reply.status(404).send(response);
-      } else {
-        response.data = oneExpense;
-        return reply.status(200).send(response);
-      }
+      } 
+      response.data = userExpense;
+      reply.status(200).send(response); 
     } catch (error) {
-      response.message = `Error : ${error.message}`;
       return reply.status(500).send(response);
     }
   }
-
   @Get('/userexpense/:id')
-  async oneUserExpenses(
+  async fetchExpenseByUserId(
     @Param('id') id: string,
     @Res() reply: any,
     @Query('date') date: string,
     @Query('limit') limit: number,
     @Query('page') page: number,
-  ): Promise<Expense | null> {
+  ): Promise<Expense | void> {
     const response: ResponseDto = {
-      message: '',
       data: null,
     };
     try {
-      const userExpenses = await this.expenseService.userExpenses(id, date, limit, page);
-      if (!userExpenses) {
-        response.message = 'The expense data is empty';
+      const userExpenses = await this.expenseService.fetchUserExpenses(
+        id,
+        date,
+        limit,
+        page,
+      );
+      if (!Array(userExpenses).length) {
         return reply.status(200).send(response);
-      } else {
-        response.message = 'success';
-        response.data = userExpenses;
-        return reply.status(200).send(response);
-      }
+      } 
+      response.data = userExpenses;
+      reply.status(200).send(response);
     } catch (error) {
-      response.message = `Error : ${error.message}`;
-      return reply.status(500).send(response);
+      reply.status(500).send(response);
     }
   }
 }

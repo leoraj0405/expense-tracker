@@ -7,7 +7,7 @@ import { FaAngleDoubleDown } from "react-icons/fa";
 import Footer from '../layouts/Footer'
 
 function ParentLogin() {
-    const [parentForm, setParentForm] = useState({ email: '', otp: '' })
+    const [parentForm, setParentForm] = useState({ email: 'iamnotraj02@gmail.com', otp: 'tNvDlT' })
     const [disbledInput, setDisbledInput] = useState(false)
     const [dangerAlert, setDangerAlter] = useState(true)
     const [spinner, setSpinner] = useState(true)
@@ -163,13 +163,14 @@ function ParentLogin() {
                                 <button
                                     className='btn btn-warning m-2'
                                     onClick={refreshPage}>
-                                    Back
+                                    Clear
                                 </button>
                                 <button
-                                    className={
-                                        btnDisabled ? 'btn btn-primary m-2 disabled'
-                                            : 'btn btn-primary m-2'
-                                    }
+                                    className='btn btn-primary m-2'
+                                    // className={
+                                    //     btnDisabled ? 'btn btn-primary m-2 disabled'
+                                    //         : 'btn btn-primary m-2'
+                                    // }
                                     onClick={handleProcessOtp}>
                                     Submit
                                 </button>

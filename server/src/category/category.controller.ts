@@ -18,52 +18,48 @@ import { Category } from 'src/schemas/category.schema';
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
-  @Post()
-  async postCategory(
+  @Post('/')
+  async createNewCategory(
     @Body() body: RequestCategory,
     @Res() reply: any,
   ): Promise<void | Category> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
       response.data = await this.categoryService.createCategory({
         name: body.name,
       });
-      return reply.status(200).send(response);
+      reply.status(200).send(response);
     } catch (error) {
       if (error.code === 11000) {
-        response.message = 'Category already exists';
-      } else {
-        response.message = `Error : ${error.message}`;
+        return reply.status(409).send('This entry already exists');
       }
-
-      return reply.status(500).send(response);
+      reply.status(500).send(response);
     }
   }
 
-  @Get()
-  async getCategory(
+  @Get('/')
+  async fetchAllCategory(
     @Res() reply: any,
     @Query('limit') limit: number,
     @Query('page') page: number,
   ): Promise<void | Category> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
-      const getCategory = await this.categoryService.findAllCategory(page, limit);
+      const getCategory = await this.categoryService.findAllCategory(
+        page,
+        limit,
+      );
       if (!Array(getCategory).length) {
-        response.message = 'Not Found';
+        response.data = [];
         return reply.status(404).send(response);
       }
-
       response.data = getCategory;
-      return reply.status(200).send(response);
+      reply.status(200).send(response);
     } catch (error) {
-      response.message = `Error : ${error.message}`;
       reply.status(500).send(response);
     }
   }
@@ -73,18 +69,19 @@ export class CategoryController {
     @Param('id') id: string,
     @Res() reply: any,
     @Body() body: RequestCategory,
-  ): Promise<Category | null> {
+  ): Promise<Category | void> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
-      const putCategory = await this.categoryService.putCategory(id, body);
+      const putCategory = await this.categoryService.updateCategoryById(
+        id,
+        body,
+      );
       response.data = putCategory;
-      return reply.status(200).send(response);
+      reply.status(200).send(response);
     } catch (error) {
-      response.message = `Error : ${error.message}`;
-      return reply.status(500).send(response);
+      reply.status(500).send(response);
     }
   }
 
@@ -92,18 +89,16 @@ export class CategoryController {
   async deleteCategory(
     @Param('id') id: string,
     @Res() reply: any,
-  ): Promise<Category | null> {
+  ): Promise<Category | void> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
       const deleteData = await this.categoryService.deleteCategory(id);
       response.data = deleteData;
-      return reply.status(200).send(response);
+      reply.status(200).send(response);
     } catch (error) {
-      response.message = `Error : ${error.message}`;
-      return reply.status(500).send(response);
+      reply.status(500).send(response);
     }
   }
 
@@ -111,23 +106,19 @@ export class CategoryController {
   async getSingleCategory(
     @Param('id') id: string,
     @Res() reply: any,
-  ): Promise<Category | null> {
+  ): Promise<Category | void> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
-      const oneCategory = await this.categoryService.singleCategory(id);
+      const oneCategory = await this.categoryService.findCategoryById(id);
       if (!oneCategory) {
-        response.message = 'Not found';
         return reply.status(404).send(response);
-      } else {
-        response.data = oneCategory
-        return reply.status(200).send(response);
       }
+      response.data = oneCategory;
+      reply.status(200).send(response);
     } catch (error) {
-      response.message = `Error : ${error.message}`;
-      return reply.status(500).send(response);
+      reply.status(500).send(response);
     }
   }
 }

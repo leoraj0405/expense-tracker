@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { RequestGrpExpense } from '../request';
@@ -6,19 +6,20 @@ import { GroupExpense } from 'src/schemas/groupExpense.schema';
 
 @Injectable()
 export class GrpExpenseService {
+  private readonly logger = new Logger(GroupExpense.name);
   constructor(
     @InjectModel(GroupExpense.name)
-    private grpExpenseModel: Model<GroupExpense>,
+    private groupExpensemodel: Model<GroupExpense>,
   ) {}
 
-  async createGrpExpense({
+  async createGroupExpense({
     groupId,
     description,
     amount,
     userId,
     categoryId,
   }: RequestGrpExpense) {
-    const postGrpExpense = new this.grpExpenseModel({
+    const postGrpExpense = new this.groupExpensemodel({
       groupId,
       description,
       amount,
@@ -28,60 +29,121 @@ export class GrpExpenseService {
       updatedAt: null,
       deletedAt: null,
     }).save();
+    this.logger.log(`The Group expense created`);
     return postGrpExpense;
   }
 
-  async findAllGrpExpense(): Promise<GroupExpense[]> {
-    const getGrpExpense = await this.grpExpenseModel
-      .find({
-        deletedAt: null,
-      })
-
-      .populate({ path: 'groupId', select: '_id name' })
-      .populate({ path: 'userId', select: '_id name' })
-      .populate({ path: 'categoryId', select: '_id name' })
-      .exec();
-    return getGrpExpense;
-  }
-
-  async putGrpExpense(
+  async updateGroupExpenseById(
     id: string,
     updateData: RequestGrpExpense,
   ): Promise<GroupExpense | null> {
-    const updateGrpExpense = await this.grpExpenseModel
+    const updateGroupExpense = await this.groupExpensemodel
       .findByIdAndUpdate(
         id,
         { $set: { ...updateData, updatedAt: new Date() } },
         { new: true },
       )
       .exec();
-    return updateGrpExpense;
+    this.logger.log(
+      `The Group expense updated by Id : ${id} the values : ${updateData}`,
+    );
+
+    return updateGroupExpense;
   }
 
-  async deleteGrpExpense(id: string): Promise<GroupExpense | null> {
-    const delGrpExpense = await this.grpExpenseModel
+  async deleteGroupExpenseById(id: string): Promise<GroupExpense | null> {
+    const deletegroupExpense = await this.groupExpensemodel
       .findByIdAndUpdate(id, { $set: { deletedAt: new Date() } }, { new: true })
       .exec();
-    return delGrpExpense;
+    this.logger.log(`The Group expense ${id} deleted (soft delete)`);
+    return deletegroupExpense;
   }
 
-  async singleGrpExpense(id: string): Promise<GroupExpense | null> {
-    const oneGrpExpense = await this.grpExpenseModel
-      .findOne({ _id: id, deletedAt: null })
-      .populate({ path: 'groupId', select: '_id name' })
-      .populate({ path: 'userId', select: '_id name' })
-      .populate({ path: 'categoryId', select: '_id name' })
-      .exec();
+  async getGroupExpenseByGroupId(id: string): Promise<GroupExpense[] | null> {
+    const oneGrpExpense = await this.groupExpensemodel.aggregate([
+      { $match: { _id: id, deletedAt: null } },
+      {
+        $lookup: {
+          from: 'groups',
+          localField: 'groupId',
+          foreignField: '_id',
+          as: 'group',
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'categoryId',
+          foreignField: '_id',
+          as: 'category',
+        },
+      },
+
+      {
+        $project: {
+          _id: 1,
+          description: 1,
+          amount: 1,
+          '$group.name': 1,
+          '$category.name': 1,
+          '$user.name': 1,
+        },
+      },
+    ]);
+
+    this.logger.log(`The group expense fetch by Id : ${id}`);
     return oneGrpExpense;
   }
 
-  async oneGrpExpenses(id: string): Promise<GroupExpense[] | null> {
-    const oneGrpExpense = await this.grpExpenseModel
-      .find({ groupId: id, deletedAt: null })
-      .populate({ path: 'groupId', select: '_id name' })
-      .populate({ path: 'userId', select: '_id name' })
-      .populate({ path: 'categoryId', select: '_id name' })
-      .exec();
-    return oneGrpExpense;
+  async getGroupExpensesByGroupId(id: string): Promise<GroupExpense[]> {
+    const groupExpenses = await this.groupExpensemodel.aggregate([
+      { $match: { groupId: id, deletedAt: null } },
+      {
+        $lookup: {
+          from: 'groups',
+          localField: 'groupId',
+          foreignField: '_id',
+          as: 'group',
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'categoryId',
+          foreignField: '_id',
+          as: 'category',
+        },
+      },
+
+      {
+        $project: {
+          _id: 1,
+          description: 1,
+          amount: 1,
+          '$group.name': 1,
+          '$category.name': 1,
+          '$user.name': 1,
+        },
+      },
+    ]);
+
+    this.logger.log(`The group expense fetch by group Id : ${id}`)
+    return groupExpenses;
   }
 }

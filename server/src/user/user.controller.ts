@@ -41,7 +41,6 @@ export class UserController {
     @Res() reply: any,
   ): Promise<void> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
@@ -54,35 +53,12 @@ export class UserController {
         },
         file,
       );
-      return reply.status(200).send(response);
+      reply.status(200).send(response);
     } catch (error) {
-      response.message = `Error : ${error.message}`;
-      return reply.status(500).send(response);
+      reply.status(500).send(response);
     }
   }
-  @Get('/')
-  async findAllUser(@Res() reply: any): Promise<void> {
-    const response: ResponseDto = {
-      message: 'Success',
-      data: null,
-    };
-    try {
-      const getUser = await this.userService.findAllUser();
-      if (!getUser.length) {
-        response.message = 'Not Found';
-        return reply.status(404).send(response);
-      }
-      response.data = getUser;
-      return reply.status(200).send(response);
-    } catch (error) {
-      if (error.code === 11000) {
-        response.message = 'This email already exists';
-      } else {
-        response.message = `Error : ${error.message}`;
-      }
-      return reply.status(500).send(response);
-    }
-  }
+
   @Put('/:id')
   @UseInterceptors(
     FileInterceptor('profileImage', {
@@ -102,7 +78,6 @@ export class UserController {
     @UploadedFile() file: Express.Multer.File,
   ): Promise<void> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
@@ -112,24 +87,22 @@ export class UserController {
       );
       reply.status(200).send(response);
     } catch (error) {
-      response.message = `Error : ${error.message}`;
       reply.status(500).send(response);
     }
   }
   @Delete('/:id')
   async deleteUser(@Param('id') id: any, @Res() reply: any): Promise<void> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
       response.data = await this.userService.deleteUser(id);
       reply.status(200).send(response);
     } catch (error) {
-      response.message = `Error : ${error.message}`;
       reply.status(500).send(response);
     }
   }
+
   @Post('/login')
   async loginUser(
     @Res() reply: any,
@@ -137,7 +110,6 @@ export class UserController {
     @Req() request: any,
   ): Promise<void> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
@@ -149,107 +121,83 @@ export class UserController {
         request.session.isLogged = true;
         request.session.data = loggedUser;
         return reply.status(200).send(response);
-      } else {
-        request.session.isLogged = false;
-        request.session.data = null;
-        response.message = 'Invalid Email | password';
-        return reply.status(404).send(response);
       }
+      request.session.isLogged = false;
+      request.session.data = null;
+      reply.status(404).send(response);
     } catch (error) {
-      response.message = `Error : ${error.message}`;
-      return reply.status(500).send(response);
+      reply.status(500).send(response);
     }
   }
   @Get('/parenthome')
   async parentHome(@Res() reply: any, @Req() request: any): Promise<void> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
       if (request.session.parentIsLogged) {
         response.data = request.session.parentData;
         return reply.status(200).send(response);
-      } else {
-        response.message = 'First you need to login.';
-        response.data = [];
-        return reply.status(400).send(response);
       }
+      response.data = [];
+      reply.status(400).send(response);
     } catch (error) {
-      response.message = `Error : ${error.message}`;
-      return reply.status(500).send(response);
+      reply.status(500).send(response);
     }
   }
+
   @Get('/home')
   async homeUser(@Res() reply: any, @Req() request: any): Promise<void> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
-      if (request.session.data) {
-        response.data = request.session.data;
-        const userProfile = request.session.data.profileImage;
-        if (!request.session.isLogged) {
-          response.message = 'User or profile image not found';
-          response.profileUrl = undefined;
-          return reply.status(404).send(response);
-        }
-        response.profileUrl = `/uploads/${userProfile}`;
-        return reply.status(200).send(response);
-      } else {
-        response.message = 'No session data found';
-        return reply.status(404).send(response);
+      if (!request.session.isLogged) {
+        return reply.status(404).send('First you need to login first');
       }
+      response.data = request.session.data;
+      const userProfile = request.session.data.profileImage;
+      response.profileUrl = `/uploads/${userProfile}`;
+      reply.status(200).send(response);
     } catch (error) {
-      response.message = `Error : ${error.message}`;
-      return reply.status(500).send(response);
+      reply.status(500).send(response);
     }
   }
   @Get('/logout')
   async logoutUser(@Res() reply: any, @Req() request: any): Promise<void> {
     const response: ResponseDto = {
-      message: 'success',
       data: null,
     };
     try {
-      if (request.session.isLogged) {
-        request.session.destroy((err) => {
-          if (err) {
-            response.message = err.message;
-            return reply.status(500).send(response);
-          }
-          response.message = 'Session destroy.';
-          return reply.status(200).send(response);
-        });
-      } else {
-        response.message = 'First you need to login.';
+      if (!request.session.isLogged) {
         return reply.status(400).send(response);
       }
+      request.session.destroy((err) => {
+        if (err) {
+          return reply.status(500).send(response);
+        }
+        reply.status(200).send(response);
+      });
     } catch (error) {
-      response.message = `Error : ${error.message}`;
       return reply.status(500).send(response);
     }
   }
   @Get('/:id')
   async findOneUser(@Res() reply: any, @Param('id') id: string): Promise<void> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
       const oneUser = await this.userService.findOneUser(id);
       if (!oneUser) {
-        response.message = 'User not found';
         return reply.status(404).send(response);
       } else {
         response.profileUrl = `/uploads/${oneUser.profileImage}`;
         response.data = oneUser;
-        return reply.status(200).send(response);
+        reply.status(200).send(response);
       }
     } catch (error) {
-      response.message = `Error : ${error.message}`;
-      return reply.status(500).send(response);
+      reply.status(500).send(response);
     }
   }
   @Post('/parentgenerateotp')
@@ -258,21 +206,17 @@ export class UserController {
     @Body() body: LoginParentReq,
   ): Promise<void> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
       const findParent = await this.userService.parentGenerateOtp(body);
       if (!findParent) {
-        response.message = 'Not found';
         return reply.status(404).send(response);
-      } else {
-        response.data = findParent;
-        return reply.status(200).send(response);
       }
+      response.data = findParent;
+      reply.status(200).send(response);
     } catch (error) {
-      response.message = `Error : ${error.message}`;
-      return reply.status(500).send(response);
+      reply.status(500).send(response);
     }
   }
   @Post('/parentproccessotp')
@@ -282,7 +226,6 @@ export class UserController {
     @Req() request: any,
   ): Promise<void> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
@@ -290,20 +233,17 @@ export class UserController {
       let otp = body.parentotp;
       const processOtp = await this.userService.parentProcessOtp(email, otp);
       if (!processOtp) {
-        response.message = 'Not found';
         request.session.parentIsLogged = false;
         request.session.parentData = [];
-
         return reply.status(404).send(response);
-      } else {
+      }
         request.session.parentIsLogged = true;
         request.session.parentData = processOtp;
         response.data = 'You succesfully logged';
-        return reply.status(200).send(response);
-      }
+        reply.status(200).send(response);
+      
     } catch (error) {
-      response.message = `Error : ${error.message}`;
-      return reply.status(500).send(response);
+      reply.status(500).send(response);
     }
   }
 }

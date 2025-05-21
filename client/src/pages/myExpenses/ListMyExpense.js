@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import Header from '../../layouts/Header'
 import Footer from '../../layouts/Footer'
 import SideBar from '../../layouts/SideBar'
-import { Link, useLocation, useSearchParams } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { FaEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { useNavigate } from 'react-router-dom'
@@ -111,7 +111,6 @@ function ListMyExpense() {
                 });
         }
     }
-
     return (
         <>
             <header>

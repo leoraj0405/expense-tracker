@@ -21,6 +21,8 @@ function ParentHome() {
     const [totalPages, setTotalPages] = useState(1);
     const [amount, setAmount] = useState(0);
     const [data, setData] = useState([])
+    const [date, setDate] = useState('')
+
 
     const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#a4de6c"];
     const timeOptions = {
@@ -43,6 +45,10 @@ function ParentHome() {
         }
     }, []);
 
+    async function handleOnChangeForDate(e) {
+        setDate(e.target.value)
+    }
+
     function handleChange(e) {
         setUser(e.target.value)
     }
@@ -63,15 +69,20 @@ function ParentHome() {
 
     const handleSubmit = async () => {
         modalInstance.current.hide();
-
-        const todayDate = new Date()
-        const year = todayDate.getFullYear();
-        const month = todayDate.getMonth() + 1;
-        const day = todayDate.getDate();
-        const formattedDate = `${year}-${month}-${day}`;
+        let formattedDate 
 
 
-        const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/expense/userexpense/${user}?page=${currentPage}&page=${formattedDate}`)
+        if(date) {
+            formattedDate = date
+        }else {
+            const todayDate = new Date()
+            const year = todayDate.getFullYear();
+            const month = todayDate.getMonth() + 1;
+            const day = todayDate.getDate();
+            formattedDate = `${year}-${month}-${day}`;
+        }
+
+        const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/expense/userexpense/${user}?page=${currentPage}&date=${formattedDate}`)
         const responseData = await response.json()
         if (response.status === 200) {
             const total = Math.ceil(responseData.data.total / responseData.data.limit);
@@ -83,10 +94,13 @@ function ParentHome() {
             }))
             setData(result)
         } else {
-            console.log(await response.json())
+            console.log(responseData)
         }
     };
 
+    useEffect(() => {
+        handleSubmit()
+    }, [date, currentPage])
     useEffect(() => {
         if (data.length > 0) {
             let total = 0;
@@ -98,6 +112,7 @@ function ParentHome() {
             setAmount(0)
         }
     }, [data])
+
     return (
         <>
             <header>
@@ -162,11 +177,56 @@ function ParentHome() {
                                 </div>
                             </div>
                         </div>
+
+                        <div>
+                            <div className='container mt-3'>
+                                <div className='row mt-3' style={{ gap: '50px' }}>
+                                    <div className='chart col-lg boxshadow justigf'>
+                                        <div className="w-full max-w-md mx-auto p-4 bg-white shadow-md rounded-2xl text-center">
+                                            <h2 className="text-xl font-semibold text-center mb-4">This month Expenses Chart</h2>
+                                            <div className='d-flex justify-content-center'>
+                                                <PieChart width={300} height={300} >
+                                                    <Pie
+                                                        data={data}
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        outerRadius={90}
+                                                        fill="#8884d8"
+                                                        dataKey="value"
+                                                        label
+                                                    >
+                                                        {data.map((_, index) => (
+                                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                        ))}
+                                                    </Pie>
+                                                    <Tooltip />
+                                                    <Legend />
+                                                </PieChart>
+                                            </div>
+                                        </div>
+                                        <div class="card  boxshadow p-3 mb-5 bg-white rounded text-center" >
+                                            <div class="card-body">
+                                                <h5 class="card-title">Month Total Expenses</h5>
+                                                <p class="card-text">₹ {amount}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className='d-flex flex-row justify-content-start ms-4 me-4 mt-2'>
+                            <div>
+                                <p>Filter by month : </p>
+                                <input type="month" onChange={handleOnChangeForDate} name='date' value={date} className='form-control' />
+                            </div>
+                        </div>
+
                         <div className='table-responsive m-4'>
                             <div className='card'>
                                 <div className='card-body'>
                                     <h2>Expenses</h2>
-                                    <table class="table table-striped">
+                                    <table class="table table-bordered mt-3">
                                         <thead>
                                             <tr>
                                                 <th scope="col">Sno</th>
@@ -182,7 +242,7 @@ function ParentHome() {
                                                     <tr key={index}>
                                                         <td>{index + 1}</td>
                                                         <td>{item?.description}</td>
-                                                        <td>{item?.categoryId?.name}</td>
+                                                        <td>{item?.category[0]?.name}</td>
                                                         <td>{item?.amount}</td>
                                                         <td>  {new Date(item?.createdAt).toLocaleString('en-IN', timeOptions)}</td>
                                                     </tr>
@@ -217,51 +277,6 @@ function ParentHome() {
                                             </div>
                                         </div> : <></>
                                     }
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div className='container mt-3'>
-                                <div className='row mt-3' style={{ gap: '50px' }}>
-                                    <div className='col-lg'>
-                                        <div className="container">
-                                            <div className="rowcolumn">
-                                                <div className="col-lg ">
-                                                    <div class="card  boxshadow p-3 mb-5 bg-white rounded text-center" >
-                                                        <div class="card-body">
-                                                            <h5 class="card-title">Month Total Expenses</h5>
-                                                            <p class="card-text">₹ {amount}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className='chart col-lg boxshadow'>
-                                        <div className="w-full max-w-md mx-auto p-4 bg-white shadow-md rounded-2xl text-center">
-                                            <h2 className="text-xl font-semibold text-center mb-4">This month Expenses Chart</h2>
-                                            <div className='d-flex justify-content-center'>
-                                                <PieChart width={300} height={300} >
-                                                    <Pie
-                                                        data={data}
-                                                        cx="50%"
-                                                        cy="50%"
-                                                        outerRadius={90}
-                                                        fill="#8884d8"
-                                                        dataKey="value"
-                                                        label
-                                                    >
-                                                        {data.map((_, index) => (
-                                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                                        ))}
-                                                    </Pie>
-                                                    <Tooltip />
-                                                    <Legend />
-                                                </PieChart>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                         </div>

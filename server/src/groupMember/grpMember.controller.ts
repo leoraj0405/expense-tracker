@@ -16,141 +16,104 @@ import { GrpMemberService } from './grpMember.service';
 export class GrpMemberController {
   constructor(private readonly grpMemberService: GrpMemberService) {}
 
-  @Post()
+  @Post('/')
   async postGrpMember(
     @Body() body: RequestGrpMember,
     @Res() reply: any,
   ): Promise<void | GroupMember> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
-      response.data = await this.grpMemberService.createGrpMember({
+      response.data = await this.grpMemberService.createGroupMember({
         groupId: body.groupId,
         userId: body.userId,
       });
-      return reply.status(200).send(response);
+      reply.status(200).send(response);
     } catch (error) {
       if (error.code === 11000) {
-        response.message = `Error : This record is already exists`;
-        return reply.status(400).send(response);
+        return reply.status(409).send(response);
       }
       if (error.name === 'ValidationError') {
-        response.message = 'Invalid user | group ';
-      } else {
-        response.message = `Error : ${error.message}`;
+        return reply.status(401).send(response);
       }
-      return reply.status(500).send(response);
-    }
-  }
-
-  @Get()
-  async getGrpMember(@Res() reply: any): Promise<void | GroupMember> {
-    const response: ResponseDto = {
-      message: 'Success',
-      data: null,
-    };
-    try {
-      const getGrpMember = await this.grpMemberService.findAllGrpMember();
-      if (!getGrpMember.length) {
-        response.message = 'Not Found';
-        return reply.status(404).send(response);
-      }
-      response.data = getGrpMember;
-      return reply.status(200).send(response);
-    } catch (error) {
-      response.message = `Error : ${error.message}`;
       reply.status(500).send(response);
     }
   }
 
   @Put('/:id')
-  async updateGrpMember(
+  async updateGroupMemberById(
     @Param('id') id: string,
     @Res() reply: any,
     @Body() body: RequestGrpMember,
-  ): Promise<GroupMember | null> {
+  ): Promise<GroupMember | void> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
-      response.data = await this.grpMemberService.putGrpMember(id, body);
-      return reply.status(200).send(response);
+      response.data = await this.grpMemberService.updateGroupMember(id, body);
+      reply.status(200).send(response);
     } catch (error) {
       if (error.code === 11000) {
-        response.message = `Error : This record is already exists`;
-        return reply.status(400).send(response);
+        return reply.status(409).send(response);
       }
-      response.message = `Error : ${error.message}`;
-      return reply.status(500).send(response);
+      reply.status(500).send(response);
     }
   }
 
   @Delete('/:id')
-  async deleteGrpMember(
+  async deleteGroupMemberbyId(
     @Param('id') id: string,
     @Res() reply: any,
-  ): Promise<GroupMember | null> {
+  ): Promise<GroupMember | void> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
       response.data = await this.grpMemberService.deleteGrpMember(id);
-      return reply.status(200).send(response);
+      reply.status(200).send(response);
     } catch (error) {
-      response.message = `Error : ${error.message}`;
-      return reply.status(500).send(response);
+      reply.status(500).send(response);
     }
   }
 
   @Get('/:id')
-  async getOneGrpMember(
+  async fetchGroupMemberById(
     @Param('id') id: string,
     @Res() reply: any,
-  ): Promise<GroupMember | null> {
+  ): Promise<GroupMember | void> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
-      const oneGrpMember = await this.grpMemberService.singleGrpMember(id);
-      if (!oneGrpMember) {
-        response.message = 'Not found';
+      const groupMember = await this.grpMemberService.fetchGroupMemberById(id);
+      if (!groupMember?.length || !groupMember) {
         return reply.status(404).send(response);
-      } else {
-        response.data = oneGrpMember;
-        return reply.status(200).send(response);
       }
+      response.data = groupMember;
+      reply.status(200).send(response);
     } catch (error) {
-      response.message = `Error : ${error.message}`;
-      return reply.status(500).send(response);
+      reply.status(500).send(response);
     }
   }
 
   @Get('onegroup/:id')
-  async oneGroupMembers(
+  async getGroupMembersByGroupId(
     @Param('id') id: string,
     @Res() reply: any,
-  ): Promise<GroupMember | null> {
+  ): Promise<GroupMember | void> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
-      const GrpMembers = await this.grpMemberService.oneGroupMembers(id);
-      if (!GrpMembers) {
-        response.message = 'Not found';
+      const groupMembers =
+        await this.grpMemberService.fetchGroupMembersByGroupId(id);
+      if (!groupMembers?.length || !groupMembers) {
         return reply.status(404).send(response);
-      } else {
-        response.data = GrpMembers;
-        return reply.status(200).send(response);
       }
+      reply.status(200).send(response);
     } catch (error) {
-      response.message = `Error : ${error.message}`;
-      return reply.status(500).send(response);
+      reply.status(500).send(response);
     }
   }
 }

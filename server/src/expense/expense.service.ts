@@ -1,15 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { RequestExpense } from '../request';
 import { Expense } from 'src/schemas/expense.schma';
 import { Types } from 'mongoose';
+
 @Injectable()
 export class ExpenseService {
+  private readonly logger = new Logger(Expense.name);
   constructor(
     @InjectModel(Expense.name) private expenseModel: Model<Expense>,
   ) {}
-
   async createExpense({
     userId,
     description,
@@ -27,19 +28,13 @@ export class ExpenseService {
       updatedAt: null,
       deletedAt: null,
     }).save();
+    this.logger.log(
+      `The expense created values : ${userId}, ${description}, ${amount}, ${date}, ${categoryId}`,
+    );
     return postExpense;
   }
 
-  async findAllExpense(): Promise<Expense[]> {
-    const getExpense = await this.expenseModel
-      .find({
-        deletedAt: null,
-      })
-      .exec();
-    return getExpense;
-  }
-
-  async putExpense(
+  async updateExpense(
     id: string,
     updateData: RequestExpense,
   ): Promise<Expense | null> {
@@ -50,6 +45,9 @@ export class ExpenseService {
         { new: true },
       )
       .exec();
+    this.logger.log(
+      `The expense updated by Id : ${id}, values : ${updateData}`,
+    );
     return updateExpense;
   }
 
@@ -57,26 +55,62 @@ export class ExpenseService {
     const delExpense = await this.expenseModel
       .findByIdAndUpdate(id, { $set: { deletedAt: new Date() } }, { new: true })
       .exec();
+    this.logger.warn(`The expense (${id}) deleted (soft delete).`);
     return delExpense;
   }
 
-  async singleExpense(id: string): Promise<Expense | null> {
-    const oneExpense = await this.expenseModel
-      .findOne({ _id: id, deletedAt: null })
-      .populate({ path: 'userId', select: '_id name' })
-      .populate({ path: 'categoryId', select: '_id name' })
-      .exec();
+  async fetchExpense(id: string): Promise<Expense[] | null> {
+    const oneExpense = await this.expenseModel.aggregate([
+      { $match: { _id: new Types.ObjectId(id), deletedAt: null } },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_userId',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'categoryId',
+          foreignField: '_id',
+          as: 'category',
+        },
+      },
+      {
+        $lookup: {
+          from: 'category',
+          localField: 'categoryId',
+          foreignField: '_id',
+          as: 'category',
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          '$category.name': 1,
+          '$user.name': 1,
+          amount: 1,
+          description: 1,
+          date: 1,
+          'category.name': 1,
+          'user.name': 1,
+        },
+      },
+    ]);
+    this.logger.log(`User expense Fetched`);
     return oneExpense;
   }
 
-  async userExpenses(
+  async fetchUserExpenses(
     id: string,
     date: string,
     limit: number,
     page: number,
   ): Promise<Expense | {}> {
     let filter;
-
     const limitNo = limit ?? 5;
     const pageNo = page ?? 1;
     const skip = (pageNo - 1) * limitNo;
@@ -93,7 +127,6 @@ export class ExpenseService {
         date: { $gte: fromDate, $lt: toDate },
       };
     }
-
     const expenses = await this.expenseModel.aggregate([
       {
         $match: { ...filter, userId: new Types.ObjectId(id), deletedAt: null },
@@ -129,8 +162,12 @@ export class ExpenseService {
         },
       },
     ]);
-
-    const totalCount = await this.expenseModel.countDocuments(filter);
+    const totalCount = await this.expenseModel.countDocuments({
+      ...filter,
+      deletedAt: null,
+      userId: new Types.ObjectId(id),
+    });
+    this.logger.log(`User expense Fetch by user Id`);
     return {
       limit: limitNo,
       page: pageNo,

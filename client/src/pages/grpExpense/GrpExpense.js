@@ -139,7 +139,7 @@ function GrpExpense() {
                                                     <td>{item.userId.name}</td>
                                                     <td>{item.description}</td>
                                                     <td>{item.amount}</td>
-                                                    <td>{item.categoryId.name}</td>
+                                                    <td>{item.categoryId?.name}</td>
                                                     <td>
                                                         <Link
                                                             to={`/group/groupexpense/editgroupexpense?grpexpid=${item._id}&grpid=${groupId}&grpname=${grpName}`}

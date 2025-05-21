@@ -17,13 +17,12 @@ import { Group } from 'src/schemas/group.schma';
 export class GroupController {
   constructor(private readonly groupService: GroupService) {}
 
-  @Post()
-  async postExpense(
+  @Post('/')
+  async creteExpense(
     @Body() body: RequestGroup,
     @Res() reply: any,
   ): Promise<void | Group> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
@@ -31,123 +30,87 @@ export class GroupController {
         name: body.name,
         createdBy: body.createdBy,
       });
-      return reply.status(200).send(response);
+      reply.status(200).send(response);
     } catch (error) {
       if (error.name === 'ValidationError') {
-        response.message = 'Invalid user or expense category';
-      } else {
-        response.message = `Error : ${error.message}`;
+        return reply.status(401).status(response);
       }
-      return reply.status(500).send(response);
-    }
-  }
-
-  @Get()
-  async getGroup(@Res() reply: any): Promise<void | Group> {
-    const response: ResponseDto = {
-      message: 'Success',
-      data: null,
-    };
-    try {
-      const getGroup = await this.groupService.findAllGroup();
-      if (!getGroup.length) {
-        response.message = 'Not Found';
-        return reply.status(404).send(response);
-      }
-      response.data = getGroup;
-      return reply.status(200).send(response);
-    } catch (error) {
-      response.message = `Error : ${error.message}`;
       reply.status(500).send(response);
     }
   }
 
   @Put('/:id')
-  async updateGroup(
+  async updateGroupById(
     @Param('id') id: string,
     @Res() reply: any,
     @Body() body: RequestGroup,
-  ): Promise<Group | null> {
+  ): Promise<Group | void> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
-      const putGroup = await this.groupService.putGroup(id, body);
+      const putGroup = await this.groupService.updateGroupById(id, body);
       response.data = putGroup;
-      return reply.status(200).send(response);
+      reply.status(200).send(response);
     } catch (error) {
-      response.message = `Error : ${error.message}`;
-      return reply.status(500).send(response);
+      reply.status(500).send(response);
     }
   }
 
   @Delete('/:id')
-  async deleteGroup(
+  async deleteGroupById(
     @Param('id') id: string,
     @Res() reply: any,
-  ): Promise<Group | null> {
+  ): Promise<Group | void> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
       const deleteData = await this.groupService.deleteGroup(id);
       response.data = deleteData;
-      return reply.status(200).send(response);
+      reply.status(200).send(response);
     } catch (error) {
-      response.message = `Error : ${error.message}`;
-      return reply.status(500).send(response);
+      reply.status(500).send(response);
     }
   }
 
   @Get('/:id')
-  async getOneGroup(
+  async fetchOneGroupById(
     @Param('id') id: string,
     @Res() reply: any,
-  ): Promise<Group | null> {
+  ): Promise<Group | void> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
     try {
-      const oneGroup = await this.groupService.singleGroup(id);
-      if (!oneGroup) {
-        response.message = 'Not found';
+      const oneGroup = await this.groupService.fetchGroupById(id);
+      if (!oneGroup || !oneGroup?.length) {
         return reply.status(404).send(response);
-      } else {
-        response.data = oneGroup;
-        return reply.status(200).send(response);
       }
+      response.data = oneGroup;
+      reply.status(200).send(response);
     } catch (error) {
-      response.message = `Error : ${error.message}`;
-      return reply.status(500).send(response);
+      reply.status(500).send(response);
     }
   }
 
   @Get('/usergroups/:id')
-  async userGroups(
+  async fetchGroupsByUserId(
     @Param('id') id: string,
     @Res() reply: any,
-  ): Promise<Group | null> {
+  ): Promise<Group | void> {
     const response: ResponseDto = {
-      message: 'Success',
       data: null,
     };
-
     try {
-      const userGroups = await this.groupService.userGroups(id);
-      if (!userGroups) {
-        response.message = 'Not found';
+      const userGroups = await this.groupService.fetchGroupByUserId(id);
+      if (!userGroups || !userGroups.length) {
         return reply.status(404).send(response);
-      } else {
-        response.data = userGroups;
-        return reply.status(200).send(response);
       }
+      response.data = userGroups;
+      reply.status(200).send(response);
     } catch (error) {
-      console.log(error)
-      response.message = `Error : ${error.message}`;
-      return reply.status(500).send(response);
+      reply.status(500).send(response);
     }
   }
 }
