@@ -39,8 +39,6 @@ function SignupPage() {
         formdata.append("parentEmail", parentEmail);
         formdata.append("profileImage", profile);
 
-        console.log(profile)
-
         const requestOptions = {
             method: "POST",
             body: formdata,
