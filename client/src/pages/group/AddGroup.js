@@ -109,10 +109,11 @@ function AddGroup() {
         const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/group/${id}`)
         if (response.ok) {
             const groupData = await response.json()
+            console.log(groupData.data[0])
             setFormData({
-                grpId: groupData.data._id,
-                grpName: groupData.data.name,
-                createdBy: groupData.data.createdBy
+                grpId: groupData.data[0]._id,
+                grpName: groupData.data[0].name,
+                createdBy: groupData.data[0].createdBy
             })
         } else {
             const errorInfo = await response.json()
@@ -134,6 +135,8 @@ function AddGroup() {
             msg: ''
         })
     }, 10000)
+
+    // console.log(formData)
     return (
         <>
             <header>
@@ -189,7 +192,7 @@ function AddGroup() {
                                 </div>
                                 <div
                                     className='mt-4 w-50 d-flex justify-content-end'>
-                                    <Link className='btn btn-warning me-4' to={`/group`}>Back</Link>
+                                    <Link className='btn btn-warning me-4' to={`/group`}>Cancel</Link>
                                     <button
                                         onClick={handleSubmit}
                                         className="btn btn-primary">Submit</button>

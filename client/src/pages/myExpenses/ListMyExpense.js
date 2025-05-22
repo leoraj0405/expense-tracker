@@ -94,12 +94,6 @@ function ListMyExpense() {
                 .then(async (response) => {
                     if (response.status === 200) {
                         fetchExpenses()
-                        setAlert({
-                            successBlockState: false,
-                            errorBlockState: true,
-                            msg: 'Record deleted successfully.'
-                        })
-
                     } else {
                         let errorData = await response.json()
                         setAlert({

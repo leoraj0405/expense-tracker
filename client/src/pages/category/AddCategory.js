@@ -154,7 +154,7 @@ function AddCategory() {
                                             value={formData.categoryName} />
 
                                         <div className='d-flex justify-content-end'>
-                                            <Link to='/category' className='btn btn-warning m-2'>Back</Link>
+                                            <Link to='/category' className='btn btn-warning m-2'>Cancel</Link>
                                             <button
                                                 className='btn btn-primary m-2'
                                                 onClick={handleSave}>Submit</button>

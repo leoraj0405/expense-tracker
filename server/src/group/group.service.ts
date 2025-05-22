@@ -50,7 +50,7 @@ export class GroupService {
 
   async fetchGroupById(id: string): Promise<Group[] | null> {
     const oneGroup = await this.groupModel.aggregate([
-      { $match: { _id: id, deletedAt: null } },
+      { $match: { _id: new Types.ObjectId(id), deletedAt: null } },
       {
         $lookup: {
           from: 'users',
@@ -97,7 +97,8 @@ export class GroupService {
         $project: {
           _id: 1,
           name: 1,
-          '$createdBy.name' : 1,
+          'createdBy.name' : 1,
+          'createdBy._id' : 1
         },
       },
     ]);

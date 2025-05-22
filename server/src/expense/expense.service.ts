@@ -61,46 +61,44 @@ export class ExpenseService {
 
   async fetchExpense(id: string): Promise<Expense[] | null> {
     const oneExpense = await this.expenseModel.aggregate([
-      { $match: { _id: new Types.ObjectId(id), deletedAt: null } },
-      {
-        $lookup: {
-          from: 'users',
-          localField: '_userId',
-          foreignField: '_id',
-          as: 'user',
-        },
+    {
+      $match: {
+        _id: new Types.ObjectId(id),
+        deletedAt: null,
       },
-
-      {
-        $lookup: {
-          from: 'categories',
-          localField: 'categoryId',
-          foreignField: '_id',
-          as: 'category',
-        },
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'user',
       },
-      {
-        $lookup: {
-          from: 'category',
-          localField: 'categoryId',
-          foreignField: '_id',
-          as: 'category',
-        },
+    },
+    { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } }, // 💡 prevent crash if user not found
+    {
+      $lookup: {
+        from: 'categories',
+        localField: 'categoryId',
+        foreignField: '_id',
+        as: 'category',
       },
-      {
-        $project: {
-          _id: 1,
-          '$category.name': 1,
-          '$user.name': 1,
-          amount: 1,
-          description: 1,
-          date: 1,
-          'category.name': 1,
-          'user.name': 1,
-        },
+    },
+    { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } }, // 💡 prevent crash if category not found
+    {
+      $project: {
+        _id: 1,
+        'category.name': 1,
+        'category._id': 1,
+        'user.name': 1,
+        'user._id': 1,
+        amount: 1,
+        description: 1,
+        date: 1,
       },
-    ]);
-    this.logger.log(`User expense Fetched`);
+    },
+  ]);
+  this.logger.log(`User expense Fetched`);
     return oneExpense;
   }
 

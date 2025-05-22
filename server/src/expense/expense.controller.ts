@@ -76,7 +76,7 @@ export class ExpenseController {
     }
   }
   @Get('/:id')
-  async fetchOneExpenseById(
+  async fetchExpenseById(
     @Param('id') id: string,
     @Res() reply: any,
   ): Promise<Expense[] | void> {
@@ -95,7 +95,7 @@ export class ExpenseController {
     }
   }
   @Get('/userexpense/:id')
-  async fetchExpenseByUserId(
+  async fetchExpensesByUserId(
     @Param('id') id: string,
     @Res() reply: any,
     @Query('date') date: string,

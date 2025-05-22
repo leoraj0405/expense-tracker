@@ -19,6 +19,7 @@ function AddGrpMember() {
     const grpMemberId = queryValue.get('grpmemid')
     const grpId = queryValue.get('grpid')
     const grpName = queryValue.get('grpname')
+    const groupLeader = queryValue.get('leader')
 
 
     const [form, setForm] = useState({ id: '', groupId: grpId, userId: '' });
@@ -63,7 +64,7 @@ function AddGrpMember() {
         }
         request.then(async (response) => {
             if (response.status === 200) {
-                navigate(`/group/groupmember?grpid=${grpId}&grpName=${grpName}`)
+                navigate(`/group/groupmember?grpid=${grpId}&grpName=${grpName}&leader=${groupLeader}`)
             } else {
                 const errorInfo = await response.json()
                 setAlertBlock({
@@ -90,24 +91,6 @@ function AddGrpMember() {
             setAlertBlock({ blockState: false, msg: errorInfo.message });
         }
     }
-
-    async function fetchUsers() {
-        const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/user`)
-        if (response.status === 200) {
-            const responseData = await response.json()
-            setUsers(responseData.data)
-        } else {
-            const errorInfo = await response.json()
-            setAlertBlock({
-                blockState: false,
-                msg: errorInfo.message
-            })
-        }
-    }
-
-    useEffect(() => {
-        fetchUsers()
-    }, [])
 
     useEffect(() => {
         if (grpMemberId) {
@@ -206,7 +189,7 @@ function AddGrpMember() {
                             </div>
 
                             <div className='d-flex justify-content-end'>
-                                <Link className='btn btn-warning me-3' to={`/group/groupmember?grpid=${grpId}&grpname=${grpName}`}>Back</Link>
+                                <Link className='btn btn-warning me-3' to={`/group/groupmember?grpid=${grpId}&grpname=${grpName}&leader=${groupLeader}`}>cancel </Link>
                                 <button onClick={handleSubmit} className="btn btn-primary">
                                     Submit
                                 </button>

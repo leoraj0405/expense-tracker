@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { RequestGrpMember } from '../request';
 import { GroupMember } from 'src/schemas/groupMember.schema';
 import { GroupExpense } from 'src/schemas/groupExpense.schema';
@@ -72,6 +72,7 @@ export class GrpMemberService {
           as: 'group',
         },
       },
+      {$unwind: '$group'},
       {
         $lookup: {
           from: 'users',
@@ -80,13 +81,14 @@ export class GrpMemberService {
           as: 'user',
         },
       },
+      {$unwind: '$user'},
       {
         $project: {
           _id: 1,
           description: 1,
           amount: 1,
-          '$group.name': 1,
-          '$user.name': 1,
+          'group.name': 1,
+          'user.name': 1,
         },
       },
     ]);
@@ -95,8 +97,9 @@ export class GrpMemberService {
   }
 
   async fetchGroupMembersByGroupId(id: string): Promise<GroupMember[] | null> {
+    const groupId = new Types.ObjectId(id)
     const groupMembers = await this.grpMemberModel.aggregate([
-      { $match: { groupId: id, deletedAt: null } },
+      { $match: { groupId: groupId, deletedAt: null } },
       {
         $lookup: {
           from: 'groups',
@@ -105,6 +108,7 @@ export class GrpMemberService {
           as: 'group',
         },
       },
+      {$unwind: '$group'},
       {
         $lookup: {
           from: 'users',
@@ -113,17 +117,20 @@ export class GrpMemberService {
           as: 'user',
         },
       },
+      {$unwind: '$user'},
       {
         $project: {
           _id: 1,
           description: 1,
           amount: 1,
-          '$group.name': 1,
-          '$user.name': 1,
+          'group.name': 1,
+          'user.name': 1,
+          'user._id' : 1
         },
       },
     ]);
-    this.logger.error(`The group members fetched by group id : ${id}`);
+    console.log(groupMembers)
+    this.logger.log(`The group members fetched by group id : ${id}`);
     return groupMembers;
   }
 }

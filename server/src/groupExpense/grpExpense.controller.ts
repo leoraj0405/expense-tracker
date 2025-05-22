@@ -38,6 +38,7 @@ export class GrpExpenseController {
       if (error.name === 'ValidationError') {
         return reply.status(401).send(response)
       }
+      console.log(error)
       reply.status(500).send(response);
     }
   }
@@ -85,10 +86,11 @@ export class GrpExpenseController {
     };
     try {
       const oneGroupExpense =
-        await this.grpExpenseService.getGroupExpenseByGroupId(id);
-      if (!oneGroupExpense) {
+        await this.grpExpenseService.getGroupExpenseById(id);
+      if (!oneGroupExpense?.length) {
         return reply.status(404).send(response);
       } 
+      response.data = oneGroupExpense
       reply.status(200).send(response);
     } catch (error) {
       reply.status(500).send(response);
@@ -106,12 +108,14 @@ export class GrpExpenseController {
     try {
       const oneGroupExpenses =
         await this.grpExpenseService.getGroupExpensesByGroupId(id);
+        console.log(oneGroupExpenses)
       if (!oneGroupExpenses.length) {
         return reply.status(404).send(response);
       }
       response.data = oneGroupExpenses;
       reply.status(200).send(response);
     } catch (error) {
+      console.log(error)
       reply.status(500).send(response);
     }
   }

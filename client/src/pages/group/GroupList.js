@@ -74,8 +74,6 @@ function GroupList() {
         }, 5000)
     }, [alertBlock])
 
-    console.log(userGrps)
-
     return (
         <>
             <header>
@@ -95,7 +93,7 @@ function GroupList() {
                                     <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
                                     {pathnames.map((item, index) => {
                                         const to = `/${pathnames.slice(0, index + 1).join('/')}`;
-                                        const label = item === 'group' ? 'Group' : item 
+                                        const label = item === 'group' ? 'Group' : item
                                         const isLast = index === pathnames.length - 1
                                         return (
                                             <li className='breadcrumb-item'>
@@ -133,7 +131,7 @@ function GroupList() {
                                             <th scope="col">Sno</th>
                                             <th scope="col">Group Name</th>
                                             <th scope='col'>Created By</th>
-                                            <th scope="col" className='text-center'>Actions</th>
+                                            <th scope="col">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -146,26 +144,46 @@ function GroupList() {
                                                     <td
                                                         className='d-flex'
                                                         style={{ gap: '30px' }}>
-                                                        <Link
-                                                            to={`/group/groupmember?grpid=${userGrp._id}&grpname=${userGrp.name}`}
-                                                            className='btn btn-link'>
-                                                            Manage Members
-                                                        </Link>
-                                                        <Link
-                                                            to={`/group/groupexpense?grpid=${userGrp._id}&grpname=${userGrp.name}`}
-                                                            className='btn btn-link'>
-                                                            Manage Expenses
-                                                        </Link>
-                                                        <Link
-                                                            to={`/editgroup?mode=edit&group=${userGrp._id}`}
-                                                            className='btn btn-sm btn-warning me-2'>
-                                                            <FaEdit />
-                                                        </Link>
-                                                        <Link
-                                                            onClick={() => hanldeDelete(userGrp._id)}
-                                                            className='btn btn-sm btn-danger'>
-                                                            <MdDelete />
-                                                        </Link>
+                                                        {
+                                                            userGrp.createdBy._id === loginUser?.data?._id ? (
+                                                                <>
+                                                                    <Link
+                                                                        to={`/group/groupmember?grpid=${userGrp._id}&grpname=${userGrp.name}&leader=${userGrp.createdBy._id}`}
+                                                                        className='btn btn-link'>
+                                                                        Manage Members
+                                                                    </Link>
+                                                                    <Link
+                                                                        to={`/group/groupexpense?grpid=${userGrp._id}&grpname=${userGrp.name}&leader=${userGrp.createdBy._id}`}
+                                                                        className='btn btn-link'>
+                                                                        Manage Expenses
+                                                                    </Link>
+                                                                    <Link
+                                                                        to={`/group/editgroup?mode=edit&group=${userGrp._id}`}
+                                                                        className='btn btn-sm btn-warning me-2'>
+                                                                        <FaEdit />
+                                                                    </Link>
+                                                                    <Link
+                                                                        onClick={() => hanldeDelete(userGrp._id)}
+                                                                        className='btn btn-sm btn-danger'>
+                                                                        <MdDelete />
+                                                                    </Link>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                <Link
+                                                                    to={`/group/groupexpense?grpid=${userGrp._id}&grpname=${userGrp.name}&leader=${userGrp.createdBy._id}`}
+                                                                    className='btn btn-link'>
+                                                                    Your Expenses
+                                                                </Link>
+                                                                <Link
+                                                                    to={`/group/groupmember?grpid=${userGrp._id}&grpname=${userGrp.name}&leader=${userGrp.createdBy._id}`}
+                                                                    className='btn btn-link'>
+                                                                    Your Members
+                                                                </Link>
+                                                            </>
+                                                            )
+                                                        }
+
                                                     </td>
                                                 </tr>
                                             )

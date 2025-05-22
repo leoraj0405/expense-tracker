@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from '../schemas/user.schema';
@@ -8,6 +8,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class UserService {
+  private readonly logger = new Logger(User.name)
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private readonly mailerService: MailerService,
@@ -32,16 +33,10 @@ export class UserService {
       updatedAt: null,
       deletedAt: null,
     });
+    this.logger.log(`The user created`)
     return newUser.save();
   }
 
-  async findAllUser(): Promise<User[]> {
-    const getUser = this.userModel.find({
-      deletedAt: null,
-    });
-    return getUser.exec();
-  }
-  
   async updateUser(
     { id, updateData }: { id: string; updateData: RequestUser },
     file: Express.Multer.File,
@@ -57,6 +52,7 @@ export class UserService {
       },
       { new: true },
     );
+    this.logger.log(`The user updated`)
     return updateUser.exec();
   }
 
@@ -66,11 +62,13 @@ export class UserService {
       { $set: { deletedAt: new Date() } },
       { new: true },
     );
+    this.logger.log(`The user deleted (soft delete)`)
     return deleteuser.exec();
   }
 
   async findOneUser(id: string): Promise<User | null> {
     const getOneUser = this.userModel.findOne({ _id: id, deletedAt: null });
+    this.logger.log(`Fetch user by id ${id}`)
     return getOneUser;
   }
 
@@ -91,8 +89,10 @@ export class UserService {
     const isMatch = await bcrypt.compare(password, hashedPassword);
 
     if (!isMatch) {
+      this.logger.log(`The user not logged`)
       throw new UnauthorizedException('Invalid User');
     }
+    this.logger.log(`The user logged`)
     return validateUser;
   }
 
@@ -102,6 +102,7 @@ export class UserService {
       .exec();
 
     if (!isParentEmail) {
+        this.logger.error(`Inavlid Parent Email Address ${parentData.parentEmail}`)
       throw new UnauthorizedException('Inavlid Parent Email Address');
     }
     const characters =
@@ -127,7 +128,7 @@ export class UserService {
               Thanks you,
               Expense Tracker Team`,
     });
-
+    this.logger.log(`Otp sent to email : ${parentData.parentEmail}`)
     return `Otp sent to the your mail id.`;
   }
 
@@ -141,8 +142,10 @@ export class UserService {
     let parentSavedOtp = parentInfo?.parentOtp;
     if (parentSavedOtp === otp) {
       const parentData = await this.userModel.find({ parentEmail: email });
+      this.logger.log(`Parent Email and OTP is correct`)
       return parentData;
     } else {
+      this.logger.error(`Invalid Email : ${email} or Wrong OTP : ${otp} `)
       throw new UnauthorizedException('Invalid Email or Wrong OTP');
     }
   }

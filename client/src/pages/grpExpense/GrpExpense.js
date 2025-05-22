@@ -17,6 +17,7 @@ function GrpExpense() {
     const queryValue = useQuery()
     const groupId = queryValue.get('grpid')
     const grpName = queryValue.get('grpname')
+    const groupLeader = queryValue.get('leader')
     const navigate = useNavigate();
     const [alertBlock, setAlertBlock] = useState({
         blockState: true,
@@ -115,7 +116,7 @@ function GrpExpense() {
 
                         <div className='d-flex justify-content-between m-4'>
                             <h4 className='text-secondary'>{grpName} Expenses : </h4>
-                            <Link className='btn btn-primary' to={`/group/groupexpense/addgroupexpense?grpid=${groupId}&grpname=${grpName}`}>Add Expenses</Link>
+                            <Link className='btn btn-primary' to={`/group/groupexpense/addgroupexpense?grpid=${groupId}&grpname=${grpName}&leader=${groupLeader}`}>Add Expenses</Link>
                         </div>
 
                         <div className='table-responsive m-4'>
@@ -136,21 +137,28 @@ function GrpExpense() {
                                             return (
                                                 <tr key={index}>
                                                     <td>{index + 1}</td>
-                                                    <td>{item.userId.name}</td>
+                                                    <td>{item.user?.name}</td>
                                                     <td>{item.description}</td>
                                                     <td>{item.amount}</td>
-                                                    <td>{item.categoryId?.name}</td>
+                                                    <td>{item.category?.name}</td>
                                                     <td>
-                                                        <Link
-                                                            to={`/group/groupexpense/editgroupexpense?grpexpid=${item._id}&grpid=${groupId}&grpname=${grpName}`}
-                                                            className='btn btn-sm btn-warning me-2'>
-                                                            <FaEdit />
-                                                        </Link>
-                                                        <Link
-                                                            onClick={() => hanldeDelete(item._id)}
-                                                            className='btn btn-sm btn-danger'>
-                                                            <MdDelete />
-                                                        </Link>
+                                                        {
+                                                            groupLeader === loginUser?.data?._id ?
+                                                                 (
+                                                                    <>
+                                                                        <Link
+                                                                            to={`/group/groupexpense/editgroupexpense?grpexpid=${item._id}&grpid=${groupId}&grpname=${grpName}&leader=${groupLeader}`}
+                                                                            className='btn btn-sm btn-warning me-2'>
+                                                                            <FaEdit />
+                                                                        </Link>
+                                                                        <button
+                                                                            onClick={() => hanldeDelete(item._id)}
+                                                                            className='btn btn-sm btn-danger'>
+                                                                            <MdDelete />
+                                                                        </button></>
+                                                                ) :
+                                                                (<>null</>)
+                                                        }
                                                     </td>
                                                 </tr>
                                             )

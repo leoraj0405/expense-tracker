@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { RequestGrpExpense } from '../request';
 import { GroupExpense } from 'src/schemas/groupExpense.schema';
 
@@ -18,7 +18,9 @@ export class GrpExpenseService {
     amount,
     userId,
     categoryId,
-  }: RequestGrpExpense) {
+  }: RequestGrpExpense) 
+  {
+
     const postGrpExpense = new this.groupExpensemodel({
       groupId,
       description,
@@ -59,9 +61,9 @@ export class GrpExpenseService {
     return deletegroupExpense;
   }
 
-  async getGroupExpenseByGroupId(id: string): Promise<GroupExpense[] | null> {
+  async getGroupExpenseById(id: string): Promise<GroupExpense[] | null> {
     const oneGrpExpense = await this.groupExpensemodel.aggregate([
-      { $match: { _id: id, deletedAt: null } },
+      { $match: { _id: new Types.ObjectId(id), deletedAt: null } },
       {
         $lookup: {
           from: 'groups',
@@ -70,6 +72,7 @@ export class GrpExpenseService {
           as: 'group',
         },
       },
+      { $unwind: '$group' },
       {
         $lookup: {
           from: 'users',
@@ -78,6 +81,7 @@ export class GrpExpenseService {
           as: 'user',
         },
       },
+      { $unwind: '$user' },
       {
         $lookup: {
           from: 'categories',
@@ -86,26 +90,30 @@ export class GrpExpenseService {
           as: 'category',
         },
       },
-
+      { $unwind: '$category' },
       {
         $project: {
           _id: 1,
           description: 1,
           amount: 1,
-          '$group.name': 1,
-          '$category.name': 1,
-          '$user.name': 1,
+          'group.name': 1,
+          'category.name': 1,
+          'user.name': 1,
+          'group._id': 1,
+          'category._id': 1,
+          'user._id': 1,
         },
       },
     ]);
-
     this.logger.log(`The group expense fetch by Id : ${id}`);
+
     return oneGrpExpense;
   }
 
   async getGroupExpensesByGroupId(id: string): Promise<GroupExpense[]> {
+    const groupId = new Types.ObjectId(id)
     const groupExpenses = await this.groupExpensemodel.aggregate([
-      { $match: { groupId: id, deletedAt: null } },
+      { $match: { groupId: groupId, deletedAt: null } },
       {
         $lookup: {
           from: 'groups',
@@ -114,6 +122,7 @@ export class GrpExpenseService {
           as: 'group',
         },
       },
+      { $unwind: '$group' },
       {
         $lookup: {
           from: 'users',
@@ -122,6 +131,7 @@ export class GrpExpenseService {
           as: 'user',
         },
       },
+      { $unwind: '$user' },
       {
         $lookup: {
           from: 'categories',
@@ -130,20 +140,20 @@ export class GrpExpenseService {
           as: 'category',
         },
       },
-
+      { $unwind: '$category' },
       {
         $project: {
           _id: 1,
           description: 1,
           amount: 1,
-          '$group.name': 1,
-          '$category.name': 1,
-          '$user.name': 1,
+          'group.name': 1,
+          'category.name': 1,
+          'user.name': 1,
+          'user._id': 1
         },
       },
     ]);
-
-    this.logger.log(`The group expense fetch by group Id : ${id}`)
+    this.logger.log(`The group expense fetch by group Id : ${id}`);
     return groupExpenses;
   }
 }

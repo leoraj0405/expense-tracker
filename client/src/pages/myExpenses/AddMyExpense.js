@@ -56,14 +56,15 @@ function AddMyExpense() {
         const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/expense/${id}`)
         if (response.ok) {
             const expenseData = await response.json()
-            const isoDate = expenseData.data.date
+            console.log(expenseData.data[0])
+            const isoDate = expenseData.data[0].date
             const formattedDate = isoDate.split("T")[0];
             setFormData({
-                id: expenseData.data._id,
-                category: expenseData.data.categoryId._id,
+                id: expenseData.data[0]._id,
+                category: expenseData.data[0].category._id,
                 date: formattedDate,
-                amount: expenseData.data.amount,
-                description: expenseData.data.description
+                amount: expenseData.data[0].amount,
+                description: expenseData.data[0].description
             })
         } else {
             const errorData = await response.json()
@@ -254,7 +255,7 @@ function AddMyExpense() {
                                 <Link
                                     className='btn btn-warning me-4'
                                     to={'/expense'}
-                                >back</Link>
+                                >Cancel</Link>
                                 <button
                                     className="btn btn-primary"
                                     onClick={() => handleSave(expenseId)}>

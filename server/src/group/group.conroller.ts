@@ -110,6 +110,7 @@ export class GroupController {
       response.data = userGroups;
       reply.status(200).send(response);
     } catch (error) {
+      console.log(error)
       reply.status(500).send(response);
     }
   }

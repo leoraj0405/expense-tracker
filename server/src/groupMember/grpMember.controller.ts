@@ -111,6 +111,7 @@ export class GrpMemberController {
       if (!groupMembers?.length || !groupMembers) {
         return reply.status(404).send(response);
       }
+      response.data = groupMembers
       reply.status(200).send(response);
     } catch (error) {
       reply.status(500).send(response);

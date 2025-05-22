@@ -18,6 +18,7 @@ function AddGrpExpense() {
     const grpExpenseId = queryValue.get('grpexpid')
     const grpId = queryValue.get('grpid')
     const grpName = queryValue.get('grpname')
+    const groupLeader = queryValue.get('leader')
 
 
     const [form, setForm] = useState({
@@ -77,7 +78,7 @@ function AddGrpExpense() {
         }
         request.then(async (response) => {
             if (response.status === 200) {
-                navigate(`/group/groupexpense?grpid=${grpId}&grpname=${grpName}`)
+                navigate(`/group/groupexpense?grpid=${grpId}&grpname=${grpName}&leader=${groupLeader}`)
             } else {
                 const errorInfo = await response.json()
                 setAlertBlock({
@@ -91,14 +92,14 @@ function AddGrpExpense() {
     async function editExpense(id) {
         const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/groupexpense/${id}`);
         if (response.status === 200) {
-            const data = await response.json();
+            const expenseData = await response.json();
             const edited = {
-                id: data.data._id,
-                groupId: data.data.groupId,
-                userId: data.data.userId,
-                categoryId: data.data.categoryId,
-                description: data.data.description,
-                amount: data.data.amount
+                id: expenseData.data[0]._id,
+                groupId: expenseData.data[0].group._id,
+                userId: expenseData.data[0].user._id,
+                categoryId: expenseData.data[0].category._id,
+                description: expenseData.data[0].description,
+                amount: expenseData.data[0].amount
             };
             setForm(edited);
         } else {
@@ -156,8 +157,7 @@ function AddGrpExpense() {
         }, 10000)
     }, [alertBlock])
 
-    console.log(users)
-
+    console.log(form)
     return (
         <>
             <header>
@@ -169,7 +169,6 @@ function AddGrpExpense() {
                 </aside>
                 <main className='p-3 w-100 bg-light'>
                     <section className='main' style={{ minHeight: '400px' }}>
-
                         <div className='d-flex justify-content-between m-4'>
                             <h2>{grpExpenseId ? 'Edit' : 'Add'} Group Expense</h2>
                             <nav className='me-3'>
@@ -185,7 +184,7 @@ function AddGrpExpense() {
                                         }
                                         if (item === 'groupexpense') {
                                             label = 'Group Expense'
-                                            to += `?grpid=${grpId}&grpname=${grpName}`
+                                            to += `?grpid=${grpId}&grpname=${grpName}&leader=${groupLeader}`
                                         }
                                         if (item === 'addgroupexpense') {
                                             label = 'Add Group Expense'
@@ -207,24 +206,20 @@ function AddGrpExpense() {
                                 </ol>
                             </nav>
                         </div>
-
                         <div
                             className="alert alert-danger m-4"
                             hidden={alertBlock.blockState}>
                             {alertBlock.msg}
                         </div>
-
                         <div className="p-3 m-4 w-50">
                             <input type="hidden" name='id' value={form.id} />
-
                             <div className="mb-3">
                                 <h4 className='text-secondary'>Group {grpName} : </h4>
                             </div>
-
                             <div className="mb-3">
                                 <label className="form-label">Member</label>
                                 <select
-                                    value={form.userId._id}
+                                    value={form.userId}
                                     className="form-select"
                                     name="userId"
                                     onChange={handleChange}
@@ -232,16 +227,15 @@ function AddGrpExpense() {
                                     <option>Select member</option>
                                     {users.map((item, index) => {
                                         return (
-                                            <option key={index} value={item?.userId?._id}>{item?.userId?.name}</option>
+                                            <option key={index} value={item?.user?._id}>{item?.user?.name}</option>
                                         )
                                     })}
                                 </select>
                             </div>
-
                             <div className="mb-3">
                                 <label className="form-label">Category</label>
                                 <select
-                                    value={form.categoryId._id}
+                                    value={form.categoryId}
                                     className="form-select"
                                     name="categoryId"
                                     onChange={handleChange}
@@ -254,25 +248,21 @@ function AddGrpExpense() {
                                     })}
                                 </select>
                             </div>
-
-                            <div className="mb-3">
-                                <label className="form-label">Description</label>
-                                <textarea onChange={handleChange} value={form.description} className='form-control' name="description"></textarea>
-                            </div>
-
                             <div className="mb-3">
                                 <label className="form-label">Amount</label>
                                 <input onChange={handleChange} value={form.amount} type="number" name='amount' className='form-control' />
                             </div>
-
+                            <div className="mb-3">
+                                <label className="form-label">Description</label>
+                                <textarea onChange={handleChange} value={form.description} className='form-control' name="description"></textarea>
+                            </div>
                             <div className='d-flex justify-content-end'>
-                                <Link className='btn btn-warning me-3' to={`/group/groupexpense?grpid=${grpId}&grpname=${grpName}`}>Back</Link>
+                                <Link className='btn btn-warning me-3' to={`/group/groupexpense?grpid=${grpId}&grpname=${grpName}&leader=${groupLeader}`}>Cancel</Link>
                                 <button onClick={handleSubmit} className="btn btn-primary">
                                     Submit
                                 </button>
                             </div>
                         </div>
-
                     </section>
                     <footer>
                         <Footer />
