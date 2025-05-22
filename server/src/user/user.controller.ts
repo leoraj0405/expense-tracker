@@ -126,6 +126,7 @@ export class UserController {
       request.session.data = null;
       reply.status(404).send(response);
     } catch (error) {
+      console.log(error)
       reply.status(500).send(response);
     }
   }
@@ -152,6 +153,7 @@ export class UserController {
       data: null,
     };
     try {
+            console.log(request.session)
       if (!request.session.isLogged) {
         return reply.status(404).send('First you need to login first');
       }
