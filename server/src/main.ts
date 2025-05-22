@@ -6,6 +6,8 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import { ConfigService } from '@nestjs/config';
+
 // import * as mongoose from 'mongoose';
 
 
@@ -27,6 +29,8 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('apidocs', app, document);
+    const configService = app.get(ConfigService);
+
 
   app.use(cookieParser());
 
@@ -48,7 +52,7 @@ async function bootstrap() {
   );
   
   app.enableCors({
-    origin: 'http://localhost:3000',
+    origin: configService.get<string>('FRONTEND_URL'),
     credentials: true,
   });
 
