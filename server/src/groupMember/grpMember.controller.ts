@@ -16,10 +16,9 @@ import { UserService } from 'src/user/user.service';
 
 @Controller('groupmember')
 export class GrpMemberController {
-
   constructor(
     private readonly grpMemberService: GrpMemberService,
-    private readonly userService:UserService
+    private readonly userService: UserService,
   ) {}
 
   @Post('/')
@@ -31,11 +30,21 @@ export class GrpMemberController {
       data: null,
     };
     try {
-      // const isUser = await this.userService.checkUserByEmail(email)
-      // if(!isUser?.length) {
-      //   const password = Math.floor(1000 + Math.random() * 9000);
-      //   const createUser = await this.userService.createUser(email, password)
-      // }
+      const inputEmail = body.email;
+      const isUser = await this.userService.checkUserByEmail(inputEmail);
+      if (!isUser?.length) {
+        const password = Math.floor(1000 + Math.random() * 9000);
+        const createUser = await this.userService.createUser(
+          {
+            name: null,
+            email: inputEmail,
+            password,
+            parentEmail: null,
+          },
+          undefined,
+        );
+        
+      }
     } catch (error) {
       if (error.code === 11000) {
         return reply.status(409).send(response);
@@ -117,7 +126,7 @@ export class GrpMemberController {
       if (!groupMembers?.length || !groupMembers) {
         return reply.status(404).send(response);
       }
-      response.data = groupMembers
+      response.data = groupMembers;
       reply.status(200).send(response);
     } catch (error) {
       reply.status(500).send(response);

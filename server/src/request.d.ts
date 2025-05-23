@@ -2,10 +2,10 @@ import { User } from "./schemas/user.schema"
 import { Category } from "./schemas/category.schema"
 
 export interface RequestUser {
-    name: string,
-    email: string,
-    password: string,
-    parentEmail: string,
+    name: User.name,
+    email: User.email,
+    password: User.password,
+    parentEmail: User.parentEmail,
 }
 
 export interface RequestCategory {

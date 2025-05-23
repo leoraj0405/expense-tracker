@@ -15,7 +15,7 @@ export class UserService {
   ) {}
   async createUser(
     { name, email, password, parentEmail }: RequestUser,
-    file: Express.Multer.File,
+    file?: Express.Multer.File,
   ): Promise<User> {
     const hashValueLength = 10;
     const hashedPassword = await bcrypt.hash(password, hashValueLength);
