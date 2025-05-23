@@ -4,6 +4,7 @@ import { Model, Types } from 'mongoose';
 import { RequestGrpMember } from '../request';
 import { GroupMember } from 'src/schemas/groupMember.schema';
 import { GroupExpense } from 'src/schemas/groupExpense.schema';
+import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class GrpMemberService {
@@ -12,9 +13,11 @@ export class GrpMemberService {
     @InjectModel(GroupMember.name) private grpMemberModel: Model<GroupMember>,
     @InjectModel(GroupExpense.name)
     private grpExpenseModel: Model<GroupExpense>,
+    private readonly mailerService: MailerService,
+    
   ) {}
 
-  async createGroupMember({ groupId, userId }: RequestGrpMember) {
+  async createGroupMember( groupId, userId ) {
     const createMember = new this.grpMemberModel({
       groupId,
       userId,
@@ -131,5 +134,20 @@ export class GrpMemberService {
     ]);
     this.logger.log(`The group members fetched by group id : ${id}`);
     return groupMembers;
+  }
+
+  async sendLoginCredentialsInfoToUserEmail(email: string): Promise<any> {
+      await this.mailerService.sendMail({
+      to: email,
+      subject: 'LOGIN AUTHENTICATION',
+      text: `Hi [ New User ],
+              You are recently register in the expense tracker web application 
+              your login credentials 
+              [ user name or email : ${email} password : 12345678 ]
+               after you login kindly change ur other informations.
+              Expense Tracker Team`,
+    });
+    this.logger.log(`Otp sent to email : ${email}`)
+    return `Otp sent to the your mail id.`;
   }
 }

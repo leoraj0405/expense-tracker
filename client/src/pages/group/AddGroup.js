@@ -31,6 +31,7 @@ function AddGroup() {
         setFormData({ ...formData, [e.target.name]: e.target.value })
     }
 
+    console.log()
     function handleSubmit() {
         const name = formData.grpName
         const createdBy = loginUser?.data?._id
@@ -68,7 +69,7 @@ function AddGroup() {
 
                 const raw = JSON.stringify({
                     groupId,
-                    userId: loginUser?.data?._id
+                    userId: loginUser?.data?.email
                 });
 
                 const requestOptions = {
@@ -79,8 +80,6 @@ function AddGroup() {
                     body: raw,
                 };
 
-
-                console.log(requestOptions)
                 fetch(`${process.env.REACT_APP_FETCH_URL}/groupmember`, requestOptions)
                     .then(async (response2) => {
                         if (response2.status === 200) {
@@ -97,6 +96,7 @@ function AddGroup() {
                     });
             } else {
                 const errorInfo = await response.json()
+                console.log(errorInfo)
                 setAlertBlock({
                     blockState: false,
                     msg: errorInfo.message

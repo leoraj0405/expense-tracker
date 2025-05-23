@@ -29,14 +29,6 @@ async function bootstrap() {
   app.use(cookieParser());
   const configService = app.get(ConfigService);
 
-  app.use((req, res, next) => {
-    if (req.method === 'OPTIONS') {
-      res.sendStatus(204); // No Content
-    } else {
-      next();
-    }
-  });
-
   app.use(
     session({
       store: new FileStoreSession({ path: './sessions', retries: 1 }),
@@ -45,37 +37,18 @@ async function bootstrap() {
       saveUninitialized: false,
       cookie: {
         maxAge: SESSION_TIME,
-        sameSite: 'none',
         httpOnly: true,
-        secure: true,
       },
     }),
   );
 
   app.enableCors({
-    origin: 'https://expense-tracker-client-woad.vercel.app',
+    origin: configService.get<string>('FRONTEND_URL'),
     credentials: true,
   });
 
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads',
-  });
-
-  app.use((req, res, next) => {
-    res.header(
-      'Access-Control-Allow-Origin',
-      'https://expense-tracker-client-woad.vercel.app',
-    );
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header(
-      'Access-Control-Allow-Headers',
-      'Origin, X-Requested-With, Content-Type, Accept',
-    );
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    if (req.method === 'OPTIONS') {
-      return res.sendStatus(200);
-    }
-    next();
   });
 
   const port = configService.get<string>('PORT') || 1000;

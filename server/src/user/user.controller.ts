@@ -58,7 +58,6 @@ export class UserController {
       reply.status(500).send(response);
     }
   }
-
   @Put('/:id')
   @UseInterceptors(
     FileInterceptor('profileImage', {
@@ -117,16 +116,15 @@ export class UserController {
         body.email,
         body.password,
       );
-      if (loggedUser) {
-        request.session.isLogged = true;
-        request.session.data = loggedUser;
-        response.data = loggedUser
-        await request.session.save()
-        return reply.status(200).send(response);
+      if (!loggedUser) {
+        request.session.isLogged = false;
+        request.session.data = null;
+        return reply.status(401).send(response);
       }
-       request.session.isLogged = false;
-       request.session.data = null;
-      reply.status(401).send(response);
+      request.session.isLogged = true;
+      request.session.data = loggedUser;
+      response.data = loggedUser;
+      reply.status(200).send('login successful');
     } catch (error) {
       reply.status(500).send(response);
     }
@@ -154,7 +152,6 @@ export class UserController {
       data: null,
     };
     try {
-      console.log(request.session);
       if (!request.session.isLogged) {
         return reply.status(401).send('First you need to login.');
       }
@@ -248,7 +245,6 @@ export class UserController {
       reply.status(500).send(response);
     }
   }
-
   @Post('/checkuser')
   async checkUserByEmail(@Res() reply: any, @Body() body: any): Promise<void> {
     const response: ResponseDto = {

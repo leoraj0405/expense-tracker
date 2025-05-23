@@ -78,7 +78,7 @@ export class UserService {
         email: email,
         deletedAt: null,
       })
-      .select('_id name password profileImage')
+      .select('_id name email password profileImage')
       .exec();
 
     if (!validateUser || !validateUser.password) {

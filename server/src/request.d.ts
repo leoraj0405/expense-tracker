@@ -35,8 +35,8 @@ export interface RequestGrpExpense {
 
 export interface RequestGrpMember {
     groupId: string,
-    email: string,
-    userId: string
+    email?: string,
+    userId?: string
 }
 
 export interface LoginUserReq {

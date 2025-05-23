@@ -18,6 +18,7 @@ function Dashboard() {
 
   async function handleIsLogged() {
     const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/user/home`, {
+      headers:  new Headers(),
       method: 'GET',
       credentials: 'include',
     });

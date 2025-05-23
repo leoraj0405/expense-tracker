@@ -87,7 +87,6 @@ function ListMyExpense() {
         if (window.confirm('Are you sure to delete this record ? ')) {
             const requestOptions = {
                 method: "DELETE",
-                redirect: "follow"
             };
 
             fetch(`${process.env.REACT_APP_FETCH_URL}/expense/${id}`, requestOptions)
