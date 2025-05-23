@@ -45,7 +45,7 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: 'https://expense-tracker-client-woad.vercel.app',
+    origin: configService.get<string>('FRONTEND_URL'),
     credentials: true,
   });
 
