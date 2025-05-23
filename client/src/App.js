@@ -17,6 +17,7 @@ import GrpExpense from './pages/grpExpense/GrpExpense';
 import AddGrpExpense from './pages/grpExpense/AddGrpExpense';
 import Profile from './pages/Profile';
 import ParentHome from './pages/ParentHome';
+import ForgetPassword from './pages/ForgetPassword';
 
 function App() {
   return (
@@ -44,7 +45,7 @@ function App() {
         <Route path='/group/groupexpense/addgroupexpense' element={<AddGrpExpense />} />
         <Route path='/group/groupexpense/editgroupexpense' element={<AddGrpExpense />} />
         <Route path='/userprofile' element={<Profile />} />
-
+        <Route path='/forgetpassword' element={<ForgetPassword />} />
       </Routes>
     </Router>
   );

@@ -54,13 +54,11 @@ function Profile() {
         } else {
             const errorData = await response.json()
             setShowDiv(true)
-            setDangetAlert({ blockState: true, suceessState: false, msg: errorData.message })
         }
     }
 
 
     async function handleSubmit(id) {
-
 
         const formdata = new FormData();
         formdata.append("name", form.userName);
@@ -94,7 +92,7 @@ function Profile() {
 
     useEffect(() => {
         setTimeout(() => {
-            setDangetAlert({ blockState: true, msg: '', suceessState: false })
+            setDangetAlert({ blockState: true, msg: '', suceessState: true })
         }, 10000)
     }, [dangerAlert])
 
@@ -170,7 +168,7 @@ function Profile() {
                                                             className="rounded-circle"
                                                         />
                                                     </div>
-                                                    <h4 className="text-center mb-3">{user?.data?.name.toUpperCase()}</h4>
+                                                    <h4 className="text-center mb-3">{user?.data?.name ? user?.data?.name.toUpperCase() : 'User'}</h4>
                                                     <div className="row mb-3">
                                                         <div className="col-sm-4 font-weight-bold text-muted">Email Address:</div>
                                                         <div className="col-sm-8">{user?.data?.email}</div>

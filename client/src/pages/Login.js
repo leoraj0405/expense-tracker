@@ -7,7 +7,7 @@ import Footer from '../layouts/Footer'
 
 function Login() {
 
-  const [formData, setFormData] = useState({ email: "leoraj04065@gmail.com", password: "123" });
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [dangerAlert, setDangerAlter] = useState(true)
   const navigate = useNavigate()
   const [spinner, setSpinner] = useState(true)
@@ -23,8 +23,8 @@ function Login() {
     myHeaders.append("Content-Type", "application/json");
 
     const raw = JSON.stringify({
-      "email": "leoraj04065@gmail.com",
-      "password": "123"
+      "email": formData.email,
+      "password": formData.password
     });
 
     const requestOptions = {
@@ -42,7 +42,6 @@ function Login() {
           console.log(await response.json())
         }
       });
-
   }
 
 
@@ -110,6 +109,7 @@ function Login() {
                   Submit
                 </button>
                 <Link
+                  to={`/forgetpassword`}
                   className='btn btn-link text-dark'>
                   Forget password ?
                 </Link>

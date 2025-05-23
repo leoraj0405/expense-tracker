@@ -27,11 +27,14 @@ function AddGroup() {
     const pageName = queryValue.get('mode')
     const groupId = queryValue.get('group')
 
+    if(!loginUser) {
+        navigate('/login')
+    }
+
     function handleOnChange(e) {
         setFormData({ ...formData, [e.target.name]: e.target.value })
     }
 
-    console.log()
     function handleSubmit() {
         const name = formData.grpName
         const createdBy = loginUser?.data?._id
@@ -67,27 +70,25 @@ function AddGroup() {
                 const postGrpData = await response.json()
                 const groupId = postGrpData?.data?._id;
 
+                const myHeaders = new Headers();
+                myHeaders.append("Content-Type", "application/json");
+
                 const raw = JSON.stringify({
-                    groupId,
-                    userId: loginUser?.data?.email
+                    "email": loginUser?.data?.email,
+                    groupId
                 });
 
                 const requestOptions = {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
+                    headers: myHeaders,
                     body: raw,
                 };
-
                 fetch(`${process.env.REACT_APP_FETCH_URL}/groupmember`, requestOptions)
                     .then(async (response2) => {
                         if (response2.status === 200) {
                             navigate('/group')
                         } else {
                             const errorInfo = await response2.json()
-                            console.log(errorInfo)
-
                             setAlertBlock({
                                 blockState: false,
                                 msg: errorInfo.message
@@ -96,7 +97,6 @@ function AddGroup() {
                     });
             } else {
                 const errorInfo = await response.json()
-                console.log(errorInfo)
                 setAlertBlock({
                     blockState: false,
                     msg: errorInfo.message

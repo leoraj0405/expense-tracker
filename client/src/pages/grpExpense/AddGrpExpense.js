@@ -157,7 +157,6 @@ function AddGrpExpense() {
         }, 10000)
     }, [alertBlock])
 
-    console.log(form)
     return (
         <>
             <header>
@@ -227,7 +226,7 @@ function AddGrpExpense() {
                                     <option>Select member</option>
                                     {users.map((item, index) => {
                                         return (
-                                            <option key={index} value={item?.user?._id}>{item?.user?.name}</option>
+                                            <option key={index} value={item?.user?._id}>{item?.user?.name || 'New user he/she not update their profile'}</option>
                                         )
                                     })}
                                 </select>

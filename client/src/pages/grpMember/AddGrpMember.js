@@ -20,10 +20,8 @@ function AddGrpMember() {
     const grpId = queryValue.get('grpid')
     const grpName = queryValue.get('grpname')
     const groupLeader = queryValue.get('leader')
-
-
-    const [form, setForm] = useState({ id: '', groupId: grpId, userId: '' });
-    const [users, setUsers] = useState([])
+    
+    const [form, setForm] = useState({ groupId: grpId, email: '' });
     const [alertBlock, setAlertBlock] = useState({
         blockState: true,
         msg: ''
@@ -41,32 +39,29 @@ function AddGrpMember() {
 
     const handleSubmit = () => {
         const groupId = form.groupId
-        const userId = form.userId
-        const id = form.id
+        const userEmail = form.email
+
         const myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
 
         const raw = JSON.stringify({
             "groupId": groupId,
-            "userId": userId
+            "email": userEmail,
         });
-
         const requestOptions = {
             headers: myHeaders,
             body: raw,
         };
 
+        console.log(requestOptions)
         let request
-        if (id) {
-            request = fetch(`${process.env.REACT_APP_FETCH_URL}/groupmember/${id}`, { ...requestOptions, method: "PUT" })
-        } else {
-            request = fetch(`${process.env.REACT_APP_FETCH_URL}/groupmember`, { ...requestOptions, method: "POST" })
-        }
+        request = fetch(`${process.env.REACT_APP_FETCH_URL}/groupmember`, { ...requestOptions, method: "POST" })
         request.then(async (response) => {
             if (response.status === 200) {
                 navigate(`/group/groupmember?grpid=${grpId}&grpName=${grpName}&leader=${groupLeader}`)
             } else {
                 const errorInfo = await response.json()
+                console.log(errorInfo)
                 setAlertBlock({
                     blockState: false,
                     msg: errorInfo.message
@@ -74,31 +69,6 @@ function AddGrpMember() {
             }
         });
     };
-
-    async function editMember(id) {
-        const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/groupmember/${id}`);
-        if (response.status === 200) {
-            const data = await response.json();
-            const edited = {
-                id: data.data._id,
-                groupId: data.data.groupId,
-                userId: data.data.userId
-            };
-            setForm(edited);
-        } else {
-
-            const errorInfo = await response.json();
-            setAlertBlock({ blockState: false, msg: errorInfo.message });
-        }
-    }
-
-    useEffect(() => {
-        if (grpMemberId) {
-            editMember(grpMemberId);
-        }
-    }, [grpMemberId]);
-
-
     useEffect(() => {
         setTimeout(() => {
             setAlertBlock({
@@ -107,8 +77,6 @@ function AddGrpMember() {
             })
         }, 5000)
     }, [alertBlock])
-
-
     return (
         <>
             <header>
@@ -136,7 +104,7 @@ function AddGrpMember() {
                                         }
                                         if (item === 'groupmember') {
                                             label = 'Group Member'
-                                            to += `?grpid=${grpId}&grpname=${grpName}`
+                                            to += `?grpid=${grpId}&grpname=${grpName}&leader=${groupLeader}`
                                         }
                                         if (item === 'addgroupmember') {
                                             label = 'Add Group Member'
@@ -165,27 +133,17 @@ function AddGrpMember() {
                         </div>
 
                         <div className="p-3 w-50">
-                            <div className="mb-3">
-                                <input type="hidden" name='id' value={form.id} />
-                            </div>
                             <div className='mb-3'>
                                 <h4 className='text-secondary'>Group Name : {grpName}</h4>
                             </div>
                             <div className="mb-3">
                                 <label className="form-label">Member</label>
-                                <select
-                                    value={form.userId._id}
-                                    className="form-select"
-                                    name="userId"
+                                <input
+                                    value={form.email}
+                                    className="form-control"
+                                    name="email"
                                     onChange={handleChange}
-                                >
-                                    <option>Select member</option>
-                                    {users.map((item, index) => {
-                                        return (
-                                            <option key={index} value={item._id}>{item.name}</option>
-                                        )
-                                    })}
-                                </select>
+                                />
                             </div>
 
                             <div className='d-flex justify-content-end'>
@@ -195,7 +153,6 @@ function AddGrpMember() {
                                 </button>
                             </div>
                         </div>
-
                     </section>
                     <footer>
                         <Footer />

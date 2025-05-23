@@ -200,6 +200,23 @@ export class UserController {
       reply.status(500).send(response);
     }
   }
+   @Post('/processotp')
+  async processOTP(
+    @Res() reply: any,
+    @Body() body: any,
+  ): Promise<void> {
+    try {
+      const process = await this.userService.processOTP(body.email, body.otp, body.password);
+      console.log(process)
+      if (!process) {
+        return reply.status(401).send(null);
+      }
+      reply.status(200).send(process);
+    } catch (error) {
+      reply.status(500).send(error);
+    }
+  }
+  
   @Post('/parentgenerateotp')
   async findParent(
     @Res() reply: any,
@@ -262,4 +279,21 @@ export class UserController {
       reply.status(500).send(response);
     }
   }
+
+  @Post('/generateotp')
+  async generateOTPByUserEmail(
+    @Res() reply: any,
+    @Body() body: any,
+  ): Promise<void> {
+    try {
+      const createOTP = await this.userService.generateOTP(body.email);
+      if (!createOTP) {
+        return reply.status(401).send(null);
+      }
+      reply.status(200).send(createOTP);
+    } catch (error) {
+      reply.status(500).send(error);
+    }
+  }
+
 }

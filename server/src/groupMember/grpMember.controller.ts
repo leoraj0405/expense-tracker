@@ -116,7 +116,7 @@ export class GrpMemberController {
     };
     try {
       const groupMember = await this.grpMemberService.fetchGroupMemberById(id);
-      if (!groupMember?.length || !groupMember) {
+      if (!groupMember?.length) {
         return reply.status(404).send(response);
       }
       response.data = groupMember;

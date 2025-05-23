@@ -66,7 +66,7 @@ export class GrpMemberService {
 
   async fetchGroupMemberById(id: string): Promise<GroupMember[] | null> {
     const oneGrpMember = await this.grpMemberModel.aggregate([
-      { $match: { _id: id, deletedAt: null } },
+      { $match: { _id: new Types.ObjectId(id), deletedAt: null } },
       {
         $lookup: {
           from: 'groups',
@@ -88,14 +88,14 @@ export class GrpMemberService {
       {
         $project: {
           _id: 1,
-          description: 1,
-          amount: 1,
           'group.name': 1,
+          'group._id': 1,
           'user.name': 1,
+          'user.email' : 1
         },
       },
     ]);
-    this.logger.error(`The member deleted (soft delete) : ${id}`);
+    this.logger.log(`The ${id} group member fetched`);
     return oneGrpMember;
   }
 

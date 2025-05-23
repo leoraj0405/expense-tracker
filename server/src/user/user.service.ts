@@ -8,7 +8,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class UserService {
-  private readonly logger = new Logger(User.name)
+  private readonly logger = new Logger(User.name);
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private readonly mailerService: MailerService,
@@ -33,7 +33,7 @@ export class UserService {
       updatedAt: null,
       deletedAt: null,
     });
-    this.logger.log(`The user created`)
+    this.logger.log(`The user created`);
     return newUser.save();
   }
 
@@ -52,7 +52,7 @@ export class UserService {
       },
       { new: true },
     );
-    this.logger.log(`The user updated`)
+    this.logger.log(`The user updated`);
     return updateUser.exec();
   }
 
@@ -62,13 +62,13 @@ export class UserService {
       { $set: { deletedAt: new Date() } },
       { new: true },
     );
-    this.logger.log(`The user deleted (soft delete)`)
+    this.logger.log(`The user deleted (soft delete)`);
     return deleteuser.exec();
   }
 
   async findOneUser(id: string): Promise<User | null> {
     const getOneUser = this.userModel.findOne({ _id: id, deletedAt: null });
-    this.logger.log(`Fetch user by id ${id}`)
+    this.logger.log(`Fetch user by id ${id}`);
     return getOneUser;
   }
 
@@ -89,10 +89,10 @@ export class UserService {
     const isMatch = await bcrypt.compare(password, hashedPassword);
 
     if (!isMatch) {
-      this.logger.log(`The user not logged`)
+      this.logger.log(`The user not logged`);
       throw new UnauthorizedException('Invalid User');
     }
-    this.logger.log(`The user logged`)
+    this.logger.log(`The user logged`);
     return validateUser;
   }
 
@@ -102,7 +102,9 @@ export class UserService {
       .exec();
 
     if (!isParentEmail) {
-        this.logger.error(`Inavlid Parent Email Address ${parentData.parentEmail}`)
+      this.logger.error(
+        `Inavlid Parent Email Address ${parentData.parentEmail}`,
+      );
       throw new UnauthorizedException('Inavlid Parent Email Address');
     }
     const characters =
@@ -128,7 +130,7 @@ export class UserService {
               Thanks you,
               Expense Tracker Team`,
     });
-    this.logger.log(`Otp sent to email : ${parentData.parentEmail}`)
+    this.logger.log(`Otp sent to email : ${parentData.parentEmail}`);
     return `Otp sent to the your mail id.`;
   }
 
@@ -142,16 +144,78 @@ export class UserService {
     let parentSavedOtp = parentInfo?.parentOtp;
     if (parentSavedOtp === otp) {
       const parentData = await this.userModel.find({ parentEmail: email });
-      this.logger.log(`Parent Email and OTP is correct`)
+      this.logger.log(`Parent Email and OTP is correct`);
       return parentData;
     } else {
-      this.logger.error(`Invalid Email : ${email} or Wrong OTP : ${otp} `)
+      this.logger.error(`Invalid Email : ${email} or Wrong OTP : ${otp} `);
       throw new UnauthorizedException('Invalid Email or Wrong OTP');
     }
   }
 
   async checkUserByEmail(email: string): Promise<User[] | null> {
-    const isUser = await this.userModel.find({email: email, deletedAt: null})
-    return isUser
+    const isUser = await this.userModel.find({ email: email, deletedAt: null });
+    return isUser;
+  }
+
+  async generateOTP(email: string) {
+    const isEmail = await this.userModel
+      .findOne({ email: email, deletedAt: null })
+      .exec();
+    if (!isEmail) {
+      this.logger.error(`Inavlid Email Address ${email}`);
+      return null
+    }
+    const characters =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let otp = '';
+    let length = 6;
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      otp += characters[randomIndex];
+    }
+    await this.userModel.findOneAndUpdate(
+      { email },
+      {
+        $set: { otp },
+      },
+      { new: true },
+    );
+    await this.mailerService.sendMail({
+      to: email,
+      subject: 'RESET PASSWORD VERIFICATION',
+      text: `Hi [ User ],
+              Your One-Time Password (OTP) for rest your password
+              🔐 ${otp} 
+              Please do not share this code with anyone.
+              Thanks you,
+              Expense Tracker Team`,
+    });
+    this.logger.log(`Otp sent to email : ${email}`);
+    return `Otp sent to the your mail id.`;
+  }
+
+  async processOTP(email: string, otp: string, password: string) {
+    const user = await this.userModel
+      .findOne({
+        email: email,
+        otp: otp,
+      })
+      .exec();
+    let userSavedOtp = user?.otp;
+    if (userSavedOtp !== otp) {
+      this.logger.error(`Invalid Email : ${email} or Wrong OTP : ${otp} `);
+      return null;
+    }
+    const hashValueLength = 10;
+    const hashedPassword = await bcrypt.hash(password, hashValueLength);
+    const updatePassword = await this.userModel.findOneAndUpdate(
+      { email },
+      {
+        $set: { otp, password: hashedPassword },
+      },
+      { new: true },
+    );
+    this.logger.log(`User password reseted`);
+    return updatePassword;
   }
 }

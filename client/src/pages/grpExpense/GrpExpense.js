@@ -137,7 +137,7 @@ function GrpExpense() {
                                             return (
                                                 <tr key={index}>
                                                     <td>{index + 1}</td>
-                                                    <td>{item.user?.name}</td>
+                                                    <td>{item.user?.name|| 'New user he/she not update their profile'}</td>
                                                     <td>{item.description}</td>
                                                     <td>{item.amount}</td>
                                                     <td>{item.category?.name}</td>

@@ -33,7 +33,7 @@ function Header() {
 
         <div className="ms-auto d-flex align-items-center">
           <span className=" me-3 text-white">
-            Welcome Mr. {loginUser?.data?.name}
+            Welcome Mr. {loginUser?.data?.name || 'User'}
           </span>
           <div className="dropdown">
             <Link className="dropdown-toggle d-flex align-items-center" href="#" role="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">

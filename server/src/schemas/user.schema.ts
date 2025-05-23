@@ -22,12 +22,6 @@ export class User extends Document {
   otp: string;
 
   @Prop({required: false})
-  otpAttempt: number;
-
-  @Prop({type: Date, required: false})
-  blockTime: Date;
-
-  @Prop({required: false})
   profileImage: string;
 
   @Prop({ type: Date, required: false })

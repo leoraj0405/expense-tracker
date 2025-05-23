@@ -118,7 +118,11 @@ function GrpMember() {
 
                         <div className='d-flex justify-content-between ms-4 me-4'>
                             <h4 className='text-secondary'>{grpName} Members : </h4>
-                            <Link className='btn btn-primary disabled' to={`addgroupmember?grpid=${groupId}&grpname=${grpName}&leader=${groupLeader}`}>Add Members</Link>
+                            <Link
+                                className='btn btn-primary'
+                                to={`addgroupmember?grpid=${groupId}&grpname=${grpName}&leader=${groupLeader}`}>
+                                Add Members
+                            </Link>
                         </div>
 
                         <div className='table-responsive m-4'>
@@ -136,16 +140,11 @@ function GrpMember() {
                                             return (
                                                 <tr key={index}>
                                                     <td>{index + 1}</td>
-                                                    <td>{item.user?.name}</td>
+                                                    <td>{item.user?.name || 'new user he/she not update their profile'}</td>
                                                     <td>
                                                         {
                                                             groupLeader === loginUser?.data?._id ? (
                                                                 <>
-                                                                    <Link
-                                                                        to={`editgroupmember?grpid=${groupId}&grpname=${grpName}&grpmemid=${item._id}&leader=${groupLeader}`}
-                                                                        className='btn btn-sm btn-warning me-2 disabled'>
-                                                                        <FaEdit />
-                                                                    </Link>
                                                                     <button
                                                                         onClick={() => hanldeDelete(item._id)}
                                                                         className='btn btn-sm btn-danger'>
