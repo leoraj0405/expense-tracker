@@ -36,13 +36,9 @@ async function bootstrap() {
         retries: 1,
       }),
       secret: 'expense-tracker',
-      resave: false,
-      saveUninitialized: false,
       cookie: {
         maxAge: SESSION_TIME,
-        sameSite: 'none',
         httpOnly: true,
-        secure: true
       },
     }),
   );
