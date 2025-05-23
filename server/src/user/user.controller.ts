@@ -117,9 +117,11 @@ export class UserController {
         body.email,
         body.password,
       );
+      console.log(loggedUser)
       if (loggedUser) {
         request.session.isLogged = true;
         request.session.data = loggedUser;
+        response.data = loggedUser
         return reply.status(200).send(response);
       }
       request.session.isLogged = false;
