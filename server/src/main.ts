@@ -31,14 +31,15 @@ async function bootstrap() {
 
   app.use(
     session({
-      store: new FileStoreSession({
-        path: './sessions',
-        retries: 1,
-      }),
+      store: new FileStoreSession({ path: './sessions', retries: 1 }),
       secret: 'expense-tracker',
+      resave: false,
+      saveUninitialized: false,
       cookie: {
         maxAge: SESSION_TIME,
+        sameSite: 'none',
         httpOnly: true,
+        secure: true,
       },
     }),
   );
@@ -52,7 +53,7 @@ async function bootstrap() {
     prefix: '/uploads',
   });
 
-  const port = configService.get<string>('PORT') || 1000
+  const port = configService.get<string>('PORT') || 1000;
   await app.listen(port, '0.0.0.0', () => {
     console.log(`Server Listening on port ${port}`);
   });
