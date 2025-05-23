@@ -29,6 +29,14 @@ async function bootstrap() {
   app.use(cookieParser());
   const configService = app.get(ConfigService);
 
+  app.use((req, res, next) => {
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(204); // No Content
+    } else {
+      next();
+    }
+  });
+
   app.use(
     session({
       store: new FileStoreSession({ path: './sessions', retries: 1 }),
@@ -45,8 +53,11 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: configService.get<string>('FRONTEND_URL'),
+    origin:
+      configService.get<string>('FRONTEND_URL') ||
+      'https://expense-tracker-client-woad.vercel.app',
     credentials: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
   });
 
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {

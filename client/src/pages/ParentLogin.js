@@ -166,11 +166,10 @@ function ParentLogin() {
                                     Clear
                                 </button>
                                 <button
-                                    className='btn btn-primary m-2'
-                                    // className={
-                                    //     btnDisabled ? 'btn btn-primary m-2 disabled'
-                                    //         : 'btn btn-primary m-2'
-                                    // }
+                                    className={
+                                        btnDisabled ? 'btn btn-primary m-2 disabled'
+                                            : 'btn btn-primary m-2'
+                                    }
                                     onClick={handleProcessOtp}>
                                     Submit
                                 </button>
