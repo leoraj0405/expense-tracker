@@ -125,7 +125,7 @@ export class UserController {
         return reply.status(200).send(response);
       }
       request.session.isLogged = false;
-      request.session.data = loggedUser;
+      request.session.data = null;
       reply.status(401).send(response);
     } catch (error) {
       reply.status(500).send(response);
