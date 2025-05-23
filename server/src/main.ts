@@ -42,6 +42,7 @@ async function bootstrap() {
         maxAge: SESSION_TIME,
         sameSite: 'none',
         httpOnly: true,
+        secure: true
       },
     }),
   );

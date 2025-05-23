@@ -126,7 +126,7 @@ export class UserController {
       request.session.data = null;
       reply.status(404).send(response);
     } catch (error) {
-      console.log(error)
+      console.log(error);
       reply.status(500).send(response);
     }
   }
@@ -153,9 +153,9 @@ export class UserController {
       data: null,
     };
     try {
-            console.log(request.session)
+      console.log(request.session);
       if (!request.session.isLogged) {
-        return reply.status(404).send('First you need to login first');
+        return reply.status(401).send('First you need to login.');
       }
       response.data = request.session.data;
       const userProfile = request.session.data.profileImage;
@@ -239,32 +239,28 @@ export class UserController {
         request.session.parentData = [];
         return reply.status(404).send(response);
       }
-        request.session.parentIsLogged = true;
-        request.session.parentData = processOtp;
-        response.data = 'You succesfully logged';
-        reply.status(200).send(response);
-      
+      request.session.parentIsLogged = true;
+      request.session.parentData = processOtp;
+      response.data = 'You succesfully logged';
+      reply.status(200).send(response);
     } catch (error) {
       reply.status(500).send(response);
     }
   }
 
   @Post('/checkuser')
-  async checkUserByEmail(
-   @Res() reply: any,
-    @Body() body: any,
-  ):Promise<void>{
+  async checkUserByEmail(@Res() reply: any, @Body() body: any): Promise<void> {
     const response: ResponseDto = {
       data: null,
     };
     try {
       let email = body.email;
-      const isUser = await this.userService.checkUserByEmail(email)
-      if(!isUser?.length) {
-        return reply.status(404).send(response)
+      const isUser = await this.userService.checkUserByEmail(email);
+      if (!isUser?.length) {
+        return reply.status(404).send(response);
       }
-      response.data = isUser[0]
-      reply.status(200).send(response)
+      response.data = isUser[0];
+      reply.status(200).send(response);
     } catch (error) {
       reply.status(500).send(response);
     }
