@@ -55,7 +55,6 @@ async function bootstrap() {
   app.enableCors({
     origin: 'https://expense-tracker-client-woad.vercel.app',
     credentials: true,
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
   });
 
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
