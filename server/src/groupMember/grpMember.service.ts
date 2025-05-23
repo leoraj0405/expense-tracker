@@ -129,7 +129,6 @@ export class GrpMemberService {
         },
       },
     ]);
-    console.log(groupMembers)
     this.logger.log(`The group members fetched by group id : ${id}`);
     return groupMembers;
   }

@@ -7,6 +7,8 @@ import {
   GroupExpense,
   GroupExpenseSchema,
 } from 'src/schemas/groupExpense.schema';
+import { User, UserSchema } from 'src/schemas/user.schema';
+import { UserModule } from 'src/user/user.module';
 
 @Module({
   imports: [
@@ -20,7 +22,13 @@ import {
         name: GroupExpense.name,
         schema: GroupExpenseSchema,
       },
+      {
+        name: User.name,
+        schema: UserSchema
+      }
+
     ]),
+    UserModule,
   ],
   providers: [GrpMemberService],
   controllers: [GrpMemberController],

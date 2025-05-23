@@ -12,9 +12,15 @@ import { GroupMember } from 'src/schemas/groupMember.schema';
 import { RequestGrpMember } from 'src/request';
 import { ResponseDto } from 'src/response';
 import { GrpMemberService } from './grpMember.service';
+import { UserService } from 'src/user/user.service';
+
 @Controller('groupmember')
 export class GrpMemberController {
-  constructor(private readonly grpMemberService: GrpMemberService) {}
+
+  constructor(
+    private readonly grpMemberService: GrpMemberService,
+    private readonly userService:UserService
+  ) {}
 
   @Post('/')
   async postGrpMember(
@@ -25,11 +31,11 @@ export class GrpMemberController {
       data: null,
     };
     try {
-      response.data = await this.grpMemberService.createGroupMember({
-        groupId: body.groupId,
-        userId: body.userId,
-      });
-      reply.status(200).send(response);
+      // const isUser = await this.userService.checkUserByEmail(email)
+      // if(!isUser?.length) {
+      //   const password = Math.floor(1000 + Math.random() * 9000);
+      //   const createUser = await this.userService.createUser(email, password)
+      // }
     } catch (error) {
       if (error.code === 11000) {
         return reply.status(409).send(response);

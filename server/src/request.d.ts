@@ -2,10 +2,10 @@ import { User } from "./schemas/user.schema"
 import { Category } from "./schemas/category.schema"
 
 export interface RequestUser {
-    name: User.name,
-    email: User.email,
-    password: User.password,
-    parentEmail: User.parentEmail,
+    name: string,
+    email: string,
+    password: string,
+    parentEmail: string,
 }
 
 export interface RequestCategory {
@@ -35,6 +35,7 @@ export interface RequestGrpExpense {
 
 export interface RequestGrpMember {
     groupId: string,
+    email: string,
     userId: string
 }
 

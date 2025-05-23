@@ -7,7 +7,6 @@ import * as cookieParser from 'cookie-parser';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { ConfigService } from '@nestjs/config';
-import { hostname } from 'os';
 
 const SESSION_TIME = 30 * 60 * 1000;
 
@@ -41,7 +40,7 @@ async function bootstrap() {
       saveUninitialized: false,
       cookie: {
         maxAge: SESSION_TIME,
-        sameSite: 'lax',
+        sameSite: 'none',
         httpOnly: true,
       },
     }),

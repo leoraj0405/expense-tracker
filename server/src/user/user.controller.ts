@@ -248,4 +248,25 @@ export class UserController {
       reply.status(500).send(response);
     }
   }
+
+  @Post('/checkuser')
+  async checkUserByEmail(
+   @Res() reply: any,
+    @Body() body: any,
+  ):Promise<void>{
+    const response: ResponseDto = {
+      data: null,
+    };
+    try {
+      let email = body.email;
+      const isUser = await this.userService.checkUserByEmail(email)
+      if(!isUser?.length) {
+        return reply.status(404).send(response)
+      }
+      response.data = isUser[0]
+      reply.status(200).send(response)
+    } catch (error) {
+      reply.status(500).send(response);
+    }
+  }
 }

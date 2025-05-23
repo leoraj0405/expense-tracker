@@ -149,4 +149,9 @@ export class UserService {
       throw new UnauthorizedException('Invalid Email or Wrong OTP');
     }
   }
+
+  async checkUserByEmail(email: string): Promise<User[] | null> {
+    const isUser = await this.userModel.find({email: email, deletedAt: null})
+    return isUser
+  }
 }
