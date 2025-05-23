@@ -117,15 +117,15 @@ export class UserController {
         body.email,
         body.password,
       );
-      console.log(loggedUser)
       if (loggedUser) {
         request.session.isLogged = true;
         request.session.data = loggedUser;
         response.data = loggedUser
+        await request.session.save()
         return reply.status(200).send(response);
       }
-      request.session.isLogged = false;
-      request.session.data = null;
+       request.session.isLogged = false;
+       request.session.data = null;
       reply.status(401).send(response);
     } catch (error) {
       reply.status(500).send(response);
