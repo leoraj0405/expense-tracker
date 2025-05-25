@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, use } from 'react'
 import Header from '../../layouts/Header'
 import SideBar from '../../layouts/SideBar'
 import Footer from '../../layouts/Footer'
 import { useLocation, Link, useNavigate } from 'react-router-dom'
 import { useUser } from '../../components/Context'
+import '../../style/Login.css'
 
 function useQuery() {
     return new URLSearchParams(useLocation().search)
@@ -19,6 +20,7 @@ function AddGrpExpense() {
     const grpId = queryValue.get('grpid')
     const grpName = queryValue.get('grpname')
     const groupLeader = queryValue.get('leader')
+    const [splitBox, setSplitBox] = useState(true)
 
 
     const [form, setForm] = useState({
@@ -36,17 +38,64 @@ function AddGrpExpense() {
         blockState: true,
         msg: ''
     })
+    const [isOpen, setIsOpen] = useState(false);
+    const contentRef = useRef(null);
+    const [splitMethod, setSplitMethod] = useState('')
+    const [unequalArr, setUnequalArr] = useState([]);
 
     useEffect(() => {
         if (!loginUser) {
             navigate('/login')
         }
     }, [])
+
+    const handleRadioChange = (e) => {
+        setSplitMethod(e.target.value);
+    };
+    const toggleSplitFormUnequal = () => setIsOpen(true);
+    const toggleSplitFormEqual = () => setIsOpen(false)
+
+    useEffect(() => {
+        const element = contentRef.current;
+        if (element) {
+            element.style.maxHeight = isOpen ? `${element.scrollHeight}px` : '0px';
+        }
+    }, [isOpen]);
+
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
+    async function fetchUsers() {
+        const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/groupmember/onegroup/${grpId}`)
+        if (response.status === 200) {
+            const responseData = await response.json()
+            setUsers(responseData.data)
+        } else {
+            const errorInfo = await response.json()
+            setAlertBlock({
+                blockState: false,
+                msg: errorInfo.message
+            })
+        }
+    }
+
+    function handleOpen() {
+        setSplitBox(false)
+    }
+
+    function handleChange2(e, index) {
+        const usersAndShares = [...(unequalArr || [])];
+        usersAndShares[index] = {
+            memberId: users[index].user?._id || '',
+            share: Number(e.target.value) < 0 ? 0 : e.target.value
+        };
+        setUnequalArr(usersAndShares);
+    }
     const handleSubmit = () => {
+        const myHeaders = new Headers();
+        myHeaders.append("Content-Type", "application/json");
+
         const id = form.id
         const groupId = form.groupId
         const userId = form.userId
@@ -54,37 +103,47 @@ function AddGrpExpense() {
         const amount = form.amount
         const categoryId = form.categoryId
 
-        const myHeaders = new Headers();
-        myHeaders.append("Content-Type", "application/json");
-
+        if (splitMethod === 'equal') {
+            var usersShares = null
+        } else {
+            let total = 0
+            unequalArr?.forEach((item) => {
+                total += Number(item.share)
+            })
+            if (Number(amount) !== total) {
+                return setAlertBlock({
+                    blockState: false,
+                    msg: 'Users share amount higher or lower than expense amount'
+                });
+            }
+            var usersShares = unequalArr
+        }
         const raw = JSON.stringify({
             "groupId": groupId,
+            "userId": userId,
+            "categoryId": categoryId,
             "description": description,
             "amount": Number(amount) < 0 ? 0 : amount,
-            "userId": userId,
-            "categoryId": categoryId
+            "usersAndShares": usersShares,
+            "splitMethod": splitMethod
         });
-
         const requestOptions = {
             headers: myHeaders,
             body: raw,
         };
-
         let request
         if (id) {
-            request = fetch(`${process.env.REACT_APP_FETCH_URL}/groupexpense/${id}`, { ...requestOptions, method: "PUT" })
+            request = fetch(`${process.env.REACT_APP_FETCH_URL}/groupexpense/${id}`, { ...requestOptions, method: "PUT", })
         } else {
-            request = fetch(`${process.env.REACT_APP_FETCH_URL}/groupexpense`, { ...requestOptions, method: "POST" })
+            request = fetch(`${process.env.REACT_APP_FETCH_URL}/groupexpense/`, { ...requestOptions, method: "POST", })
         }
         request.then(async (response) => {
             if (response.status === 200) {
                 navigate(`/group/groupexpense?grpid=${grpId}&grpname=${grpName}&leader=${groupLeader}`)
             } else {
-                const errorInfo = await response.json()
-                setAlertBlock({
-                    blockState: false,
-                    msg: errorInfo.message
-                })
+                const errorInfo = await response.json();
+                console.log(errorInfo)
+                setAlertBlock({ blockState: false, msg: errorInfo.message });
             }
         });
     };
@@ -101,24 +160,18 @@ function AddGrpExpense() {
                 description: expenseData.data[0].description,
                 amount: expenseData.data[0].amount
             };
+            if (expenseData.data[0].splitUnequal && expenseData.data[0].splitUnequal.length) {
+                setSplitMethod('unequal')
+                toggleSplitFormUnequal()
+            } else {
+                setSplitMethod('equal')
+            }
+            setUnequalArr(expenseData.data[0].splitUnequal)
             setForm(edited);
+            setSplitBox(false)
         } else {
             const errorInfo = await response.json();
             setAlertBlock({ blockState: false, msg: errorInfo.message });
-        }
-    }
-
-    async function fetchUsers() {
-        const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/groupmember/onegroup/${grpId}`)
-        if (response.status === 200) {
-            const responseData = await response.json()
-            setUsers(responseData.data)
-        } else {
-            const errorInfo = await response.json()
-            setAlertBlock({
-                blockState: false,
-                msg: errorInfo.message
-            })
         }
     }
 
@@ -146,7 +199,6 @@ function AddGrpExpense() {
             editExpense(grpExpenseId);
         }
     }, [grpExpenseId]);
-
 
     useEffect(() => {
         setTimeout(() => {
@@ -216,7 +268,7 @@ function AddGrpExpense() {
                                 <h4 className='text-secondary'>Group {grpName} : </h4>
                             </div>
                             <div className="mb-3">
-                                <label className="form-label">Member</label>
+                                <label className="form-label">Paid By</label>
                                 <select
                                     value={form.userId}
                                     className="form-select"
@@ -249,14 +301,65 @@ function AddGrpExpense() {
                             </div>
                             <div className="mb-3">
                                 <label className="form-label">Amount</label>
-                                <input onChange={handleChange} value={form.amount} type="number" name='amount' className='form-control' />
+                                <input onChange={(e) => {
+                                    handleChange(e)
+                                    handleOpen()
+                                }}
+                                    value={form.amount}
+                                    type="number"
+                                    name='amount'
+                                    className='form-control' />
                             </div>
+                            <div
+                                className='d-flex justify-content-around mb-3' >
+                                <span hidden={splitBox}>Equal</span>
+                                <input
+                                    hidden={splitBox}
+                                    type='radio'
+                                    value='equal'
+                                    checked={splitMethod === 'equal'}
+                                    onChange={handleRadioChange}
+                                    onClick={toggleSplitFormEqual}
+                                    className='ms-3 w-25'
+                                    name='splitMethod' />
+                                <span hidden={splitBox}>Un Equal</span>
+                                <input
+                                    hidden={splitBox}
+                                    type="radio"
+                                    value='unequal'
+                                    checked={splitMethod === 'unequal'}
+                                    onChange={handleRadioChange}
+                                    onClick={toggleSplitFormUnequal}
+                                    className='ms-3 w-25' name='splitMethod' />
+                            </div>
+                            <div ref={contentRef} className={`split-form-collapse d-flex flex-column mb-3`}>
+                                {users.map((item, index) => (
+                                    <div key={index} className='d-flex justify-content-between mt-3 mb-2'>
+                                        <div className='w-50'>
+                                            <label value={item?.user?._id}>
+                                                {item?.user?.name || 'New user he/she not update their profile'}
+                                            </label>
+                                        </div>
+                                        <div className='w-50'>
+                                            <input
+                                                type="number"
+                                                name='share'
+                                                value={unequalArr?.[index]?.share}
+                                                onChange={(e) => handleChange2(e, index)}
+                                                className='form-control w-75' />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
                             <div className="mb-3">
                                 <label className="form-label">Description</label>
                                 <textarea onChange={handleChange} value={form.description} className='form-control' name="description"></textarea>
                             </div>
                             <div className='d-flex justify-content-end'>
-                                <Link className='btn btn-warning me-3' to={`/group/groupexpense?grpid=${grpId}&grpname=${grpName}&leader=${groupLeader}`}>Cancel</Link>
+                                <Link
+                                    className='btn btn-warning me-3'
+                                    to={`/group/groupexpense?grpid=${grpId}&grpname=${grpName}&leader=${groupLeader}`}>Cancel</Link>
                                 <button onClick={handleSubmit} className="btn btn-primary">
                                     Submit
                                 </button>

@@ -32,12 +32,11 @@ export class GrpExpenseController {
         amount: body.amount,
         userId: body.userId,
         categoryId: body.categoryId,
+        usersAndShares: body.usersAndShares,
+        splitMethod:body.splitMethod
       });
       reply.status(200).send(response);
     } catch (error) {
-      if (error.name === 'ValidationError') {
-        return reply.status(401).send(response)
-      }
       console.log(error)
       reply.status(500).send(response);
     }
@@ -56,7 +55,10 @@ export class GrpExpenseController {
       response.data = await this.grpExpenseService.updateGroupExpenseById(id, body);
       reply.status(200).send(response);
     } catch (error) {
-      reply.status(500).send(response);
+      if(error.status) {
+        return reply.status(400).send(error.message)
+      }
+      reply.status(500).send(error);
     }
   }
 
@@ -108,7 +110,6 @@ export class GrpExpenseController {
     try {
       const oneGroupExpenses =
         await this.grpExpenseService.getGroupExpensesByGroupId(id);
-        console.log(oneGroupExpenses)
       if (!oneGroupExpenses.length) {
         return reply.status(404).send(response);
       }

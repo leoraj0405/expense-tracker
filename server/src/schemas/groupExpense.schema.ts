@@ -3,6 +3,7 @@ import { Document, Schema as MongooseSchema } from 'mongoose';
 import { User } from './user.schema';
 import { Group } from './group.schma';
 import { Category } from './category.schema';
+import { GroupMember } from './groupMember.schema';
 
 @Schema()
 export class GroupExpense extends Document {
@@ -32,6 +33,28 @@ export class GroupExpense extends Document {
     required: true,
   })
   categoryId: Category;
+
+  @Prop({
+    type: [
+      {
+        memberId: { type: MongooseSchema.Types.ObjectId, ref: 'User' },
+        share: Number,
+      },
+    ],
+    required: false,
+  })
+  splitAmong?: { memberId: GroupMember; share: number }[];
+
+  @Prop({
+    type: [
+      {
+        userId: { type: MongooseSchema.Types.ObjectId, ref: 'User' },
+        share: Number,
+      },
+    ],
+    required: false,
+  })
+  splitUnequal?: {memberId: GroupMember, share: number }[];
 
   @Prop({ required: true })
   createdAt: Date;

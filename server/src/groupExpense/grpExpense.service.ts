@@ -1,8 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { RequestGrpExpense } from '../request';
 import { GroupExpense } from 'src/schemas/groupExpense.schema';
+import { GrpMemberService } from 'src/groupMember/grpMember.service';
+import { promises } from 'dns';
 
 @Injectable()
 export class GrpExpenseService {
@@ -10,6 +12,8 @@ export class GrpExpenseService {
   constructor(
     @InjectModel(GroupExpense.name)
     private groupExpensemodel: Model<GroupExpense>,
+
+    private readonly memberService: GrpMemberService,
   ) {}
 
   async createGroupExpense({
@@ -18,19 +22,46 @@ export class GrpExpenseService {
     amount,
     userId,
     categoryId,
-  }: RequestGrpExpense) 
-  {
-
-    const postGrpExpense = new this.groupExpensemodel({
+    usersAndShares,
+    splitMethod,
+  }: RequestGrpExpense) {
+    var inputs = {
       groupId,
       description,
       amount,
       userId,
       categoryId,
+      splitAmong: null as { memberId: string; share: number }[] | null,
+      splitUnequal: null as typeof usersAndShares | null,
       createdAt: new Date(),
       updatedAt: null,
       deletedAt: null,
-    }).save();
+    };
+    if (splitMethod === 'equal') {
+      const splitEqualArr: { memberId: string; share: number }[] = [];
+      const groupMembersArr =
+        await this.memberService.fetchGroupMembersByGroupId(groupId);
+      const membersId = groupMembersArr?.map((member) => member.user._id);
+
+      membersId?.forEach((id) => {
+        splitEqualArr.push({
+          memberId: id,
+          share: Math.round(amount / membersId.length),
+        });
+      });
+
+      inputs.splitAmong = splitEqualArr;
+    } else {
+      let total: number = 0;
+      usersAndShares.map((item) => {
+        total += Number(item.share);
+      });
+      if (total !== Number(amount)) {
+        return 'Users share amount higher or lower than expense amount';
+      }
+      inputs.splitUnequal = usersAndShares;
+    }
+    const postGrpExpense = new this.groupExpensemodel(inputs).save();
     this.logger.log(`The Group expense created`);
     return postGrpExpense;
   }
@@ -39,10 +70,61 @@ export class GrpExpenseService {
     id: string,
     updateData: RequestGrpExpense,
   ): Promise<GroupExpense | null> {
+    var inputs = {
+      groupId: updateData.groupId,
+      description: updateData.description,
+      amount: updateData.amount,
+      userId: updateData.userId,
+      categoryId: updateData.categoryId,
+      splitAmong: null as { memberId: string; share: number }[] | null,
+      splitUnequal:
+        Array.isArray(updateData.usersAndShares) &&
+        updateData.usersAndShares.length > 0
+          ? updateData.usersAndShares
+          : null,
+      createdAt: new Date(),
+      updatedAt: null,
+      deletedAt: null,
+      splitMethod: updateData.splitMethod,
+    };
+
+    if (updateData.splitMethod === 'equal') {
+      inputs.splitUnequal = null;
+
+      const splitEqualArr: { memberId: string; share: number }[] = [];
+      const groupMembersArr =
+        await this.memberService.fetchGroupMembersByGroupId(updateData.groupId);
+      const membersId = groupMembersArr?.map((member) => member.user._id);
+
+      membersId?.forEach((id) => {
+        splitEqualArr.push({
+          memberId: id,
+          share: Math.round(updateData.amount / membersId.length),
+        });
+      });
+
+      inputs.splitAmong = splitEqualArr;
+    } else {
+      console.log(inputs);
+      let total: number = 0;
+      updateData.usersAndShares.map((item) => {
+        total += Number(item.share);
+      });
+      if (total !== Number(updateData.amount)) {
+        throw new HttpException(
+          'Users share amount higher or lower than expense amount',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      inputs.splitUnequal = updateData.usersAndShares;
+    }
+
+    console.log(inputs, id);
+
     const updateGroupExpense = await this.groupExpensemodel
       .findByIdAndUpdate(
         id,
-        { $set: { ...updateData, updatedAt: new Date() } },
+        {...inputs, updatedAt: new Date() } ,
         { new: true },
       )
       .exec();
@@ -96,6 +178,8 @@ export class GrpExpenseService {
           _id: 1,
           description: 1,
           amount: 1,
+          splitAmong: 1,
+          splitUnequal: 1,
           'group.name': 1,
           'category.name': 1,
           'user.name': 1,
@@ -111,7 +195,7 @@ export class GrpExpenseService {
   }
 
   async getGroupExpensesByGroupId(id: string): Promise<GroupExpense[]> {
-    const groupId = new Types.ObjectId(id)
+    const groupId = new Types.ObjectId(id);
     const groupExpenses = await this.groupExpensemodel.aggregate([
       { $match: { groupId: groupId, deletedAt: null } },
       {
@@ -146,10 +230,12 @@ export class GrpExpenseService {
           _id: 1,
           description: 1,
           amount: 1,
+          splitAmong: 1,
+          splitUnequal: 1,
           'group.name': 1,
           'category.name': 1,
           'user.name': 1,
-          'user._id': 1
+          'user._id': 1,
         },
       },
     ]);

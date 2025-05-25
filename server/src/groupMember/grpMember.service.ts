@@ -6,8 +6,15 @@ import { GroupMember } from 'src/schemas/groupMember.schema';
 import { GroupExpense } from 'src/schemas/groupExpense.schema';
 import { MailerService } from '@nestjs-modules/mailer';
 
+export interface GroupMemberWithUser {
+  _id: Types.ObjectId;
+  group: { name: string };
+  user: { _id: string; name: string };
+}
+
 @Injectable()
 export class GrpMemberService {
+  
   private readonly logger = new Logger(GroupMember.name);
   constructor(
     @InjectModel(GroupMember.name) private grpMemberModel: Model<GroupMember>,
@@ -15,8 +22,10 @@ export class GrpMemberService {
     private grpExpenseModel: Model<GroupExpense>,
     private readonly mailerService: MailerService,
     
-  ) {}
+  )
+   {}
 
+  
   async createGroupMember( groupId, userId ) {
     const createMember = new this.grpMemberModel({
       groupId,
@@ -99,7 +108,7 @@ export class GrpMemberService {
     return oneGrpMember;
   }
 
-  async fetchGroupMembersByGroupId(id: string): Promise<GroupMember[] | null> {
+  async fetchGroupMembersByGroupId(id: string): Promise<GroupMemberWithUser[] | null> {
     const groupId = new Types.ObjectId(id)
     const groupMembers = await this.grpMemberModel.aggregate([
       { $match: { groupId: groupId, deletedAt: null } },

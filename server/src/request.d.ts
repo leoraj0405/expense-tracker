@@ -30,7 +30,9 @@ export interface RequestGrpExpense {
     description: string,
     amount: number,
     userId: string,
-    categoryId: string
+    categoryId: string,
+    splitMethod: string
+    usersAndShares: {memberId: string, share: number }[] 
 }
 
 export interface RequestGrpMember {
