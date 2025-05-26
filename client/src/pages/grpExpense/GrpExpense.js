@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import Header from '../../layouts/Header'
 import Footer from '../../layouts/Footer'
 import SideBar from '../../layouts/SideBar'
-import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useLocation, } from 'react-router-dom';
 import { useUser } from '../../components/Context';
 import { FaEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
@@ -29,7 +29,7 @@ function GrpExpense() {
         if (!loginUser) {
             navigate('/login')
         }
-    }, [])
+    }, [loginUser])
 
     async function fetchGroupExpenses() {
         const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/groupexpense/onegroup/${groupId}`)
@@ -140,7 +140,7 @@ function GrpExpense() {
                                                     <td>{index + 1}</td>
                                                     <td>{item.user?.name|| 'New user he/she not update their profile'}</td>
                                                     <td>{item.description}</td>
-                                                    <td>{item.amount}</td>
+                                                    <td>₹ {item.amount}</td>
                                                     <td>{item.category?.name}</td>
                                                     <td>
                                                         {

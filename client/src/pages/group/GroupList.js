@@ -65,23 +65,8 @@ function GroupList() {
         }
     }, [])
 
-    // useEffect(() => {
-    //     async function fetchgroupExpense(id) {
-    //         const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/groupexpense/onegroup/${id}`)
-    //         const expenses = await response.json()
-    //         const totalAmount = expenses.data.reduce((sum, expense) => sum + expense.amount, 0);
-    //         setExpensesTotal(totalAmount);
-
-    //     }
-    //     async function fetchAllGroups() {
-    //         if (userGrps.length > 0) {
-    //             await Promise.all(userGrps.map(group => fetchgroupExpense(group._id)));
-    //         }
-    //     }
-    //     fetchAllGroups();
-    // }, [fetchUserGrp])
-
-        useEffect(() => {
+    useEffect(() => {
+        if (userGrps.length === 0) return;
         async function fetchgroupExpense(id) {
             const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/groupexpense/onegroup/${id}`);
             const expenses = await response.json();
@@ -97,7 +82,7 @@ function GroupList() {
         }
 
         fetchAllGroups();
-    }, [fetchUserGrp]);
+    }, [userGrps]);
 
     useEffect(() => {
         setTimeout(() => {
@@ -163,9 +148,9 @@ function GroupList() {
                                     <thead>
                                         <tr>
                                             <th scope="col">Sno</th>
-                                            <th scope="col">Group Name</th>
-                                            <th scope='col'>Created By</th>
-                                            <th scope='col'>Total Expense</th>
+                                            <th scope="col" className='text-nowrap'>Group Name</th>
+                                            <th scope='col' className='text-nowrap'>Created By</th>
+                                            <th scope='col' className='text-nowrap'>Total Expense</th>
                                             <th scope="col" className='text-center'>Actions</th>
                                         </tr>
                                     </thead>
@@ -174,8 +159,8 @@ function GroupList() {
                                             return (
                                                 <tr key={index}>
                                                     <td scope="row">{sno++}</td>
-                                                    <td>{userGrp.name}</td>
-                                                    <td>{userGrp.createdBy.name}</td>
+                                                    <td className='text-nowrap'>{userGrp.name}</td>
+                                                    <td className='text-nowrap'>{userGrp.createdBy.name}</td>
                                                     <td>₹ {expensesTotal[index] || 0}</td>
                                                     <td
                                                         className='d-flex'
@@ -185,13 +170,18 @@ function GroupList() {
                                                                 <>
                                                                     <Link
                                                                         to={`/group/groupmember?grpid=${userGrp._id}&grpname=${userGrp.name}&leader=${userGrp.createdBy._id}`}
-                                                                        className='btn btn-link'>
+                                                                        className='btn btn-link text-nowrap'>
                                                                         Manage Members
                                                                     </Link>
                                                                     <Link
                                                                         to={`/group/groupexpense?grpid=${userGrp._id}&grpname=${userGrp.name}&leader=${userGrp.createdBy._id}`}
-                                                                        className='btn btn-link'>
+                                                                        className='btn btn-link text-nowrap'>
                                                                         Manage Expenses
+                                                                    </Link>
+                                                                    <Link
+                                                                        to={`/group/settlement?grpid=${userGrp._id}&grpname=${userGrp.name}`}
+                                                                        className='btn btn-link'>
+                                                                        Settlements
                                                                     </Link>
                                                                     <Link
                                                                         to={`/group/editgroup?mode=edit&group=${userGrp._id}`}
@@ -207,19 +197,18 @@ function GroupList() {
                                                             ) : (
                                                                 <>
                                                                     <Link
-                                                                        to={`/group/groupexpense?grpid=${userGrp._id}&grpname=${userGrp.name}&leader=${userGrp.createdBy._id}`}
-                                                                        className='btn btn-link'>
-                                                                        Your Expenses
-                                                                    </Link>
-                                                                    <Link
                                                                         to={`/group/groupmember?grpid=${userGrp._id}&grpname=${userGrp.name}&leader=${userGrp.createdBy._id}`}
                                                                         className='btn btn-link'>
-                                                                        Your Members
+                                                                        Group Members
+                                                                    </Link>
+                                                                    <Link
+                                                                        to={`/group/groupexpense?grpid=${userGrp._id}&grpname=${userGrp.name}&leader=${userGrp.createdBy._id}`}
+                                                                        className='btn btn-link'>
+                                                                        Group Expenses
                                                                     </Link>
                                                                 </>
                                                             )
                                                         }
-
                                                     </td>
                                                 </tr>
                                             )

@@ -18,6 +18,7 @@ import AddGrpExpense from './pages/grpExpense/AddGrpExpense';
 import Profile from './pages/Profile';
 import ParentHome from './pages/ParentHome';
 import ForgetPassword from './pages/ForgetPassword';
+import Settlements from './pages/group/Settlements';
 
 function App() {
   return (
@@ -44,6 +45,7 @@ function App() {
         <Route path='/group/groupexpense' element={<GrpExpense />} />
         <Route path='/group/groupexpense/addgroupexpense' element={<AddGrpExpense />} />
         <Route path='/group/groupexpense/editgroupexpense' element={<AddGrpExpense />} />
+        <Route path='/group/settlement' element={<Settlements />} />
         <Route path='/userprofile' element={<Profile />} />
         <Route path='/forgetpassword' element={<ForgetPassword />} />
       </Routes>

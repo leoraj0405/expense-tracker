@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import '../style/Login.css'
+import '../style/style.css'
 import Footer from '../layouts/Footer'
 import { Link, useNavigate } from 'react-router-dom'
 

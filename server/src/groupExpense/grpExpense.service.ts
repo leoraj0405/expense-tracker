@@ -4,7 +4,6 @@ import { Model, Types } from 'mongoose';
 import { RequestGrpExpense } from '../request';
 import { GroupExpense } from 'src/schemas/groupExpense.schema';
 import { GrpMemberService } from 'src/groupMember/grpMember.service';
-import { promises } from 'dns';
 
 @Injectable()
 export class GrpExpenseService {
@@ -46,7 +45,7 @@ export class GrpExpenseService {
       membersId?.forEach((id) => {
         splitEqualArr.push({
           memberId: id,
-          share: Math.round(amount / membersId.length),
+          share: Math.round(Number(amount) / Number(membersId.length)),
         });
       });
 
@@ -124,7 +123,7 @@ export class GrpExpenseService {
     const updateGroupExpense = await this.groupExpensemodel
       .findByIdAndUpdate(
         id,
-        {...inputs, updatedAt: new Date() } ,
+        { ...inputs, updatedAt: new Date() },
         { new: true },
       )
       .exec();
@@ -240,6 +239,57 @@ export class GrpExpenseService {
       },
     ]);
     this.logger.log(`The group expense fetch by group Id : ${id}`);
+    return groupExpenses;
+  }
+
+  async getExpensesByUserId(userId: string, groupId: string): Promise<GroupExpense[] | null> {
+   
+    const user = new Types.ObjectId(userId);
+    const group = new Types.ObjectId(groupId)
+    const groupExpenses = await this.groupExpensemodel.aggregate([
+      { $match: { userId: user, groupId : group, deletedAt: null } },
+      {
+        $lookup: {
+          from: 'groups',
+          localField: 'groupId',
+          foreignField: '_id',
+          as: 'group',
+        },
+      },
+      { $unwind: '$group' },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      { $unwind: '$user' },
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'categoryId',
+          foreignField: '_id',
+          as: 'category',
+        },
+      },
+      { $unwind: '$category' },
+      {
+        $project: {
+          _id: 1,
+          description: 1,
+          amount: 1,
+          splitAmong: 1,
+          splitUnequal: 1,
+          'group.name': 1,
+          'category.name': 1,
+          'user.name': 1,
+          'user._id': 1,
+        },
+      },
+    ]);
+    this.logger.log(`The group expense fetch by user Id : ${userId} in group ${groupId}`);
     return groupExpenses;
   }
 }

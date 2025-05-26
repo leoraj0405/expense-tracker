@@ -33,15 +33,15 @@ export class GrpExpenseController {
         userId: body.userId,
         categoryId: body.categoryId,
         usersAndShares: body.usersAndShares,
-        splitMethod:body.splitMethod
+        splitMethod: body.splitMethod,
       });
       reply.status(200).send(response);
     } catch (error) {
-      console.log(error)
+      console.log(error);
       reply.status(500).send(response);
     }
   }
-  
+
   @Put('/:id')
   async updateGroupExpenseById(
     @Param('id') id: string,
@@ -52,11 +52,14 @@ export class GrpExpenseController {
       data: null,
     };
     try {
-      response.data = await this.grpExpenseService.updateGroupExpenseById(id, body);
+      response.data = await this.grpExpenseService.updateGroupExpenseById(
+        id,
+        body,
+      );
       reply.status(200).send(response);
     } catch (error) {
-      if(error.status) {
-        return reply.status(400).send(error.message)
+      if (error.status) {
+        return reply.status(400).send(error.message);
       }
       reply.status(500).send(error);
     }
@@ -91,8 +94,8 @@ export class GrpExpenseController {
         await this.grpExpenseService.getGroupExpenseById(id);
       if (!oneGroupExpense?.length) {
         return reply.status(404).send(response);
-      } 
-      response.data = oneGroupExpense
+      }
+      response.data = oneGroupExpense;
       reply.status(200).send(response);
     } catch (error) {
       reply.status(500).send(response);
@@ -116,7 +119,32 @@ export class GrpExpenseController {
       response.data = oneGroupExpenses;
       reply.status(200).send(response);
     } catch (error) {
-      console.log(error)
+      console.log(error);
+      reply.status(500).send(response);
+    }
+  }
+
+  @Get('/user/:user/:group')
+  async fetchGroupExpensesByUserId(
+    @Param('user') userId: string,
+    @Param('group') groupId: string,
+    @Res() reply: any,
+  ): Promise<GroupExpense[] | void> {
+    const response: ResponseDto = {
+      data: null,
+    };
+    try {
+      const userExpenses = await this.grpExpenseService.getExpensesByUserId(
+        userId,
+        groupId,
+      );
+      if (!userExpenses || !userExpenses.length) {
+        return reply.status(404).send(response);
+      }
+      response.data = userExpenses;
+      reply.status(200).send(response);
+    } catch (error) {
+      console.log(error);
       reply.status(500).send(response);
     }
   }

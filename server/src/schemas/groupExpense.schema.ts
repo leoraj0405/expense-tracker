@@ -43,18 +43,18 @@ export class GroupExpense extends Document {
     ],
     required: false,
   })
-  splitAmong?: { memberId: GroupMember; share: number }[];
+  splitAmong?: { memberId: GroupMember; share: number, isSettle: boolean }[];
 
   @Prop({
     type: [
       {
-        userId: { type: MongooseSchema.Types.ObjectId, ref: 'User' },
+        memberId: { type: MongooseSchema.Types.ObjectId, ref: 'User' },
         share: Number,
       },
     ],
     required: false,
   })
-  splitUnequal?: {memberId: GroupMember, share: number }[];
+  splitUnequal?: {memberId: GroupMember, share: number, isSettle: boolean }[];
 
   @Prop({ required: true })
   createdAt: Date;

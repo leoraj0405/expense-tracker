@@ -19,8 +19,8 @@ function GrpMember() {
     const groupId = queryValue.get('grpid')
     const grpName = queryValue.get('grpname')
     const groupLeader = queryValue.get('leader')
-
     const navigate = useNavigate();
+    
     const [alertBlock, setAlertBlock] = useState({
         blockState: true,
         msg: ''

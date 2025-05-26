@@ -4,7 +4,7 @@ import SideBar from '../../layouts/SideBar'
 import Footer from '../../layouts/Footer'
 import { useLocation, Link, useNavigate } from 'react-router-dom'
 import { useUser } from '../../components/Context'
-import '../../style/Login.css'
+import '../../style/style.css'
 
 function useQuery() {
     return new URLSearchParams(useLocation().search)
@@ -42,6 +42,7 @@ function AddGrpExpense() {
     const contentRef = useRef(null);
     const [splitMethod, setSplitMethod] = useState('')
     const [unequalArr, setUnequalArr] = useState([]);
+    const [members, setMembers] = useState([])
 
     useEffect(() => {
         if (!loginUser) {
@@ -71,6 +72,11 @@ function AddGrpExpense() {
         if (response.status === 200) {
             const responseData = await response.json()
             setUsers(responseData.data)
+            const members = responseData?.data.reduce((acc, member) => {
+                acc[member.user._id] = member.user.name;
+                return acc;
+            }, {});
+            setMembers(members)
         } else {
             const errorInfo = await response.json()
             setAlertBlock({
@@ -209,6 +215,8 @@ function AddGrpExpense() {
         }, 10000)
     }, [alertBlock])
 
+    console.log(members)
+
     return (
         <>
             <header>
@@ -337,7 +345,7 @@ function AddGrpExpense() {
                                     <div key={index} className='d-flex justify-content-between mt-3 mb-2'>
                                         <div className='w-50'>
                                             <label value={item?.user?._id}>
-                                                {item?.user?.name || 'New user he/she not update their profile'}
+                                                {members[item?.user?._id] || 'New user he/she not update their profile'}
                                             </label>
                                         </div>
                                         <div className='w-50'>
