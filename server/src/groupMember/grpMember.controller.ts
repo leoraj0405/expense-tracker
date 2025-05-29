@@ -67,8 +67,10 @@ export class GrpMemberController {
         reply.status(200).send(createMember);
       }
     } catch (error) {
-      console.log(error);
-      reply.status(500).send(response);
+      if(error.code === 11000) {
+        return reply.status(409).send('This User Already is in the Group.')
+      }
+      reply.status(500).send(error);
     }
   }
 

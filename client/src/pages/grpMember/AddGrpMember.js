@@ -53,19 +53,17 @@ function AddGrpMember() {
             body: raw,
         };
 
-        console.log(requestOptions)
-        let request
-        request = fetch(`${process.env.REACT_APP_FETCH_URL}/groupmember`, { ...requestOptions, method: "POST" })
+        let request = fetch(`${process.env.REACT_APP_FETCH_URL}/groupmember`, { ...requestOptions, method: "POST" })
         request.then(async (response) => {
             if (response.status === 200) {
                 navigate(`/group/groupmember?grpid=${grpId}&grpName=${grpName}&leader=${groupLeader}`)
             } else {
-                const errorInfo = await response.json()
-                console.log(errorInfo)
+                if(response.status === 409) {
                 setAlertBlock({
                     blockState: false,
-                    msg: errorInfo.message
+                    msg: await response.text()
                 })
+                }
             }
         });
     };
@@ -75,7 +73,7 @@ function AddGrpMember() {
                 blockState: true,
                 msg: ''
             })
-        }, 5000)
+        }, 10000)
     }, [alertBlock])
     return (
         <>

@@ -3,13 +3,17 @@ import { Link } from "react-router-dom";
 import { GiExpense } from "react-icons/gi";
 import { MdOutlineCategory } from "react-icons/md";
 import { MdGroups2 } from "react-icons/md";
-
-
+import Logo from '../assets/img/websiteLogo.png'
 
 const SideBar = () => {
   return (
-    <div className="d-flex flex-column h-100 p-2 bg-warning" style={{ width: "250px" }}>
+    <div className="d-flex flex-column h-100 p-2 bg-warning" style={{ width: "220px" }}>
       <ul className="nav nav-pills flex-column">
+        <li className="nav-item mb-2 d-flex justify-content-around align-items-center">
+          <img src={Logo} alt="Logo" width="60" height="60" className="d-inline-block align-top me-2" />
+          <strong><h3>ET</h3></strong>
+        </li>
+        <hr />
         <li className="nav-item mb-2">
           <Link to="/home" className="nav-link text-dark">
             <i className="bi bi-house me-2"></i> Home

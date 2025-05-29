@@ -1,276 +1,235 @@
-import React, { useEffect, useState } from 'react'
-import Header from '../../layouts/Header'
-import Footer from '../../layouts/Footer'
-import SideBar from '../../layouts/SideBar'
-import { useLocation, useNavigate, Link } from 'react-router-dom'
-import { useUser } from '../../components/Context'
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import Header from '../../layouts/Header';
+import Footer from '../../layouts/Footer';
+import SideBar from '../../layouts/SideBar';
+import { useUser } from '../../components/Context';
 
 function useQuery() {
-    return new URLSearchParams(useLocation().search)
+    return new URLSearchParams(useLocation().search);
 }
 
 function AddMyExpense() {
-
+    const { loginUser } = useUser();
+    const navigate = useNavigate();
+    const query = useQuery();
     const location = useLocation();
-    const pathnames = location.pathname.split('/').filter((x) => x);
+    const pathnames = location.pathname.split('/').filter(Boolean);
 
-    const { loginUser } = useUser()
-    const navigate = useNavigate()
+    const pageMode = query.get('mode');
+    const expenseId = query.get('expense');
 
-    const queryValue = useQuery()
-    const [categories, setCategories] = useState([])
+    const [categories, setCategories] = useState([]);
     const [formData, setFormData] = useState({
         id: '',
         category: '',
         date: '',
         amount: '',
-        description: ''
-    })
-    const [dangerAlert, setDangetAlert] = useState({ blockState: true, msg: '' })
-    const pageMode = queryValue.get('mode')
-    const expenseId = queryValue.get('expense')
+        description: '',
+    });
 
+    const [alert, setAlert] = useState({ visible: false, msg: '' });
 
+    const today = new Date().toISOString().split('T')[0];
+
+    // Redirect if user is not logged in
     useEffect(() => {
-        if (!loginUser) {
-            navigate('/login')
-        }
-    }, [loginUser])
+        if (!loginUser) navigate('/login');
+    }, [loginUser]);
 
-    async function fetchCategory() {
-        try {
-            const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/category`)
-            if (response.status === 200) {
-                const categoryData = await response.json()
-                setCategories(categoryData.data)
-            } else {
-                const errorData = await response.json()
-                setDangetAlert({ blockState: false, msg: errorData.message })
+    // Fetch categories on mount
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await fetch(`${process.env.REACT_APP_FETCH_URL}/category`);
+                const data = await res.json();
+                if (res.ok) {
+                    setCategories(data.data?.categoryData || []);
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (err) {
+                showAlert(err.message);
             }
-        } catch (error) {
-            setDangetAlert({ blockState: false, msg: error.message })
-        }
-    }
+        };
+        fetchCategories();
+    }, []);
 
-    async function fetchExpense(id) {
-        const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/expense/${id}`)
-        if (response.ok) {
-            const expenseData = await response.json()
-            console.log(expenseData.data[0])
-            const isoDate = expenseData.data[0].date
-            const formattedDate = isoDate.split("T")[0];
-            setFormData({
-                id: expenseData.data[0]._id,
-                category: expenseData.data[0].category._id,
-                date: formattedDate,
-                amount: expenseData.data[0].amount,
-                description: expenseData.data[0].description
-            })
-        } else {
-            const errorData = await response.json()
-            setDangetAlert({ blockState: false, msg: errorData.message })
-        }
-    }
+    // Fetch expense if editing
+    useEffect(() => {
+        if (!expenseId) return;
 
-    function handleChange(e) {
-        setFormData({ ...formData, [e.target.name]: e.target.value })
-    }
+        const fetchExpense = async () => {
+            try {
+                const res = await fetch(`${process.env.REACT_APP_FETCH_URL}/expense/${expenseId}`);
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message);
 
-
-    function handleSave() {
-        const id = formData.id
-        const categoryId = formData.category
-        const amount = formData.amount
-        const description = formData.description
-        const date = formData.date
-
-        const myHeaders = new Headers();
-        myHeaders.append("Content-Type", "application/json");
-
-
-        const raw = JSON.stringify({
-            "description": description,
-            "amount": Number(amount) < 0 ? 0 : amount,
-            "userId": loginUser?.data?._id,
-            "categoryId": categoryId,
-            "date": date
-        });
-
-        const requestOptions = {
-            headers: myHeaders,
-            body: raw,
+                const expense = data.data[0];
+                setFormData({
+                    id: expense._id,
+                    category: expense.category._id,
+                    date: expense.date.split("T")[0],
+                    amount: expense.amount,
+                    description: expense.description,
+                });
+            } catch (err) {
+                showAlert(err.message);
+            }
         };
 
-        let request
-        if (id) {
-            request = fetch(`${process.env.REACT_APP_FETCH_URL}/expense/${id}`,
-                { ...requestOptions, method: "PUT" })
-        } else {
-            request = fetch(`${process.env.REACT_APP_FETCH_URL}/expense`,
-                { ...requestOptions, method: "POST" })
+        fetchExpense();
+    }, [expenseId]);
+
+    // Auto-dismiss alert
+    useEffect(() => {
+        if (!alert.visible) return;
+        const timer = setTimeout(() => setAlert({ visible: false, msg: '' }), 5000);
+        return () => clearTimeout(timer);
+    }, [alert]);
+
+    const showAlert = (msg) => setAlert({ visible: true, msg });
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSave = async () => {
+        const { id, category, amount, date, description } = formData;
+
+        const payload = {
+            description,
+            amount: Math.max(0, Number(amount)),
+            userId: loginUser?.data?._id,
+            categoryId: category,
+            date,
+        };
+
+        try {
+            const res = await fetch(
+                `${process.env.REACT_APP_FETCH_URL}/expense${id ? `/${id}` : ''}`,
+                {
+                    method: id ? 'PUT' : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                }
+            );
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+            navigate('/expense');
+        } catch (err) {
+            showAlert(err.message);
         }
+    };
 
-        request.then(async (response) => {
-            if (response.status === 200) {
-                navigate('/expense')
-            } else {
-                const errorData = await response.json()
-                setDangetAlert({ blockState: false, msg: errorData.message })
-            }
-        });
-    }
-
-    useEffect(() => {
-        fetchCategory();
-    }, [])
-
-
-    useEffect(() => {
-        if (expenseId) {
-            fetchExpense(expenseId);
-        }
-    }, [expenseId])
-
-
-    useEffect(() => {
-        setTimeout(() => {
-            setDangetAlert({ blockState: true, msg: '' })
-        }, 5000)
-    }, [])
-    const today = new Date().toISOString().split('T')[0];
     return (
-        <>
-            <header>
-                <Header />
-            </header>
-            <div className='d-flex'>
-                <aside>
-                    <SideBar />
-                </aside>
-                <main className='p-3 w-100 bg-light'>
-                    <section className='main' style={{ minHeight: '400px' }}>
-                        <div className='d-flex justify-content-between m-3'>
-                            <h3 className='ms-2'>{pageMode === 'edit'
-                                ? 'Edit My Expenses'
-                                : 'Add My Expenses'}</h3>
-                            <nav className='me-4'>
+        <div className="d-flex">
+            <aside><SideBar /></aside>
+            <div className="flex-grow-1">
+                <header><Header /></header>
+                <main className="p-3 bg-light">
+                    <section className="main" style={{ minHeight: '400px' }}>
+                        <div className="d-flex justify-content-end m-3 w-100">
+                            <nav className="me-4">
                                 <ol className="breadcrumb">
-                                    <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
-
-                                    {pathnames.map((item, index) => {
-                                        const label = item === 'addexpense'
-                                            ? 'Add expense'
-                                            : item === 'editexpense'
-                                                ? 'Edit expense'
-                                                : item === 'expense'
-                                                    ? 'Expense'
-                                                    : item
-                                        const to = `/${pathnames.slice(0, index + 1).join('/')}`;
-                                        const isLast = index === pathnames.length - 1;
-
+                                    <li className="breadcrumb-item">
+                                        <Link className="text-secondary" to="/home">Home</Link>
+                                    </li>
+                                    {pathnames.map((item, idx) => {
+                                        const labelMap = {
+                                            addexpense: 'Add Expense',
+                                            editexpense: 'Edit Expense',
+                                            expense: 'Expense',
+                                        };
+                                        const label = labelMap[item] || item;
+                                        const path = `/${pathnames.slice(0, idx + 1).join('/')}`;
+                                        const isLast = idx === pathnames.length - 1;
                                         return (
-                                            <li className='breadcrumb-item'>
-                                                {isLast ? (
-                                                    <p className='text-secondary' style={{ whiteSpace: 'nowrap' }} >{label}</p>
-                                                ) : (
-                                                    <Link className='text-secondary' to={to}>{label}</Link>
-                                                )}
+                                            <li key={idx} className="breadcrumb-item">
+                                                {isLast
+                                                    ? <span className="text-secondary" style={{ whiteSpace: 'nowrap' }}>{label}</span>
+                                                    : <Link className="text-secondary" to={path}>{label}</Link>}
                                             </li>
-                                        )
+                                        );
                                     })}
                                 </ol>
                             </nav>
                         </div>
-                        <div className="m-4 alert alert-danger" hidden={dangerAlert.blockState}>
-                            {dangerAlert.msg}
-                        </div>
-                        <div
-                            className="m-4 needs-validation p-4 rounded"
-                            style={{ backgroundColor: '#f1f1f1' }}>
+
+                        {alert.visible && (
+                            <div className="m-4 alert alert-danger">{alert.msg}</div>
+                        )}
+
+                        <div className="m-4 p-4 rounded" style={{ backgroundColor: '#f1f1f1' }}>
                             <div className="column">
                                 <div className="col-md-4 mb-3">
-                                    <label htmlFor='category'>Category</label>
+                                    <label htmlFor="category">Category</label>
                                     <select
                                         name="category"
                                         className="form-control"
                                         value={formData.category}
-                                        onChange={handleChange}>
-                                        <option>Choose category</option>
-                                        {Array.isArray(categories?.categoryData) && categories?.categoryData.map(category => {
-                                            return (
-                                                <option
-                                                    key={category._id}
-                                                    value={category._id}>
-                                                    {category.name}
-                                                </option>
-                                            )
-                                        })}
+                                        onChange={handleChange}
+                                    >
+                                        <option value="">Choose category</option>
+                                        {categories.map((cat) => (
+                                            <option key={cat._id} value={cat._id}>{cat.name}</option>
+                                        ))}
                                     </select>
                                 </div>
+
                                 <div className="col-md-4 mb-3">
-                                    <label htmlFor='amount'>Amount</label>
+                                    <label htmlFor="amount">Amount</label>
                                     <input
                                         type="number"
-                                        name='amount'
+                                        name="amount"
+                                        className="form-control"
                                         min="0"
-                                        class="form-control"
                                         value={formData.amount}
                                         onChange={handleChange}
-                                        required />
+                                    />
                                 </div>
+
                                 <div className="col-md-4 mb-3">
-                                    <label htmlFor='date'>Date</label>
+                                    <label htmlFor="date">Date</label>
                                     <input
                                         type="date"
-                                        name='date'
-                                        class="form-control"
-                                        value={formData.date}
+                                        name="date"
+                                        className="form-control"
                                         max={today}
+                                        value={formData.date}
                                         onChange={handleChange}
-                                        required />
+                                    />
                                 </div>
-                                <div className="col-md-4 mb-3">
 
-                                    <input
-                                        type="hidden"
-                                        name='id'
-                                        class="form-control"
-                                        value={formData.id}
-                                        required />
-                                </div>
+                                <input type="hidden" name="id" value={formData.id} />
                             </div>
+
                             <div className="form-row">
                                 <div className="col-md-6 mb-3">
-                                    <label htmlFor='description'>Discription</label>
+                                    <label htmlFor="description">Description</label>
                                     <textarea
-                                        type="text"
-                                        name='description'
-                                        class="form-control"
+                                        name="description"
+                                        className="form-control"
                                         value={formData.description}
                                         onChange={handleChange}
-                                        required />
+                                    />
                                 </div>
                             </div>
-                            <div className='d-flex justify-content-end'>
-                                <Link
-                                    className='btn btn-warning me-4'
-                                    to={'/expense'}
-                                >Cancel</Link>
-                                <button
-                                    className="btn btn-primary"
-                                    onClick={() => handleSave(expenseId)}>
+
+                            <div className="d-flex justify-content-end">
+                                <Link className="btn btn-warning me-4" to="/expense">Cancel</Link>
+                                <button className="btn btn-primary" onClick={handleSave}>
                                     Submit
                                 </button>
                             </div>
                         </div>
                     </section>
-                    <footer>
-                        <Footer />
-                    </footer>
+                    <footer><Footer /></footer>
                 </main>
             </div>
-        </>
-    )
+        </div>
+    );
 }
 
-export default AddMyExpense
+export default AddMyExpense;

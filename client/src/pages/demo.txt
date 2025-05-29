@@ -1,20 +1,24 @@
-    <>
-    <header>
-    <Header />
-    </header>
-      <div className='d-flex'>
-        <aside>
-          <SideBar />
-        </aside>
-        <main className='p-3 w-100 bg-light'>
-          <section className='main' style={{minHeight: '400px'}}>
-            
-          </section>
-          <footer>
-            <Footer />
-          </footer>
-        </main>
-      </div>
-    </>
 
+<>
+  <div className="d-flex">
+    {/* Sidebar */}
+    <aside>
+      <SideBar />
+    </aside>
 
+    {/* Right content: header, main, footer */}
+    <div className="flex-grow-1">
+      <header>
+        <Header />
+      </header>
+      <main className="p-3 bg-light">
+        <section className="main" style={{ minHeight: '400px' }}>
+          {/* Content goes here */}
+        </section>
+        <footer>
+          <Footer />
+        </footer>
+      </main>
+    </div>
+  </div>
+</>

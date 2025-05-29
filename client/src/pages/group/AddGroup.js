@@ -1,202 +1,168 @@
-import React, { useEffect, useState } from 'react'
-import Header from '../../layouts/Header'
-import Footer from '../../layouts/Footer'
-import SideBar from '../../layouts/SideBar'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { useUser } from '../../components/Context'
+import React, { useEffect, useState } from 'react';
+import Header from '../../layouts/Header';
+import Footer from '../../layouts/Footer';
+import SideBar from '../../layouts/SideBar';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useUser } from '../../components/Context';
 
 function useQuery() {
-    return new URLSearchParams(useLocation().search)
+    return new URLSearchParams(useLocation().search);
 }
 
 function AddGroup() {
     const location = useLocation();
-    const pathnames = location.pathname.split('/').filter((x) => x);
+    const navigate = useNavigate();
+    const pathnames = location.pathname.split('/').filter(Boolean);
 
-    const { loginUser } = useUser()
-    const queryValue = useQuery()
-    const navigate = useNavigate()
-    const [formData, setFormData] = useState({
-        grpId: '',
-        grpName: '',
-    })
-    const [alertBlock, setAlertBlock] = useState({
-        blockState: true,
-        msg: ''
-    })
-    const pageName = queryValue.get('mode')
-    const groupId = queryValue.get('group')
+    const { loginUser } = useUser();
+    const query = useQuery();
+    const mode = query.get('mode');
+    const groupId = query.get('group');
 
-    if(!loginUser) {
-        navigate('/login')
-    }
-
-    function handleOnChange(e) {
-        setFormData({ ...formData, [e.target.name]: e.target.value })
-    }
-
-    function handleSubmit() {
-        const name = formData.grpName
-        const createdBy = loginUser?.data?._id
-        const id = formData.grpId
-
-        const myHeaders = new Headers();
-        myHeaders.append("Content-Type", "application/json");
-
-        const raw = JSON.stringify({
-            "name": name,
-            "createdBy": createdBy
-        });
-
-        const requestOptions = {
-
-            headers: myHeaders,
-            body: raw,
-        };
-
-        let request
-        if (!id) {
-            request = fetch(`${process.env.REACT_APP_FETCH_URL}/group`,
-                { ...requestOptions, method: "POST", })
-        } else {
-            request = fetch(`${process.env.REACT_APP_FETCH_URL}/group/${id}`,
-                { ...requestOptions, method: "PUT", })
-        }
-        request.then(async (response) => {
-            if (response.status === 200) {
-                if (pageName === 'edit') {
-                    navigate('/group')
-                }
-                const postGrpData = await response.json()
-                const groupId = postGrpData?.data?._id;
-
-                const myHeaders = new Headers();
-                myHeaders.append("Content-Type", "application/json");
-
-                const raw = JSON.stringify({
-                    "email": loginUser?.data?.email,
-                    groupId
-                });
-
-                const requestOptions = {
-                    method: "POST",
-                    headers: myHeaders,
-                    body: raw,
-                };
-                fetch(`${process.env.REACT_APP_FETCH_URL}/groupmember`, requestOptions)
-                    .then(async (response2) => {
-                        if (response2.status === 200) {
-                            navigate('/group')
-                        } else {
-                            const errorInfo = await response2.json()
-                            setAlertBlock({
-                                blockState: false,
-                                msg: errorInfo.message
-                            })
-                        }
-                    });
-            } else {
-                const errorInfo = await response.json()
-                setAlertBlock({
-                    blockState: false,
-                    msg: errorInfo.message
-                })
-            }
-        });
-    }
-
-    async function handleEdit(id) {
-        const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/group/${id}`)
-        if (response.ok) {
-            const groupData = await response.json()
-            console.log(groupData.data[0])
-            setFormData({
-                grpId: groupData.data[0]._id,
-                grpName: groupData.data[0].name,
-                createdBy: groupData.data[0].createdBy
-            })
-        } else {
-            const errorInfo = await response.json()
-            setAlertBlock({
-                blockState: false,
-                msg: errorInfo.message
-            })
-        }
-    }
+    const [formData, setFormData] = useState({ grpId: '', grpName: '' });
+    const [alert, setAlert] = useState({ show: false, message: '' });
 
     useEffect(() => {
-        if (groupId) {
-            handleEdit(groupId)
+        if (!loginUser) {
+            navigate('/login');
         }
-    }, [groupId])
-    setTimeout(() => {
-        setAlertBlock({
-            blockState: true,
-            msg: ''
-        })
-    }, 10000)
+    }, [loginUser, navigate]);
 
-    // console.log(formData)
+    useEffect(() => {
+        if (groupId) fetchGroupData(groupId);
+    }, [groupId]);
+
+    useEffect(() => {
+        if (alert.show) {
+            const timer = setTimeout(() => {
+                setAlert({ show: false, message: '' });
+            }, 10000);
+            return () => clearTimeout(timer);
+        }
+    }, [alert]);
+
+    const fetchGroupData = async (id) => {
+        try {
+            const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/group/${id}`);
+            if (!response.ok) throw new Error('Failed to fetch group');
+            const { data } = await response.json();
+            const group = data[0];
+            setFormData({ grpId: group._id, grpName: group.name });
+        } catch (err) {
+            showAlert(err.message);
+        }
+    };
+
+    const showAlert = (message) => {
+        setAlert({ show: true, message });
+    };
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = async () => {
+        const { grpId, grpName } = formData;
+        const createdBy = loginUser?.data?._id;
+
+        const headers = { 'Content-Type': 'application/json' };
+        const body = JSON.stringify({ name: grpName, createdBy });
+
+        try {
+            const url = `${process.env.REACT_APP_FETCH_URL}/group${grpId ? `/${grpId}` : ''}`;
+            const method = grpId ? 'PUT' : 'POST';
+            const response = await fetch(url, { method, headers, body });
+
+            if (!response.ok) throw new Error((await response.json()).message);
+
+            const result = await response.json();
+            const groupId = result?.data?._id;
+
+            // Add current user as member
+            const memberResponse = await fetch(`${process.env.REACT_APP_FETCH_URL}/groupmember`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({
+                    email: loginUser?.data?.email,
+                    groupId,
+                }),
+            });
+
+            if (!memberResponse.ok) {
+                throw new Error((await memberResponse.json()).message);
+            }
+
+            navigate('/group');
+        } catch (err) {
+            showAlert(err.message);
+        }
+    };
+
     return (
-        <>
-            <header>
-                <Header />
-            </header>
-            <div className='d-flex'>
-                <aside>
-                    <SideBar />
-                </aside>
-                <main className='p-3 w-100 bg-light'>
-                    <section className='main' style={{ minHeight: '400px' }}>
-
-                        <div className='d-flex justify-content-between m-4'>
-                            <h2>{pageName === 'edit' ? 'Edit Group' : 'Create Group'}</h2>
+        <div className="d-flex">
+            <aside>
+                <SideBar />
+            </aside>
+            <div className="flex-grow-1">
+                <header>
+                    <Header />
+                </header>
+                <main className="p-3 bg-light">
+                    <section className="main" style={{ minHeight: '400px' }}>
+                        <div className="d-flex justify-content-end m-4">
                             <nav>
                                 <ol className="breadcrumb">
-                                    <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
-
+                                    <li className="breadcrumb-item">
+                                        <Link className="text-secondary" to="/home">Home</Link>
+                                    </li>
                                     {pathnames.map((item, index) => {
                                         const to = `/${pathnames.slice(0, index + 1).join('/')}`;
-                                        const label = item === 'addgroup' ? 'Add group' : item === 'editgroup' ? 'Edit group' : item === 'group' ? 'Group' : item
+                                        const labelMap = {
+                                            addgroup: 'Add Group',
+                                            editgroup: 'Edit Group',
+                                            group: 'Group',
+                                        };
+                                        const label = labelMap[item] || item;
                                         return (
-                                            <li className="breadcrumb-item"><Link className='text-secondary' to={to}>{label}</Link></li>
-                                        )
+                                            <li key={index} className="breadcrumb-item">
+                                                <Link className="text-secondary" to={to}>{label}</Link>
+                                            </li>
+                                        );
                                     })}
                                 </ol>
                             </nav>
                         </div>
-                        <div
-                            className="alert alert-danger m-4"
-                            hidden={alertBlock.blockState}>
-                            {alertBlock.msg}
-                        </div>
 
-                        <div className='m-4 w-100'>
-                            <div className='d-flex flex-column align-content-center'>
+                        {alert.show && (
+                            <div className="alert alert-danger m-4">{alert.message}</div>
+                        )}
+
+                        <div className="m-4 w-75">
+                            <div className="d-flex flex-column align-content-center">
                                 <div className="form-group col-md-6">
                                     <label htmlFor="grpName">Name</label>
                                     <input
                                         type="text"
                                         className="form-control"
-                                        name='grpName'
+                                        name="grpName"
                                         value={formData.grpName}
-                                        onChange={handleOnChange}
-                                        placeholder="Group Name" />
-
+                                        onChange={handleChange}
+                                        placeholder="Group Name"
+                                    />
                                     <input
                                         type="hidden"
-                                        className="form-control mt-3"
+                                        name="grpId"
                                         value={formData.grpId}
-                                        onChange={handleOnChange}
-                                        name='grpId' />
+                                    />
                                 </div>
-                                <div
-                                    className='mt-4 w-50 d-flex justify-content-end'>
-                                    <Link className='btn btn-warning me-4' to={`/group`}>Cancel</Link>
-                                    <button
-                                        onClick={handleSubmit}
-                                        className="btn btn-primary">Submit</button>
+                                <div className="mt-4 d-flex justify-content-end gap-3">
+                                    <Link className="btn btn-warning" to="/group">Cancel</Link>
+                                    <button onClick={handleSubmit} className="btn btn-primary">
+                                        Submit
+                                    </button>
                                 </div>
+
                             </div>
                         </div>
                     </section>
@@ -205,7 +171,8 @@ function AddGroup() {
                     </footer>
                 </main>
             </div>
-        </>)
+        </div>
+    );
 }
 
-export default AddGroup
+export default AddGroup;

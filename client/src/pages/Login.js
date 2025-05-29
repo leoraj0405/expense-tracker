@@ -7,7 +7,7 @@ import Footer from '../layouts/Footer'
 
 function Login() {
 
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [formData, setFormData] = useState({ email: "leoraj04065@gmail.com", password: "123" });
   const [dangerAlert, setDangerAlter] = useState(true)
   const navigate = useNavigate()
   const [spinner, setSpinner] = useState(true)

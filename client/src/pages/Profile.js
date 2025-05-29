@@ -7,247 +7,206 @@ import defaultImage from '../assets/img/profile.png'
 import { useLocation, Link, useNavigate } from 'react-router-dom'
 
 function Profile() {
-    const location = useLocation();
-    const pathnames = location.pathname.split('/').filter((x) => x);
-    const { loginUser } = useUser()
-    const navigate = useNavigate()
-    const [user, setUser] = useState([])
-    const [dangerAlert, setDangetAlert] = useState({ blockState: true, msg: '', suceessState: true })
-    const [form, setFormData] = useState({ userName: '', email: '', parentEmail: '', profile: '' })
+  const location = useLocation()
+  const pathnames = location.pathname.split('/').filter(Boolean)
+  const { loginUser } = useUser()
+  const navigate = useNavigate()
 
-    const [showDiv, setShowDiv] = useState(false);
-    const divRef = useRef(null);
+  const [user, setUser] = useState(null)
+  const [form, setForm] = useState({
+    userName: '',
+    email: '',
+    parentEmail: '',
+    profile: null,
+  })
+  const [alert, setAlert] = useState({ visible: false, message: '', isError: false })
 
-    useEffect(() => {
-        if (showDiv && divRef.current) {
-            divRef.current.focus();
-        }
-    }, [showDiv]);
+  const alertRef = useRef(null)
 
-    useEffect(() => {
-        if (!loginUser) {
-            navigate('/login')
-        }
-    }, [loginUser])
+  // Redirect if no user
+  useEffect(() => {
+    if (!loginUser) navigate('/login')
+  }, [loginUser, navigate])
 
-    function handleChange(e) {
-        const { name, value, files } = e.target;
-        if (name === 'profile') {
-            setFormData({ ...form, [name]: files[0] });
-        } else {
-            setFormData({ ...form, [name]: value });
-        }
+  // Fetch user data
+  useEffect(() => {
+    if (!loginUser) return
+    fetch(`http://localhost:1000/user/${loginUser.data._id}`)
+      .then((res) => res.json())
+      .then((userData) => {
+        setUser(userData)
+        setForm({
+          userName: userData?.data?.name || '',
+          email: userData?.data?.email || '',
+          parentEmail: userData?.data?.parentEmail || '',
+          profile: null,
+        })
+      })
+      .catch(() => setAlert({ visible: true, message: 'Failed to fetch user', isError: true }))
+  }, [loginUser])
+
+  // Auto-focus alert when shown
+  useEffect(() => {
+    if (alert.visible && alertRef.current) {
+      alertRef.current.focus()
     }
+  }, [alert])
 
-
-    async function fetchUser() {
-        const response = await fetch(`http://localhost:1000/user/${loginUser?.data?._id}`)
-        if (response.status === 200) {
-            const userData = await response.json()
-            setUser(userData)
-            setFormData({
-                userName: userData?.data?.name,
-                email: userData?.data?.email,
-                parentEmail: userData?.data?.parentEmail,
-                profile: userData?.profileUrl.split('/')[2],
-            })
-        } else {
-            const errorData = await response.json()
-            setShowDiv(true)
-        }
+  // Auto-hide alert
+  useEffect(() => {
+    if (alert.visible) {
+      const timer = setTimeout(() => setAlert({ visible: false, message: '', isError: false }), 5000)
+      return () => clearTimeout(timer)
     }
+  }, [alert.visible])
 
+  const handleChange = (e) => {
+    const { name, value, files } = e.target
+    setForm((prev) => ({
+      ...prev,
+      [name]: name === 'profile' ? files[0] : value,
+    }))
+  }
 
-    async function handleSubmit(id) {
+  const handleSubmit = async () => {
+    if (!loginUser) return
 
-        const formdata = new FormData();
-        formdata.append("name", form.userName);
-        formdata.append("email", form.email);
-        formdata.append("parentEmail", form.parentEmail);
-        formdata.append("profileImage", form.profile);
+    const formData = new FormData()
+    formData.append('name', form.userName)
+    formData.append('email', form.email)
+    formData.append('parentEmail', form.parentEmail)
+    if (form.profile) formData.append('profileImage', form.profile)
 
-        console.log(form)
-        const requestOptions = {
-            method: "PUT",
-            body: formdata,
-        };
-
-        fetch(`${process.env.REACT_APP_FETCH_URL}/user/${id}`, requestOptions)
-            .then(async (response) => {
-                if (response.status === 200) {
-                    setDangetAlert({ blockState: true, msg: '', suceessState: false })
-                    fetchUser()
-                } else {
-                    const errorData = await response.json()
-                    setDangetAlert({ blockState: false, msg: errorData.message, suceessState: true })
-
-                }
-            });
+    try {
+      const res = await fetch(`${process.env.REACT_APP_FETCH_URL}/user/${loginUser.data._id}`, {
+        method: 'PUT',
+        body: formData,
+      })
+      if (res.ok) {
+        setAlert({ visible: true, message: 'Profile updated successfully!', isError: false })
+        // Refresh user data
+        const updatedUser = await res.json()
+        setUser(updatedUser)
+      } else {
+        const errorData = await res.json()
+        setAlert({ visible: true, message: errorData.message, isError: true })
+      }
+    } catch (error) {
+      setAlert({ visible: true, message: 'Something went wrong!', isError: true })
     }
+  }
 
+  return (
+    <div className="d-flex">
+      <aside><SideBar /></aside>
 
-    useEffect(() => {
-        fetchUser()
-    }, [])
+      <div className="flex-grow-1">
+        <Header />
+        <main className="p-3 bg-light" style={{ minHeight: '400px' }}>
+          <div className="container me-5">
+            <Breadcrumb pathnames={pathnames} />
+            {alert.visible && (
+              <div
+                tabIndex={-1}
+                ref={alertRef}
+                className={`alert ${alert.isError ? 'alert-danger' : 'alert-success'}`}
+                role="alert"
+              >
+                {alert.message}
+              </div>
+            )}
 
-    useEffect(() => {
-        setTimeout(() => {
-            setDangetAlert({ blockState: true, msg: '', suceessState: true })
-        }, 10000)
-    }, [dangerAlert])
+            <ProfileOverview user={user} defaultImage={defaultImage} />
+            <EditProfileForm form={form} handleChange={handleChange} handleSubmit={handleSubmit} />
+          </div>
+        </main>
+        <Footer />
+      </div>
+    </div>
+  )
+}
 
-    return (
-        <>
-            <header>
-                <Header />
-            </header>
-            <div className='d-flex'>
-                <aside>
-                    <SideBar />
-                </aside>
-                <main className='p-3 w-100 bg-light'>
-                    <section className='main' style={{ minHeight: '400px' }}>
-                        <div className='d-flex justify-content-between me-4 ms-4 mt-4'>
-                            <h4>Profile</h4>
-                            <nav className='me-4'>
-                                <ol className="breadcrumb">
-                                    <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
-                                    {pathnames.map((item, index) => {
-                                        const label = item === 'userprofile' ? 'User Profile' : item
-                                        const to = `/${pathnames.slice(0, index + 1).join('/')}`;
-                                        const isLast = index === pathnames.length - 1
-                                        return (
-                                            <li className='breadcrumb-item'>
-                                                {isLast ? (
-                                                    <p className='text-secondary' style={{ whiteSpace: 'nowrap' }} >{label}</p>
-                                                ) : (
-                                                    <Link className='text-secondary' to={to}>{label}</Link>
-                                                )}
-                                            </li>
-                                        )
-                                    })}
-                                </ol>
-                            </nav>
-                        </div>
-                        <div
-                            className="m-4 alert alert-danger"
-                            ref={divRef}
-                            tabIndex={-1}
-                            hidden={dangerAlert.blockState}>
-                            {dangerAlert.msg}
-                        </div>
-                        <div>
-                            <div className="container">
-                                <div className="d-flex justify-content-around">
-                                    <div className="col-md-8 w-50">
-                                        <div className="card shadow border-0">
-                                            <div className="card-body">
-                                                <div className='d-flex'>
-                                                    <p className='p-2 
-                                                        text-primary fw-bold'
-                                                    >
-                                                        Over View</p>
-                                                    <p
-                                                        className='p-2 
-                                                        text-primary fw-bold'
-                                                        role='button'
-                                                        data-bs-toggle="collapse"
-                                                        data-bs-target="#editInfo"
-                                                    >
-                                                        Edit Info</p>
-                                                </div>
-                                                <hr />
-                                                <div className='mt-4'>
-                                                    <div className="text-center mb-4 ">
-                                                        <img
-                                                            src={user?.profileUrl && user.profileUrl !== '/uploads/null'
-                                                                ? `${process.env.REACT_APP_FETCH_URL}${user.profileUrl}`
-                                                                : defaultImage}
-                                                            alt="Profile"
-                                                            style={{ width: '120px', height: '120px', objectFit: 'cover' }}
-                                                            className="rounded-circle"
-                                                        />
-                                                    </div>
-                                                    <h4 className="text-center mb-3">{user?.data?.name ? user?.data?.name.toUpperCase() : 'User'}</h4>
-                                                    <div className="row mb-3">
-                                                        <div className="col-sm-4 font-weight-bold text-muted">Email Address:</div>
-                                                        <div className="col-sm-8">{user?.data?.email}</div>
-                                                    </div>
-                                                    <div className="row mb-3">
-                                                        <div className="col-sm-4 font-weight-bold text-muted">Parent Email address:</div>
-                                                        <div className="col-sm-8">{user?.data?.parentEmail}</div>
-                                                    </div>
-                                                    <div className="row">
-                                                        <div className="col-sm-4 font-weight-bold text-muted">Joined:</div>
-                                                        <div className="col-sm-8">{user?.data?.createdAt.split('T')[0]}</div>
-                                                    </div>
-                                                </div>
-                                                <hr />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className='col-md-8 ms-4 w-50 collapse' id='editInfo'>
-                                        <div className="card shadow border-0">
-                                            <div className='card-body pb-5'>
-                                                <div className='mt-4' >
-                                                    <div>
-                                                        <div className="mb-3">
-                                                            <label for="userName" className="form-label">Name</label>
-                                                            <input type="text" className="form-control" onChange={handleChange} value={form.userName} name="userName" placeholder="Enter name" />
-                                                        </div>
+function Breadcrumb({ pathnames }) {
+  return (
+    <nav aria-label="breadcrumb" className="mb-3 d-flex justify-content-end">
+      <ol className="breadcrumb">
+        <li className="breadcrumb-item"><Link to="/home">Home</Link></li>
+        {pathnames.map((item, idx) => {
+          const label = item === 'userprofile' ? 'User Profile' : item
+          const to = `/${pathnames.slice(0, idx + 1).join('/')}`
+          const isLast = idx === pathnames.length - 1
+          return (
+            <li className="breadcrumb-item" key={to} aria-current={isLast ? 'page' : undefined}>
+              {isLast ? label : <Link to={to}>{label}</Link>}
+            </li>
+          )
+        })}
+      </ol>
+    </nav>
+  )
+}
 
-                                                        <div class="mb-3">
-                                                            <label for="email" className="form-label">Email</label>
-                                                            <input type="email" className="form-control" onChange={handleChange} value={form.email} name="email" placeholder="Enter email" />
-                                                        </div>
+function ProfileOverview({ user, defaultImage }) {
+  if (!user) return <p>Loading...</p>
+  return (
+    <div className="card shadow mb-4">
+      <div className="card-body text-center">
+        <img
+          src={
+            user.profileUrl && user.profileUrl !== '/uploads/null'
+              ? `${process.env.REACT_APP_FETCH_URL}${user.profileUrl}`
+              : defaultImage
+          }
+          alt="Profile"
+          className="rounded-circle mb-3"
+          style={{ width: 120, height: 120, objectFit: 'cover' }}
+        />
+        <h4>{user.data?.name?.toUpperCase() || 'User'}</h4>
+        <p><strong>Email:</strong> {user.data?.email}</p>
+        <p><strong>Parent Email:</strong> {user.data?.parentEmail}</p>
+        <p><strong>Joined:</strong> {user.data?.createdAt?.split('T')[0]}</p>
+      </div>
+    </div>
+  )
+}
 
-                                                        <div class="mb-3">
-                                                            <label for="parentEmail" className="form-label">Parent Email</label>
-                                                            <input type="email" className="form-control" onChange={handleChange} value={form.parentEmail} name="parentEmail" placeholder="Enter parent's email" />
-                                                        </div>
+function EditProfileForm({ form, handleChange, handleSubmit }) {
+  return (
+    <div className="card shadow mb-4">
+      <div className="card-body">
+        <h5>Edit Profile</h5>
+        <div className="mb-3">
+          <label htmlFor="userName" className="form-label">Name</label>
+          <input type="text" className="form-control" id="userName" name="userName" value={form.userName} onChange={handleChange} />
+        </div>
 
-                                                        <div class="mb-3">
-                                                            <label for="profileImage" className="form-label">Profile Image</label>
-                                                            <input className="form-control" onChange={handleChange} type="file" name="profile" required={true} />
-                                                        </div>
-                                                        <div className='mb-3'>
-                                                            {form.profile instanceof File && (
-                                                                <div className="mb-3">
-                                                                    <img
-                                                                        src={URL.createObjectURL(form.profile)}
-                                                                        alt="Preview"
-                                                                        style={{ width: '100px', height: '100px', objectFit: 'cover' }}
-                                                                    />
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        <div className='d-flex justify-content-end'>
-                                                            <button className="btn btn-warning mt-2 me-3" data-bs-toggle="collapse"
-                                                                data-bs-target="#editInfo">Back</button>
-                                                            <button className="btn btn-primary mt-2" onClick={() => { handleSubmit(loginUser?.data?._id) }}>Submit</button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+        <div className="mb-3">
+          <label htmlFor="email" className="form-label">Email</label>
+          <input type="email" className="form-control" id="email" name="email" value={form.email} onChange={handleChange} />
+        </div>
 
-                            </div>
+        <div className="mb-3">
+          <label htmlFor="parentEmail" className="form-label">Parent Email</label>
+          <input type="email" className="form-control" id="parentEmail" name="parentEmail" value={form.parentEmail} onChange={handleChange} />
+        </div>
 
-                            <div className="alert alert-success mt-5" hidden={dangerAlert.suceessState} role="alert">
-                                Data updated after login
-                            </div>
-                        </div>
-                    </section>
-                    <footer>
-                        <Footer />
-                    </footer>
-                </main>
-            </div>
-        </>
+        <div className="mb-3">
+          <label htmlFor="profileImage" className="form-label">Profile Image</label>
+          <input type="file" className="form-control" id="profileImage" name="profile" onChange={handleChange} />
+          {form.profile && form.profile instanceof File && (
+            <img
+              src={URL.createObjectURL(form.profile)}
+              alt="Preview"
+              className="mt-2 rounded"
+              style={{ width: 100, height: 100, objectFit: 'cover' }}
+            />
+          )}
+        </div>
 
-    )
+        <button className="btn btn-primary" onClick={handleSubmit}>Submit</button>
+      </div>
+    </div>
+  )
 }
 
 export default Profile
