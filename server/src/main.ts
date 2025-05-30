@@ -38,9 +38,7 @@ async function bootstrap() {
       cookie: {
         httpOnly: true,
         maxAge: SESSION_TIME,
-        sameSite: 'none',
-        secure: true,
-        domain: configService.get<string>('FRONTEND_URL')
+        sameSite: 'lax',
       },
     }),
   );

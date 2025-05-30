@@ -11,9 +11,8 @@ function CategoryList() {
     // Navigation and state
     const navigate = useNavigate();
     const location = useLocation();
-    const { loginUser } = useUser();
+    const { user } = useUser();
     const pathnames = location.pathname.split('/').filter(Boolean);
-
     // Data state
     const [categories, setCategories] = useState({
         categoryData: [],
@@ -33,10 +32,10 @@ function CategoryList() {
 
     // Authentication check
     useEffect(() => {
-        if (!loginUser) {
+        if (!user) {
             navigate('/login');
         }
-    }, [loginUser, navigate]);
+    }, [user, navigate]);
 
     // Auto-hide alert after timeout
     useEffect(() => {
