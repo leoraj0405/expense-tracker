@@ -40,9 +40,12 @@ async function bootstrap() {
         maxAge: SESSION_TIME,
         sameSite: 'none',
         secure: true,
+        domain: configService.get<string>('FRONTEND_URL')
       },
     }),
   );
+
+  app.set('trust proxy', 1);
 
   app.enableCors({
     origin: configService.get<string>('FRONTEND_URL'),
