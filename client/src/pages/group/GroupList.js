@@ -15,6 +15,7 @@ function GroupList() {
   const [userGroups, setUserGroups] = useState([]);
   const [expensesTotal, setExpensesTotal] = useState([]);
   const [alert, setAlert] = useState({ visible: false, msg: '' });
+  const [isLoading, setIsLoading] = useState(true);
 
   const pathnames = location.pathname.split('/').filter(Boolean);
 
@@ -29,6 +30,7 @@ function GroupList() {
   }, [loginUser]);
 
   const fetchUserGroups = async (userId) => {
+    setIsLoading(true);
     try {
       const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/group/usergroups/${userId}`);
       const result = await response.json();
@@ -39,8 +41,44 @@ function GroupList() {
       }
     } catch (error) {
       showAlert('Failed to fetch groups');
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  // Render functions
+  const renderGroupTable = () => {
+    if (isLoading) {
+      return (
+        <tr>
+          <td colSpan="5" className="text-center">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+          </td>
+        </tr>
+      );
+    }
+    if (userGroups.length === 0) {
+      <tr>
+        <td colSpan="5" className="text-center text-secondary">
+          No Groups Found
+        </td>
+      </tr>
+    }
+
+    return userGroups.map((group, index) => (
+      <tr key={group._id}>
+        <td>{index + 1}</td>
+        <td className="text-nowrap">{group.name}</td>
+        <td className="text-nowrap">{group.createdBy.name}</td>
+        <td>₹{expensesTotal[index] || 0}</td>
+        <td className="d-flex" style={{ gap: '30px' }}>
+          {renderActions(group, index)}
+        </td>
+      </tr>
+    ))
+  }
 
   const deleteGroup = async (id) => {
     if (!window.confirm('Are you sure to delete this record?')) return;
@@ -120,14 +158,12 @@ function GroupList() {
         >
           {isOwner ? 'Manage Expenses' : 'Group Expenses'}
         </Link>
+        <Link
+          to={`/group/settlement?grpid=${group._id}&grpname=${group.name}`}
+          className="btn btn-link"
+        >Settlements</Link>
         {isOwner && (
           <>
-            <Link
-              to={`/group/settlement?grpid=${group._id}&grpname=${group.name}`}
-              className="btn btn-link"
-            >
-              Settlements
-            </Link>
             <Link
               to={`/group/editgroup?mode=edit&group=${group._id}`}
               className="btn btn-sm btn-warning me-2"
@@ -148,13 +184,12 @@ function GroupList() {
 
   return (
     <div className="d-flex">
-      <aside><SideBar /></aside>
+      <aside className='vh-100'><SideBar /></aside>
       <div className="flex-grow-1">
         <header><Header /></header>
         <main className="p-3 bg-light">
           <section className="main" style={{ minHeight: '400px' }}>
-            <div className="d-flex justify-content-between m-4">
-              <h2>Your group list</h2>
+            <div className="d-flex justify-content-end m-4">
               <nav className="me-3">{renderBreadcrumbs()}</nav>
             </div>
 
@@ -168,8 +203,8 @@ function GroupList() {
               )}
 
               <div className="table-responsive mt-4">
-                <table className="table table-bordered">
-                  <thead>
+                <table className="table table-bordered table-hover">
+                  <thead className="table-light">
                     <tr>
                       <th>Sno</th>
                       <th className="text-nowrap">Group Name</th>
@@ -179,25 +214,7 @@ function GroupList() {
                     </tr>
                   </thead>
                   <tbody>
-                    {userGroups.length ? (
-                      userGroups.map((group, index) => (
-                        <tr key={group._id}>
-                          <td>{index + 1}</td>
-                          <td className="text-nowrap">{group.name}</td>
-                          <td className="text-nowrap">{group.createdBy.name}</td>
-                          <td>₹ {expensesTotal[index] || 0}</td>
-                          <td className="d-flex" style={{ gap: '30px' }}>
-                            {renderActions(group, index)}
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="5" className="text-center text-secondary">
-                          No Groups Found
-                        </td>
-                      </tr>
-                    )}
+                    {renderGroupTable()}
                   </tbody>
                 </table>
               </div>

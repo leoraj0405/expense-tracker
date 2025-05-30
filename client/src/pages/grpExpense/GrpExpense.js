@@ -30,6 +30,7 @@ function GrpExpense() {
   const grpName = query.get('grpname');
   const groupLeader = query.get('leader');
   const pathnames = location.pathname.split('/').filter(Boolean);
+  const isGroupLeader = groupLeader === loginUser?.data?._id;
 
   // State management
   const [alert, setAlert] = useState({ visible: false, message: '' });
@@ -52,7 +53,7 @@ function GrpExpense() {
     setIsLoading(true);
     try {
       const response = await fetch(`${process.env.REACT_APP_FETCH_URL}${API_URLS.GROUP_EXPENSES}${groupId}`);
-      
+
       if (!response.ok) {
         throw new Error(await response.json().then(data => data.message));
       }
@@ -86,7 +87,6 @@ function GrpExpense() {
     }
   };
 
-  // Helper functions
   const showAlert = (message) => {
     setAlert({ visible: true, message });
     setTimeout(() => setAlert({ visible: false, message: '' }), 5000);
@@ -139,7 +139,7 @@ function GrpExpense() {
     if (groupExpenses.length === 0) {
       return (
         <tr>
-          <td colSpan="6" className="text-center text-secondary">
+          <td colSpan={isGroupLeader ? 6 : 5} className="text-center text-secondary">
             No Expenses Found
           </td>
         </tr>
@@ -151,35 +151,34 @@ function GrpExpense() {
         <td>{index + 1}</td>
         <td>{expense.user?.name || 'New user (profile not updated)'}</td>
         <td>{expense.description || '-'}</td>
-        <td>₹ {expense.amount.toLocaleString()}</td>
+        <td>₹{expense.amount.toLocaleString()}</td>
         <td>{expense.category?.name || '-'}</td>
-        <td>
-          {groupLeader === loginUser?.data?._id && (
-            <div className="d-flex">
-              <Link
-                to={`/group/groupexpense/editgroupexpense?grpexpid=${expense._id}&grpid=${groupId}&grpname=${grpName}&leader=${groupLeader}`}
-                className="btn btn-sm btn-warning me-2"
-                aria-label="Edit expense"
-              >
-                <FaEdit />
-              </Link>
-              <button
-                onClick={() => handleDelete(expense._id)}
-                className="btn btn-sm btn-danger"
-                aria-label="Delete expense"
-              >
-                <MdDelete />
-              </button>
-            </div>
-          )}
+        {isGroupLeader && (<td>
+          <div className="d-flex">
+            <Link
+              to={`/group/groupexpense/editgroupexpense?grpexpid=${expense._id}&grpid=${groupId}&grpname=${grpName}&leader=${groupLeader}`}
+              className="btn btn-sm btn-warning me-2"
+              aria-label="Edit expense"
+            >
+              <FaEdit />
+            </Link>
+            <button
+              onClick={() => handleDelete(expense._id)}
+              className="btn btn-sm btn-danger"
+              aria-label="Delete expense"
+            >
+              <MdDelete />
+            </button>
+          </div>
         </td>
+      )}
       </tr>
     ));
   };
 
   return (
     <div className="d-flex">
-      <aside>
+      <aside className='vh-100'>
         <SideBar />
       </aside>
 
@@ -226,7 +225,7 @@ function GrpExpense() {
                     <th>Description</th>
                     <th>Amount</th>
                     <th>Category</th>
-                    <th>Actions</th>
+                    {isGroupLeader && <th scope="col">Actions</th>}
                   </tr>
                 </thead>
                 <tbody>

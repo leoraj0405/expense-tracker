@@ -21,6 +21,7 @@ function ListMyExpense() {
   const [date, setDate] = useState(queryDate || '');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Redirect to login if not logged in
   useEffect(() => {
@@ -37,7 +38,7 @@ function ListMyExpense() {
 
     const query = new URLSearchParams({ page: currentPage.toString() });
     if (date) query.append('date', date);
-
+    setIsLoading(true);
     try {
       const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/expense/userexpense/${loginUser.data._id}?${query.toString()}`);
       if (!response.ok) {
@@ -51,6 +52,8 @@ function ListMyExpense() {
       setAlert({ success: false, error: true, msg: error.message });
       setExpenses({ userExpenseData: [], total: 0, limit: 10 });
       setTotalPages(1);
+    } finally {
+      setIsLoading(false);
     }
   }, [loginUser, date, currentPage]);
 
@@ -81,14 +84,67 @@ function ListMyExpense() {
     }
   };
 
+  // Render functions
+  const renderExpenseTable = () => {
+
+    if (isLoading) {
+      return (
+        <tr>
+          <td colSpan="6" className="text-center">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+          </td>
+        </tr>
+      );
+    }
+
+    if (expenses.length === 0) {
+      return (
+        <tr>
+          <td colSpan={6} className="text-center text-secondary">No Expenses Found</td>
+        </tr>
+      );
+    }
+
+    return expenses.userExpenseData.map((item, idx) => (
+      <tr key={item._id}>
+        <td>{(currentPage - 1) * expenses.limit + idx + 1}</td>
+        <td>{item.description}</td>
+        <td>{item.category?.[0]?.name || '-'}</td>
+        <td>{item.date?.split('T')[0]}</td>
+        <td>₹{item.amount}</td>
+        <td>
+          <Link
+            to={`/editexpense?mode=edit&expense=${item._id}`}
+            className="btn btn-sm btn-warning me-2"
+            title="Edit"
+          >
+            <FaEdit />
+          </Link>
+          <button
+            onClick={() => handleDelete(item._id)}
+            className="btn btn-sm btn-danger"
+            title="Delete"
+          >
+            <MdDelete />
+          </button>
+        </td>
+      </tr>
+    ))
+  };
+
   const goToPage = (page) => {
     if (page < 1 || page > totalPages) return;
     setCurrentPage(page);
   };
 
+    const today = new Date();
+    const maxMonth = today.toISOString().slice(0, 7); // 'YYYY-MM'
+
   return (
     <div className="d-flex">
-      <aside><SideBar /></aside>
+      <aside className='vh-100'><SideBar /></aside>
 
       <div className="flex-grow-1">
         <header><Header /></header>
@@ -130,6 +186,7 @@ function ListMyExpense() {
                   id="filter-month"
                   name="date"
                   value={date}
+                  max={maxMonth}
                   onChange={(e) => setDate(e.target.value)}
                   className="form-control d-inline-block"
                   style={{ width: '200px' }}
@@ -140,7 +197,7 @@ function ListMyExpense() {
 
             <div className="table-responsive">
               <table className="table table-bordered">
-                <thead>
+                <thead className="table-light">
                   <tr>
                     <th>S No</th>
                     <th>Description</th>
@@ -151,37 +208,7 @@ function ListMyExpense() {
                   </tr>
                 </thead>
                 <tbody>
-                  {expenses.userExpenseData.length > 0 ? (
-                    expenses.userExpenseData.map((item, idx) => (
-                      <tr key={item._id}>
-                        <td>{(currentPage - 1) * expenses.limit + idx + 1}</td>
-                        <td>{item.description}</td>
-                        <td>{item.category?.[0]?.name || '-'}</td>
-                        <td>{item.date?.split('T')[0]}</td>
-                        <td>{item.amount}</td>
-                        <td>
-                          <Link
-                            to={`/editexpense?mode=edit&expense=${item._id}`}
-                            className="btn btn-sm btn-warning me-2"
-                            title="Edit"
-                          >
-                            <FaEdit />
-                          </Link>
-                          <button
-                            onClick={() => handleDelete(item._id)}
-                            className="btn btn-sm btn-danger"
-                            title="Delete"
-                          >
-                            <MdDelete />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="text-center text-secondary">No Expenses Found</td>
-                    </tr>
-                  )}
+                  {renderExpenseTable()}
                 </tbody>
               </table>
             </div>

@@ -1,179 +1,244 @@
-import React, { useEffect, useState } from 'react'
-import Header from '../../layouts/Header'
-import Footer from '../../layouts/Footer'
-import SideBar from '../../layouts/SideBar'
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useUser } from '../../components/Context';
-import { FaEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
+import Header from '../../layouts/Header';
+import Footer from '../../layouts/Footer';
+import SideBar from '../../layouts/SideBar';
+import { useUser } from '../../components/Context';
 
+// Custom hook for URL query parameters
 function useQuery() {
-    return new URLSearchParams(useLocation().search)
+    return new URLSearchParams(useLocation().search);
 }
 
 function GrpMember() {
+    // Hooks and context
     const location = useLocation();
-    const pathnames = location.pathname.split('/').filter((x) => x);
-    const { loginUser } = useUser();
-    const queryValue = useQuery()
-    const groupId = queryValue.get('grpid')
-    const grpName = queryValue.get('grpname')
-    const groupLeader = queryValue.get('leader')
     const navigate = useNavigate();
-    
-    const [alertBlock, setAlertBlock] = useState({
-        blockState: true,
-        msg: ''
-    })
-    const [groupMembers, setGroupMembers] = useState([])
+    const { loginUser } = useUser();
+    const queryParams = useQuery();
 
+    // State management
+    const [alert, setAlert] = useState({
+        show: false,
+        message: ''
+    });
+    const [groupMembers, setGroupMembers] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+
+    // Derived values
+    const pathnames = location.pathname.split('/').filter(Boolean);
+    const groupId = queryParams.get('grpid');
+    const groupName = queryParams.get('grpname');
+    const groupLeader = queryParams.get('leader');
+    const isGroupLeader = groupLeader === loginUser?.data?._id;
+
+    // Memoized fetch function
+    const fetchGroupMembers = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/groupmember/onegroup/${groupId}`);
+
+            if (!response.ok) {
+                const errorInfo = await response.json();
+                throw new Error(errorInfo.message || 'Failed to fetch group members');
+            }
+
+            const { data } = await response.json();
+            setGroupMembers(data);
+        } catch (error) {
+            setAlert({
+                show: true,
+                message: error.message
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [groupId]);
+
+    // Effect for authentication check
     useEffect(() => {
         if (!loginUser) {
-            navigate('/login')
+            navigate('/login');
         }
-    }, [])
+    }, [loginUser, navigate]);
 
-    async function fetchGroupMembers() {
-        const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/groupmember/onegroup/${groupId}`)
-        if (response.status === 200) {
-            const grpMembersData = await response.json()
-            setGroupMembers(grpMembersData.data)
-        } else {
-            const errorInfo = await response.json()
-            setAlertBlock({
-                blockState: true,
-                msg: errorInfo.message
-            })
+    // Effect for initial data loading
+    useEffect(() => {
+        if (groupId) {
+            fetchGroupMembers();
         }
-    }
+    }, [groupId, fetchGroupMembers]);
 
-    function hanldeDelete(id) {
-        if (window.confirm('Are you sure to delete this record ?')) {
-            let request = fetch(`${process.env.REACT_APP_FETCH_URL}/groupmember/${id}`, { method: "DELETE" })
-            request.then(async (response) => {
-                if (response.status === 200) {
-                    fetchGroupMembers()
-                } else {
-                    const errorInfo = await response.json()
-                    setAlertBlock({
-                        blockState: false,
-                        msg: errorInfo.message
-                    })
-                }
+    // Effect for auto-hiding alerts
+    useEffect(() => {
+        if (alert.show) {
+            const timer = setTimeout(() => {
+                setAlert(prev => ({ ...prev, show: false }));
+            }, 5000);
+
+            return () => clearTimeout(timer);
+        }
+    }, [alert.show]);
+
+    // Handler for deleting a member
+    const handleDeleteMember = async (memberId) => {
+        if (!window.confirm('Are you sure you want to delete this member?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/groupmember/${memberId}`, {
+                method: "DELETE"
+            });
+
+            if (!response.ok) {
+                const errorInfo = await response.json();
+                throw new Error(errorInfo.message || 'Failed to delete member');
+            }
+
+            fetchGroupMembers();
+        } catch (error) {
+            setAlert({
+                show: true,
+                message: error.message
             });
         }
-    }
+    };
 
-    useEffect(() => {
-        fetchGroupMembers(groupId)
-    }, [groupId])
+    // Render helper for breadcrumbs
+    const renderBreadcrumbs = () => (
+        <nav className='me-3'>
+            <ol className="breadcrumb">
+                <li className="breadcrumb-item">
+                    <Link className='text-secondary' to="/home">Home</Link>
+                </li>
+                {pathnames.map((item, index) => {
+                    const to = `/${pathnames.slice(0, index + 1).join('/')}`;
+                    const labelMap = {
+                        'groupmember': 'Group Member',
+                        'group': 'Group'
+                    };
+                    const label = labelMap[item] || item;
+                    const isLast = index === pathnames.length - 1;
 
-    useEffect(() => {
-        setTimeout(() => {
-            setAlertBlock({
-                blockState: true,
-                msg: ''
-            })
-        }, 5000)
-    }, [alertBlock])
+                    return (
+                        <li key={to} className='breadcrumb-item'>
+                            {isLast ? (
+                                <span className='text-secondary' style={{ whiteSpace: 'nowrap' }}>{label}</span>
+                            ) : (
+                                <Link className='text-secondary' to={to}>{label}</Link>
+                            )}
+                        </li>
+                    );
+                })}
+            </ol>
+        </nav>
+    );
+
+    const renderMembersTable = () => {
+        if (isLoading) {
+            return (
+                <tr>
+                    <td colSpan={isGroupLeader ? 3 : 2} className="text-center">
+                        <div className="spinner-border text-primary" role="status">
+                            <span className="visually-hidden">Loading...</span>
+                        </div>
+                    </td>
+                </tr>
+            );
+        }
+
+        if (groupMembers.length === 0) {
+            return (
+                <tr>
+                    <td colSpan={isGroupLeader ? 3 : 2} className='text-center text-secondary'>
+                        No members found
+                    </td>
+                </tr>
+            );
+        }
+
+        return groupMembers.map((member, index) => (
+            <tr key={member._id}>
+                <td>{index + 1}</td>
+                <td>{member.user?.name || 'New user (profile not updated)'}</td>
+                {isGroupLeader && (
+                    <td>
+                        <button
+                            onClick={() => handleDeleteMember(member._id)}
+                            className='btn btn-sm btn-danger'
+                            aria-label={`Delete ${member.user?.name}`}
+                        >
+                            <MdDelete />
+                        </button>
+                    </td>
+                )}
+            </tr>
+        ))
+    };
+
 
     return (
-        <>
-            <header>
-                <Header />
-            </header>
-            <div className='d-flex'>
-                <aside>
-                    <SideBar />
-                </aside>
-                <main className='p-3 w-100 bg-light'>
+        <div className="d-flex">
+            <aside>
+                <SideBar />
+            </aside>
+
+            <div className="flex-grow-1">
+                <header>
+                    <Header />
+                </header>
+
+                <main className="p-3 bg-light">
                     <section className='main' style={{ minHeight: '400px' }}>
-                        <div className='d-flex justify-content-between m-4'>
-                            <h2>Group Members</h2>
-                            <nav className='me-3'>
-                                <ol className="breadcrumb">
-                                    <li className="breadcrumb-item"><Link className='text-secondary' to="/home">Home</Link></li>
-                                    {pathnames.map((item, index) => {
-                                        const to = `/${pathnames.slice(0, index + 1).join('/')}`;
-                                        const label = item === 'groupmember' ? 'Group Member' : item === 'group' ? 'Group' : item
-                                        const isLast = index === pathnames.length - 1
-                                        return (
-                                            <li className='breadcrumb-item'>
-                                                {isLast ? (
-                                                    <p className='text-secondary' style={{ whiteSpace: 'nowrap' }} >{label}</p>
-                                                ) : (
-                                                    <Link className='text-secondary' to={to}>{label}</Link>
-                                                )}
-                                            </li>
-                                        )
-                                    })}
-                                </ol>
-                            </nav>
-                        </div>
-                        <div
-                            className="alert alert-danger m-4"
-                            hidden={alertBlock.blockState}>
-                            {alertBlock.msg}
+                        <div className='d-flex justify-content-end m-4'>
+                            {renderBreadcrumbs()}
                         </div>
 
-                        <div className='d-flex justify-content-between ms-4 me-4'>
-                            <h4 className='text-secondary'>{grpName} Members : </h4>
+                        {alert.show && (
+                            <div className="alert alert-danger m-4">
+                                {alert.message}
+                            </div>
+                        )}
+
+                        <div className='d-flex justify-content-between ms-4 me-4 mb-4'>
+                            <h4 className='text-secondary'>{groupName} Members</h4>
                             <Link
                                 className='btn btn-primary'
-                                to={`addgroupmember?grpid=${groupId}&grpname=${grpName}&leader=${groupLeader}`}>
+                                to={{
+                                    pathname: 'addgroupmember',
+                                    search: `?grpid=${groupId}&grpname=${groupName}&leader=${groupLeader}`
+                                }}
+                            >
                                 Add Members
                             </Link>
                         </div>
 
                         <div className='table-responsive m-4'>
-                            <table className="table table-bordered">
-                                <thead>
+                            <table className="table table-bordered table-hover">
+                                <thead className="table-light">
                                     <tr>
-                                        <th scope="col">S No</th>
+                                        <th scope="col">#</th>
                                         <th scope="col">Member</th>
-                                        <th scope="col">Actions</th>
+                                        {isGroupLeader && <th scope="col">Actions</th>}
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {groupMembers.length > 0 ?
-                                        groupMembers.map((item, index) => {
-                                            return (
-                                                <tr key={index}>
-                                                    <td>{index + 1}</td>
-                                                    <td>{item.user?.name || 'new user he/she not update their profile'}</td>
-                                                    <td>
-                                                        {
-                                                            groupLeader === loginUser?.data?._id ? (
-                                                                <>
-                                                                    <button
-                                                                        onClick={() => hanldeDelete(item._id)}
-                                                                        className='btn btn-sm btn-danger'>
-                                                                        <MdDelete />
-                                                                    </button>
-                                                                </>
-                                                            ) : (
-                                                                <>null</>
-                                                            )
-                                                        }
-                                                    </td>
-                                                </tr>
-                                            )
-                                        }) :
-                                        <tr>
-                                            <td colSpan={4} className='text-center text-secondary'>No Members</td>
-                                        </tr>}
+                                    {renderMembersTable()}
                                 </tbody>
                             </table>
                         </div>
-
                     </section>
+
                     <footer>
                         <Footer />
                     </footer>
                 </main>
             </div>
-        </>
-    )
+        </div>
+    );
 }
 
-export default GrpMember
+export default GrpMember;

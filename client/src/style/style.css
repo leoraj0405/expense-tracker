@@ -57,3 +57,19 @@
   max-height: 200px; /* or more depending on content */
   opacity: 1;
 }
+
+.modal-backdrop.show {
+  background-color: rgba(255, 255, 255, 0.3); /* light white */
+}
+
+
+.modal-dialog {
+  margin: 0 auto;
+  max-width: 400px; /* optional, control width */
+}
+
+.modal-content {
+  border-radius: 12px;
+  overflow: hidden;
+}
+

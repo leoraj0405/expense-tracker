@@ -97,7 +97,7 @@ function AddCategory() {
 
     return (
         <div className="d-flex">
-            <aside><SideBar /></aside>
+            <aside className='vh-100'><SideBar /></aside>
             <div className="flex-grow-1">
                 <Header />
                 <main className="p-3 bg-light">

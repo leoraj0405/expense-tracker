@@ -78,7 +78,7 @@ function Profile() {
     if (form.profile) formData.append('profileImage', form.profile)
 
     try {
-      const res = await fetch(`${process.env.REACT_APP_FETCH_URL}/user/${loginUser.data._id}`, {
+      const res = await fetch(`${process.env.REACT_APP_FETCH_URL}/user/${loginUser?.data?._id}`, {
         method: 'PUT',
         body: formData,
       })
@@ -130,14 +130,14 @@ function Breadcrumb({ pathnames }) {
   return (
     <nav aria-label="breadcrumb" className="mb-3 d-flex justify-content-end">
       <ol className="breadcrumb">
-        <li className="breadcrumb-item"><Link to="/home">Home</Link></li>
+        <li className="breadcrumb-item"><Link to="/home" className='text-secondary'>Home</Link></li>
         {pathnames.map((item, idx) => {
           const label = item === 'userprofile' ? 'User Profile' : item
           const to = `/${pathnames.slice(0, idx + 1).join('/')}`
           const isLast = idx === pathnames.length - 1
           return (
             <li className="breadcrumb-item" key={to} aria-current={isLast ? 'page' : undefined}>
-              {isLast ? label : <Link to={to}>{label}</Link>}
+              {isLast ? label : <Link className='text-secondary' to={to}>{label}</Link>}
             </li>
           )
         })}

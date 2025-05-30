@@ -1,193 +1,256 @@
-import React, { useRef, useEffect, useState } from 'react'
-import Footer from '../layouts/Footer'
-import Logo from '../assets/img/websiteLogo.png'
-import defaultImage from '../assets/img/profile.png'
-import { Link, useNavigate } from 'react-router-dom'
-import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts'
-
+import React, { useEffect, useState, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import * as bootstrap from 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import Footer from '../layouts/Footer';
+import Logo from '../assets/img/websiteLogo.png';
+import defaultImage from '../assets/img/profile.png';
+import '../style/style.css'
+
+// Initialize bootstrap globally
 window.bootstrap = bootstrap;
 
-
+// Constants
+const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#a4de6c"];
+const TIME_OPTIONS = {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+};
 
 function ParentHome() {
-    const modalRef = useRef(null);
-    const modalInstance = useRef(null);
-    const navigate = useNavigate()
-    const [user, setUser] = useState('')
-    const [children, setChildren] = useState([])
-    const [childExpense, setChildExpense] = useState([])
-    const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
-    const [amount, setAmount] = useState(0);
-    const [data, setData] = useState([])
-    const [date, setDate] = useState('')
+    const navigate = useNavigate();
 
+    // State
+    const [state, setState] = useState({
+        user: '',
+        children: [],
+        childExpense: [],
+        currentPage: 1,
+        totalPages: 1,
+        amount: 0,
+        chartData: [],
+        date: '',
+        isLoading: false,
+        error: null,
+        hasSelectedChild: false
+    });
 
-    const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#a4de6c"];
-    const timeOptions = {
-        timeZone: 'Asia/Kolkata',
-        year: 'numeric',
-        month: 'short',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true
-    }
+    // Destructure state for easier access
+    const {
+        user,
+        children,
+        childExpense,
+        currentPage,
+        totalPages,
+        amount,
+        chartData,
+        date,
+        isLoading,
+        error,
+        hasSelectedChild
+    } = state;
 
+    // Check if parent is logged in
+    const checkParentAuth = useCallback(async () => {
+        try {
+            const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/user/parenthome`, {
+                method: 'GET',
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const usersData = await response.json();
+                setState(prev => ({ 
+                    ...prev, 
+                    children: usersData.data
+                }));
+            } else {
+                navigate('/parentlogin');
+            }
+        } catch (err) {
+            setState(prev => ({ ...prev, error: 'Failed to fetch children data' }));
+        }
+    }, [navigate]);
+
+    // Initialize auth check
     useEffect(() => {
-        isParentLogged()
+        checkParentAuth();
+    }, [checkParentAuth]);
 
-        if (modalRef.current) {
-            modalInstance.current = new window.bootstrap.Modal(modalRef.current);
-            modalInstance.current.show();
-        }
-    }, []);
-
-    async function handleOnChangeForDate(e) {
-        setDate(e.target.value)
-    }
-
-    function handleChange(e) {
-        setUser(e.target.value)
-    }
-
-    function goToPage(page) {
-        if (page < 1 || page > totalPages) return;
-        setCurrentPage(page);
-    }
-    async function isParentLogged() {
-        const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/user/parenthome`, { method: 'GET', credentials: 'include' })
-        const usersData = await response.json()
-        if (response.status === 200) {
-            setChildren(usersData.data)
-        } else {
-            navigate('/parentlogin')
-        }
-    }
-
-    const handleSubmit = async () => {
-        modalInstance.current.hide();
-        let formattedDate 
-
-
-        if(date) {
-            formattedDate = date
-        }else {
-            const todayDate = new Date()
-            const year = todayDate.getFullYear();
-            const month = todayDate.getMonth() + 1;
-            const day = todayDate.getDate();
-            formattedDate = `${year}-${month}-${day}`;
-        }
-
-        const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/expense/userexpense/${user}?page=${currentPage}&date=${formattedDate}`)
-        const responseData = await response.json()
-        if (response.status === 200) {
-            const total = Math.ceil(responseData.data.total / responseData.data.limit);
-            setTotalPages(total);
-            setChildExpense(responseData?.data?.userExpenseData)
-            const result = responseData.data.userExpenseData.map((item) => ({
-                name: item.description,
-                value: item.amount
-            }))
-            setData(result)
-        } else {
-            console.log(responseData)
-        }
+    // Handle date change
+    const handleDateChange = (e) => {
+        setState(prev => ({ ...prev, date: e.target.value }));
     };
 
-    useEffect(() => {
-        handleSubmit()
-    }, [date, currentPage])
-    useEffect(() => {
-        if (data.length > 0) {
-            let total = 0;
-            data.forEach(item => {
-                total += Number(item.value);
-            });
-            setAmount(total);
-        } else {
-            setAmount(0)
+    // Handle user selection change
+    const handleUserChange = (e) => {
+        setState(prev => ({ 
+            ...prev, 
+            user: e.target.value,
+            hasSelectedChild: true,
+            currentPage: 1 // Reset to first page when changing child
+        }));
+    };
+
+    // Pagination handler
+    const goToPage = useCallback((page) => {
+        if (page < 1 || page > totalPages) return;
+        setState(prev => ({ ...prev, currentPage: page }));
+    }, [totalPages]);
+
+    // Fetch child expenses
+    const fetchChildExpenses = useCallback(async () => {
+        if (!user) return;
+
+        try {
+            setState(prev => ({ ...prev, isLoading: true, error: null }));
+
+            let formattedDate = date;
+            if (!formattedDate) {
+                const today = new Date();
+                formattedDate = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+            }
+
+            const response = await fetch(
+                `${process.env.REACT_APP_FETCH_URL}/expense/userexpense/${user}?page=${currentPage}&date=${formattedDate}`
+            );
+
+            if (response.ok) {
+                const responseData = await response.json();
+                const newTotalPages = Math.ceil(responseData.data.total / responseData.data.limit);
+
+                const newChartData = responseData.data.userExpenseData.map(item => ({
+                    name: item.description,
+                    value: item.amount
+                }));
+
+                const totalAmount = newChartData.reduce((sum, item) => sum + Number(item.value), 0);
+
+                setState(prev => ({
+                    ...prev,
+                    childExpense: responseData.data.userExpenseData,
+                    totalPages: newTotalPages,
+                    chartData: newChartData,
+                    amount: totalAmount,
+                    isLoading: false
+                }));
+            } else {
+                throw new Error('Failed to fetch expenses');
+            }
+        } catch (err) {
+            setState(prev => ({
+                ...prev,
+                error: err.message,
+                isLoading: false
+            }));
         }
-    }, [data])
+    }, [user, currentPage, date]);
+
+    // Fetch expenses when dependencies change
+    useEffect(() => {
+        fetchChildExpenses();
+    }, [fetchChildExpenses]);
+
+    const today = new Date();
+    const maxMonth = today.toISOString().slice(0, 7); // 'YYYY-MM'
 
     return (
-        <>
-            <header>
-                <nav className="navbar navbar-expand-lg navbar-light bg-primary p-4">
-                    <Link className="navbar-brand d-flex align-items-center">
+        <div className="d-flex flex-column min-vh-100">
+            {/* Header */}
+            <header className="sticky-top">
+                <nav className="navbar navbar-expand-lg navbar-light bg-primary p-3">
+                    <Link to="#" className="navbar-brand d-flex align-items-center">
                         <img src={Logo} alt="Logo" width="30" height="30" className="d-inline-block align-top me-2" />
-                        <span className='text-white'>Expense Tracker</span>
+                        <span className="text-white">Expense Tracker</span>
                     </Link>
 
                     <div className="ms-auto d-flex align-items-center">
-                        <span className=" me-3 text-white">
-                            Welcome Parent
-                        </span>
+                        <span className="me-3 text-white">Welcome Parent</span>
                         <div className="dropdown">
-                            <Link className="dropdown-toggle d-flex align-items-center" role="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <Link
+                                className="dropdown-toggle d-flex align-items-center"
+                                role="button"
+                                id="userDropdown"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false"
+                            >
                                 <img
                                     src={defaultImage}
                                     alt="User Profile"
                                     className="rounded-circle"
-                                    style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                                    style={{ width: '40px', height: '40px', objectFit: 'cover' }}
                                 />
                             </Link>
                             <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                <li><Link className="dropdown-item" to={'/parentlogin'}>Logout</Link></li>
+                                <li><Link className="dropdown-item" to="/parentlogin">Logout</Link></li>
                             </ul>
                         </div>
                     </div>
                 </nav>
             </header>
-            <div className='d-flex'>
-                <main className='p-3 w-100 bg-light'>
-                    <section className='main' style={{ minHeight: '400px' }}>
-                        <div
-                            className="modal fade"
-                            id="myModal"
-                            tabIndex="-1"
-                            aria-labelledby="exampleModalLabel"
-                            aria-hidden="true"
-                            ref={modalRef}
-                        >
-                            <div className="modal-dialog">
-                                <div className="modal-content">
-                                    <div className="modal-header">
-                                        <h5 className="modal-title" id="exampleModalLabel">Welcome Parent</h5>
-                                    </div>
-                                    <div className="modal-body">
-                                        <div>
-                                            <div className="mb-3">
-                                                <label htmlFor="inputField" className="form-label">Example input</label>
-                                                <select name="userId" className='form-select' value={user.userId} onChange={handleChange}>
-                                                    <option value='leo'>select your child</option>
-                                                    {children?.map((item) => {
-                                                        return (
-                                                            <option value={item._id}>{item.name}</option>
-                                                        )
-                                                    })}
-                                                </select>
-                                            </div>
-                                            <button onClick={handleSubmit} className="btn btn-primary">Submit</button>
-                                        </div>
+
+            {/* Main Content */}
+            <main className="flex-grow-1 p-3 bg-light">
+                {/* Error Alert */}
+                {error && (
+                    <div className="alert alert-danger alert-dismissible fade show" role="alert">
+                        {error}
+                        <button
+                            type="button"
+                            className="btn-close"
+                            onClick={() => setState(prev => ({ ...prev, error: null }))}
+                        />
+                    </div>
+                )}
+
+                {/* Child Selector Section */}
+                <section className="container mb-4">
+                    <div className="row">
+                        <div className="col-md-6">
+                            <div className="card shadow-sm">
+                                <div className="card-body">
+                                    <h2 className="h5 card-title">Select Child</h2>
+                                    <div className="mb-3">
+                                        <select
+                                            className="form-select"
+                                            value={user}
+                                            onChange={handleUserChange}
+                                            disabled={isLoading}
+                                        >
+                                            <option value="">-- Select a child --</option>
+                                            {children.map((child) => (
+                                                <option key={child._id} value={child._id}>
+                                                    {child.name}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </section>
 
-                        <div>
-                            <div className='container mt-3'>
-                                <div className='row mt-3' style={{ gap: '50px' }}>
-                                    <div className='chart col-lg boxshadow justigf'>
-                                        <div className="w-full max-w-md mx-auto p-4 bg-white shadow-md rounded-2xl text-center">
-                                            <h2 className="text-xl font-semibold text-center mb-4">This month Expenses Chart</h2>
-                                            <div className='d-flex justify-content-center'>
-                                                <PieChart width={300} height={300} >
+                {/* Dashboard Content (only shown after child selection) */}
+                {hasSelectedChild && user && (
+                    <>
+                        {/* Charts Section */}
+                        <section className="container mt-4">
+                            <div className="row g-4">
+                                <div className="col-lg-6">
+                                    <div className="card shadow-sm h-100">
+                                        <div className="card-body text-center">
+                                            <h2 className="h5 card-title">Expenses Breakdown</h2>
+                                            <div className="d-flex justify-content-center">
+                                                <PieChart width={300} height={300}>
                                                     <Pie
-                                                        data={data}
+                                                        data={chartData}
                                                         cx="50%"
                                                         cy="50%"
                                                         outerRadius={90}
@@ -195,99 +258,166 @@ function ParentHome() {
                                                         dataKey="value"
                                                         label
                                                     >
-                                                        {data.map((_, index) => (
+                                                        {chartData.map((_, index) => (
                                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                                         ))}
                                                     </Pie>
-                                                    <Tooltip />
+                                                    <Tooltip formatter={(value) => [`₹${value}`, 'Amount']} />
                                                     <Legend />
                                                 </PieChart>
                                             </div>
                                         </div>
-                                        <div class="card  boxshadow p-3 mb-5 bg-white rounded text-center" >
-                                            <div class="card-body">
-                                                <h5 class="card-title">Month Total Expenses</h5>
-                                                <p class="card-text">₹ {amount}</p>
-                                            </div>
+                                    </div>
+                                </div>
+
+                                <div className="col-lg-6">
+                                    <div className="card shadow-sm h-100">
+                                        <div className="card-body text-center">
+                                            <h2 className="h5 card-title">Total Expenses</h2>
+                                            <p className="display-6">₹{amount.toLocaleString()}</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </section>
 
-                        <div className='d-flex flex-row justify-content-start ms-4 me-4 mt-2'>
-                            <div>
-                                <p>Filter by month : </p>
-                                <input type="month" onChange={handleOnChangeForDate} name='date' value={date} className='form-control' />
+                        {/* Date Filter */}
+                        <section className="container mt-4">
+                            <div className="row">
+                                <div className="col-md-4">
+                                    <label htmlFor="monthFilter" className="form-label">Filter by month:</label>
+                                    <input
+                                        type="month"
+                                        id="monthFilter"
+                                        onChange={handleDateChange}
+                                        name="date"
+                                        value={date}
+                                        className="form-control"
+                                        disabled={isLoading}
+                                        max={maxMonth}
+                                    />
+                                </div>
                             </div>
-                        </div>
+                        </section>
 
-                        <div className='table-responsive m-4'>
-                            <div className='card'>
-                                <div className='card-body'>
-                                    <h2>Expenses</h2>
-                                    <table class="table table-bordered mt-3">
-                                        <thead>
-                                            <tr>
-                                                <th scope="col">Sno</th>
-                                                <th scope="col">Description</th>
-                                                <th scope="col">Category</th>
-                                                <th scope="col">Amount</th>
-                                                <th scope='col'>Date & Time</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {childExpense?.length > 0 ? (
-                                                childExpense.map((item, index) => (
-                                                    <tr key={index}>
-                                                        <td>{index + 1}</td>
-                                                        <td>{item?.description}</td>
-                                                        <td>{item?.category[0]?.name}</td>
-                                                        <td>{item?.amount}</td>
-                                                        <td>  {new Date(item?.createdAt).toLocaleString('en-IN', timeOptions)}</td>
-                                                    </tr>
-                                                ))
-                                            ) : (
+                        {/* Expenses Table */}
+                        <section className="container mt-4">
+                            <div className="card shadow-sm">
+                                <div className="card-body">
+                                    <h2 className="h4 card-title">Expenses</h2>
+                                    <div className="table-responsive">
+                                        <table className="table table-bordered table-hover mt-3">
+                                            <thead className="table-light">
                                                 <tr>
-                                                    <td colSpan={5} className='text-center text-secondary'>
-                                                        No expenses.
-                                                    </td>
+                                                    <th scope="col">#</th>
+                                                    <th scope="col">Description</th>
+                                                    <th scope="col">Category</th>
+                                                    <th scope="col">Amount</th>
+                                                    <th scope="col">Date & Time</th>
                                                 </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                    {childExpense?.length > 0 ?
-                                        <div className='card'>
-                                            <div className='card-body d-flex justify-content-center'>
-                                                <nav>
-                                                    <ul className="pagination">
-                                                        <li className="page-item">
-                                                            <button className="page-link" onClick={() => goToPage(Number(currentPage) - 1)} >Previous</button>
+                                            </thead>
+                                            <tbody>
+                                                {childExpense.length > 0 ? (
+                                                    childExpense.map((item, index) => (
+                                                        <tr key={item._id}>
+                                                            <td>{(currentPage - 1) * 10 + index + 1}</td>
+                                                            <td>{item.description}</td>
+                                                            <td>{item.category[0]?.name}</td>
+                                                            <td>₹ {item.amount}</td>
+                                                            <td>{new Date(item.createdAt).toLocaleString('en-IN', TIME_OPTIONS)}</td>
+                                                        </tr>
+                                                    ))
+                                                ) : (
+                                                    <tr>
+                                                        <td colSpan={5} className="text-center text-muted py-4">
+                                                            {isLoading ? 'Loading expenses...' : 'No expenses found'}
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {/* Pagination */}
+                                    {childExpense.length > 0 && (
+                                        <nav aria-label="Expenses pagination">
+                                            <ul className="pagination justify-content-center">
+                                                <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                                                    <button
+                                                        className="page-link"
+                                                        onClick={() => goToPage(currentPage - 1)}
+                                                        disabled={currentPage === 1 || isLoading}
+                                                    >
+                                                        Previous
+                                                    </button>
+                                                </li>
+
+                                                {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+                                                    let pageNum;
+                                                    if (totalPages <= 5) {
+                                                        pageNum = i + 1;
+                                                    } else if (currentPage <= 3) {
+                                                        pageNum = i + 1;
+                                                    } else if (currentPage >= totalPages - 2) {
+                                                        pageNum = totalPages - 4 + i;
+                                                    } else {
+                                                        pageNum = currentPage - 2 + i;
+                                                    }
+
+                                                    return (
+                                                        <li key={pageNum} className="page-item">
+                                                            <button
+                                                                className={`page-link ${currentPage === pageNum ? 'active' : ''}`}
+                                                                onClick={() => goToPage(pageNum)}
+                                                                disabled={isLoading}
+                                                            >
+                                                                {pageNum}
+                                                            </button>
                                                         </li>
-                                                        {Array.from({ length: totalPages }).map((_, i) => (
-                                                            <li className="page-item" key={i}>
-                                                                <button className={currentPage === i + 1 ? "page-link active" : "page-link"} onClick={() => goToPage(i + 1)}>{i + 1}</button>
-                                                            </li>
-                                                        ))}
-                                                        <li class="page-item">
-                                                            <button className='page-link' onClick={() => goToPage(Number(currentPage) + 1)}>Next</button>
-                                                        </li>
-                                                    </ul>
-                                                </nav>
-                                            </div>
-                                        </div> : <></>
-                                    }
+                                                    );
+                                                })}
+
+                                                <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                                                    <button
+                                                        className="page-link"
+                                                        onClick={() => goToPage(currentPage + 1)}
+                                                        disabled={currentPage === totalPages || isLoading}
+                                                    >
+                                                        Next
+                                                    </button>
+                                                </li>
+                                            </ul>
+                                        </nav>
+                                    )}
+                                </div>
+                            </div>
+                        </section>
+                    </>
+                )}
+
+                {/* Empty State (when no children available) */}
+                {children.length === 0 && !isLoading && (
+                    <div className="container mt-5">
+                        <div className="row justify-content-center">
+                            <div className="col-md-6 text-center">
+                                <div className="card shadow-sm">
+                                    <div className="card-body">
+                                        <h3 className="card-title">No Children Found</h3>
+                                        <p className="card-text">You don't have any children registered yet.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </section>
-                    <footer>
-                        <Footer />
-                    </footer>
-                </main>
-            </div>
-        </>
-    )
+                    </div>
+                )}
+            </main>
+
+            {/* Footer */}
+            <footer>
+                <Footer />
+            </footer>
+        </div>
+    );
 }
 
-export default ParentHome
+export default ParentHome;

@@ -17,13 +17,12 @@ import { ResponseDto } from '../response';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
-import { request } from 'http';
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post('/')
+  @Post()
   @UseInterceptors(
     FileInterceptor('profileImage', {
       storage: diskStorage({
@@ -40,9 +39,11 @@ export class UserController {
     @Body() body: RequestUser,
     @Res() reply: any,
   ): Promise<void> {
+    console.log('leo')
     const response: ResponseDto = {
       data: null,
     };
+    console.log(file, body)
     try {
       response.data = await this.userService.createUser(
         {
