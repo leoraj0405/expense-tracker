@@ -73,3 +73,6 @@
   overflow: hidden;
 }
 
+.collapsed {
+  max-height: 0 !important;
+}

@@ -137,7 +137,8 @@ export class GrpMemberService {
           amount: 1,
           'group.name': 1,
           'user.name': 1,
-          'user._id' : 1
+          'user._id' : 1,
+          'user.email': 1
         },
       },
     ]);

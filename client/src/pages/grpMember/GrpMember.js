@@ -163,7 +163,7 @@ function GrpMember() {
         return groupMembers.map((member, index) => (
             <tr key={member._id}>
                 <td>{index + 1}</td>
-                <td>{member.user?.name || 'New user (profile not updated)'}</td>
+                <td>{member.user?.name || `New user ( ${member.user?.email} )`}</td>
                 {isGroupLeader && (
                     <td>
                         <button

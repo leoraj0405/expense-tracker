@@ -24,13 +24,13 @@ function AddGrpExpense() {
   const location = useLocation();
   const navigate = useNavigate();
   const query = useQuery();
-  
+
   // Extract query parameters
   const grpExpenseId = query.get('grpexpid');
   const grpId = query.get('grpid');
   const grpName = query.get('grpname');
   const groupLeader = query.get('leader');
-  
+
   // State management
   const [form, setForm] = useState({
     id: '',
@@ -40,19 +40,21 @@ function AddGrpExpense() {
     amount: '',
     categoryId: ''
   });
-  
+
   const [users, setUsers] = useState([]);
   const [categories, setCategories] = useState([]);
   const [members, setMembers] = useState({});
   const [splitMethod, setSplitMethod] = useState('');
   const [unequalShares, setUnequalShares] = useState([]);
   const [isSplitFormOpen, setIsSplitFormOpen] = useState(false);
+  const [equalForm, setEqualForm] = useState(false);
   const [alert, setAlert] = useState({
     show: true,
     message: ''
   });
-  
+
   const splitFormRef = useRef(null);
+  const equalFormRef = useRef(null)
   const pathnames = location.pathname.split('/').filter(Boolean);
   const showSplitOptions = form.amount !== '';
 
@@ -85,29 +87,40 @@ function AddGrpExpense() {
 
   useEffect(() => {
     if (splitFormRef.current) {
-      splitFormRef.current.style.maxHeight = isSplitFormOpen 
-        ? `${splitFormRef.current.scrollHeight}px` 
+      console.log('roshan')
+      splitFormRef.current.style.maxHeight = isSplitFormOpen
+        ? `${splitFormRef.current.scrollHeight}px`
         : '0px';
     }
   }, [isSplitFormOpen]);
+
+
+  useEffect(() => {
+  if (equalFormRef.current) {
+    equalFormRef.current.style.maxHeight =
+      equalForm === 'equal'
+        ? `${equalFormRef.current.scrollHeight}px`
+        : '0px';
+  }
+}, [equalForm]);
 
   // Data fetching functions
   async function fetchGroupMembers() {
     try {
       const response = await fetch(`${process.env.REACT_APP_FETCH_URL}${API_URLS.GROUP_MEMBERS}${grpId}`);
-      
+
       if (!response.ok) {
         throw new Error(await response.json().then(data => data.message));
       }
-      
+
       const responseData = await response.json();
       setUsers(responseData.data);
-      
+
       const membersMap = responseData.data.reduce((acc, member) => {
         acc[member.user._id] = member.user.name;
         return acc;
       }, {});
-      
+
       setMembers(membersMap);
     } catch (error) {
       setAlert({ show: false, message: error.message });
@@ -117,11 +130,11 @@ function AddGrpExpense() {
   async function fetchCategories() {
     try {
       const response = await fetch(`${process.env.REACT_APP_FETCH_URL}${API_URLS.CATEGORIES}`);
-      
+
       if (!response.ok) {
         throw new Error(await response.json().then(data => data.message));
       }
-      
+
       const responseData = await response.json();
       setCategories(responseData.data.categoryData);
     } catch (error) {
@@ -132,14 +145,14 @@ function AddGrpExpense() {
   async function fetchExpenseDetails(id) {
     try {
       const response = await fetch(`${process.env.REACT_APP_FETCH_URL}${API_URLS.GROUP_EXPENSE}${id}`);
-      
+
       if (!response.ok) {
         throw new Error(await response.json().then(data => data.message));
       }
-      
+
       const expenseData = await response.json();
       const expense = expenseData.data[0];
-      
+
       setForm({
         id: expense._id,
         groupId: expense.group._id,
@@ -148,14 +161,15 @@ function AddGrpExpense() {
         description: expense.description,
         amount: expense.amount
       });
-      
+
       if (expense.splitUnequal?.length) {
         setSplitMethod('unequal');
         setIsSplitFormOpen(true);
       } else {
         setSplitMethod('equal');
+        setEqualForm(true)
       }
-      
+
       setUnequalShares(expense.splitUnequal || []);
     } catch (error) {
       setAlert({ show: false, message: error.message });
@@ -171,7 +185,11 @@ function AddGrpExpense() {
   const handleSplitMethodChange = (e) => {
     const method = e.target.value;
     setSplitMethod(method);
-    setIsSplitFormOpen(method === 'unequal');
+    if (method === 'unequal') {
+      setIsSplitFormOpen(method === 'unequal');
+    } else {
+      setEqualForm(method === 'equal')
+    }
   };
 
   const handleShareChange = (e, index) => {
@@ -185,11 +203,14 @@ function AddGrpExpense() {
 
   const handleSubmit = async () => {
     try {
+      if (Number(form.amount) <= 0) {
+        setAlert({ show: false, message: 'Enter valid amount' });
+      }
       if (splitMethod === 'unequal') {
         const totalShares = unequalShares.reduce((sum, item) => sum + Number(item.share || 0), 0);
-        
+
         if (Number(form.amount) !== totalShares) {
-          throw new Error('Users share amount must equal the expense amount');
+          setAlert({ show: false, message: 'Users share amount must equal the expense amount' });
         }
       }
 
@@ -204,7 +225,7 @@ function AddGrpExpense() {
       };
 
       const method = form.id ? 'PUT' : 'POST';
-      const url = form.id 
+      const url = form.id
         ? `${process.env.REACT_APP_FETCH_URL}${API_URLS.GROUP_EXPENSE}${form.id}`
         : `${process.env.REACT_APP_FETCH_URL}${API_URLS.GROUP_EXPENSE}`;
 
@@ -271,10 +292,10 @@ function AddGrpExpense() {
         <header>
           <Header />
         </header>
-        
+
         <main className="p-3 bg-light">
           <section className='main' style={{ minHeight: '400px' }}>
-            <div className='d-flex justify-content-end m-4'>
+            <div className='d-flex  justify-content-end m-4'>
               <nav className='me-3'>
                 <ol className="breadcrumb">
                   <li className="breadcrumb-item">
@@ -284,139 +305,154 @@ function AddGrpExpense() {
                 </ol>
               </nav>
             </div>
-            
+
             <div className="alert alert-danger m-4" hidden={alert.show}>
               {alert.message}
             </div>
-            
-            <div className="p-3 m-4 w-50">
-              <input type="hidden" name='id' value={form.id} />
-              
-              <div className="mb-3">
-                <h4 className='text-secondary'>Group {grpName} : </h4>
-              </div>
-              
-              <div className="mb-3">
-                <label className="form-label">Paid By</label>
-                <select
-                  value={form.userId}
-                  className="form-select"
-                  name="userId"
-                  onChange={handleInputChange}
-                >
-                  <option value="">Select member</option>
-                  {users.map((item) => (
-                    <option key={item.user._id} value={item.user._id}>
-                      {item.user?.name || 'New user (profile not updated)'}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="mb-3">
-                <label className="form-label">Category</label>
-                <select
-                  value={form.categoryId}
-                  className="form-select"
-                  name="categoryId"
-                  onChange={handleInputChange}
-                >
-                  <option value="">Select category</option>
-                  {categories.map((category) => (
-                    <option key={category._id} value={category._id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="mb-3">
-                <label className="form-label">Amount</label>
-                <input
-                  onChange={handleInputChange}
-                  value={form.amount}
-                  type="number"
-                  min="0"
-                  name='amount'
-                  className='form-control'
-                />
-              </div>
-              
-              {showSplitOptions && (
-                <>
-                  <div className='d-flex justify-content-around mb-3'>
-                    <span>Equal</span>
-                    <input
-                      type='radio'
-                      value='equal'
-                      checked={splitMethod === 'equal'}
-                      onChange={handleSplitMethodChange}
-                      className='ms-3 w-25'
-                      name='splitMethod'
-                    />
-                    <span>Un Equal</span>
-                    <input
-                      type="radio"
-                      value='unequal'
-                      checked={splitMethod === 'unequal'}
-                      onChange={handleSplitMethodChange}
-                      className='ms-3 w-25'
-                      name='splitMethod'
-                    />
-                  </div>
-                  
-                  <div
-                    ref={splitFormRef}
-                    className={`split-form-collapse d-flex flex-column mb-3`}
+
+            <div className='d-flex justify-content-between m-4'>
+              <div className="w-50">
+                <input type="hidden" name='id' value={form.id} />
+
+                <div className="mb-3">
+                  <h4 className='text-secondary'>Group {grpName} : </h4>
+                </div>
+
+                <div className="mb-3">
+                  <label className="form-label">Paid By</label>
+                  <select
+                    value={form.userId}
+                    className="form-select"
+                    name="userId"
+                    onChange={handleInputChange}
                   >
-                    {users.map((user, index) => (
-                      <div key={user.user._id} className='d-flex justify-content-between mt-3 mb-2'>
-                        <div className='w-50'>
-                          <label>
-                            {members[user.user._id] || 'New user (profile not updated)'}
-                          </label>
-                        </div>
-                        <div className='w-50'>
-                          <input
-                            type="number"
-                            min="0"
-                            name='share'
-                            value={unequalShares[index]?.share || 0}
-                            onChange={(e) => handleShareChange(e, index)}
-                            className='form-control w-75'
-                            disabled={splitMethod !== 'unequal'}
-                          />
-                        </div>
-                      </div>
+                    <option value="">Select member</option>
+                    {users.map((item) => (
+                      <option key={item.user._id} value={item.user._id}>
+                        {item.user?.name || `New user ( ${item.user?.email} )`}
+                      </option>
                     ))}
-                  </div>
-                </>
-              )}
-              
-              <div className="mb-3">
-                <label className="form-label">Description</label>
-                <textarea
-                  onChange={handleInputChange}
-                  value={form.description}
-                  className='form-control'
-                  name="description"
-                />
+                  </select>
+                </div>
+
+                <div className="mb-3">
+                  <label className="form-label">Category</label>
+                  <select
+                    value={form.categoryId}
+                    className="form-select"
+                    name="categoryId"
+                    onChange={handleInputChange}
+                  >
+                    <option value="">Select category</option>
+                    {categories.map((category) => (
+                      <option key={category._id} value={category._id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="mb-3">
+                  <label className="form-label">Amount</label>
+                  <input
+                    onChange={handleInputChange}
+                    value={form.amount}
+                    type="number"
+                    min="0"
+                    name='amount'
+                    className='form-control'
+                  />
+                </div>
+
+                {showSplitOptions && (
+                  <>
+                    <div className='d-flex justify-content-around mb-3'>
+                      <span>Equal</span>
+                      <input
+                        type='radio'
+                        value='equal'
+                        checked={splitMethod === 'equal'}
+                        onChange={handleSplitMethodChange}
+                        className='ms-3 w-25'
+                        name='splitMethod'
+                      />
+                      <span>Un Equal</span>
+                      <input
+                        type="radio"
+                        value='unequal'
+                        checked={splitMethod === 'unequal'}
+                        onChange={handleSplitMethodChange}
+                        className='ms-3 w-25'
+                        name='splitMethod'
+                      />
+                    </div>
+
+                    <div
+                      ref={splitFormRef}
+                      className={`split-form-collapse d-flex flex-column mb-3`}
+                    >
+                      {users.map((user, index) => (
+                        <div key={user.user._id} className='d-flex justify-content-between mt-3 mb-2'>
+                          <div className='w-50'>
+                            <label>
+                              {members[user.user._id] || `New user ( ${user.user?.email} )`}
+                            </label>
+                          </div>
+                          <div className='w-50'>
+                            <input
+                              type="number"
+                              min="0"
+                              name='share'
+                              value={unequalShares[index]?.share || 0}
+                              onChange={(e) => handleShareChange(e, index)}
+                              className='form-control w-75'
+                              disabled={splitMethod !== 'unequal'}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                <div className="mb-3">
+                  <label className="form-label">Description</label>
+                  <textarea
+                    onChange={handleInputChange}
+                    value={form.description}
+                    className='form-control'
+                    name="description"
+                  />
+                </div>
+
+                <div className='d-flex justify-content-end'>
+                  <Link
+                    className='btn btn-warning me-3'
+                    to={`/group/groupexpense?grpid=${grpId}&grpname=${grpName}&leader=${groupLeader}`}
+                  >
+                    Cancel
+                  </Link>
+                  <button onClick={handleSubmit} className="btn btn-primary">
+                    Submit
+                  </button>
+                </div>
               </div>
-              
-              <div className='d-flex justify-content-end'>
-                <Link
-                  className='btn btn-warning me-3'
-                  to={`/group/groupexpense?grpid=${grpId}&grpname=${grpName}&leader=${groupLeader}`}
-                >
-                  Cancel
-                </Link>
-                <button onClick={handleSubmit} className="btn btn-primary">
-                  Submit
-                </button>
+
+              <div
+                ref={equalFormRef}
+                className={`split-form-collapse w-50 h-25 ${equalForm !== 'equal' ? 'collapsed' : ''}`}
+                style={{
+                  overflow: 'hidden',
+                  transition: 'max-height 0.3s ease',
+                }}
+              >
+                <div>
+                  <div>Hello</div>
+                </div>
               </div>
             </div>
           </section>
-          
+
           <footer>
             <Footer />
           </footer>

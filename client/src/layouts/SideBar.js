@@ -25,13 +25,13 @@ const SideBar = () => {
           </Link>
         </li>
         <li className="nav-item mb-2">
-          <Link to="/category" className="nav-link text-dark">
-            <MdOutlineCategory className="me-2" />Category
+          <Link to="/group" className="nav-link text-dark">
+            <MdGroups2 className="me-2" /> Group
           </Link>
         </li>
         <li className="nav-item mb-2">
-          <Link to="/group" className="nav-link text-dark">
-            <MdGroups2 className="me-2" /> Group
+          <Link to="/category" className="nav-link text-dark">
+            <MdOutlineCategory className="me-2" />Category
           </Link>
         </li>
       </ul>

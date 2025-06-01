@@ -6,6 +6,7 @@ import { useUser } from '../../components/Context';
 import Header from '../../layouts/Header';
 import Footer from '../../layouts/Footer';
 import SideBar from '../../layouts/SideBar';
+import CountUp from 'react-countup';
 
 // Constants
 const API_URLS = {
@@ -151,7 +152,7 @@ function GrpExpense() {
         <td>{index + 1}</td>
         <td>{expense.user?.name || 'New user (profile not updated)'}</td>
         <td>{expense.description || '-'}</td>
-        <td>₹{expense.amount.toLocaleString()}</td>
+        <td><CountUp end={expense.amount} prefix='₹' separator=',' /></td>
         <td>{expense.category?.name || '-'}</td>
         {isGroupLeader && (<td>
           <div className="d-flex">
@@ -171,7 +172,7 @@ function GrpExpense() {
             </button>
           </div>
         </td>
-      )}
+        )}
       </tr>
     ));
   };
