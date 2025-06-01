@@ -5,6 +5,7 @@ import Header from '../layouts/Header';
 import SideBar from '../layouts/SideBar';
 import Footer from '../layouts/Footer';
 import { useUser } from '../components/Context';
+import CountUp from 'react-countup';
 
 // Constants
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#a4de6c"];
@@ -102,7 +103,7 @@ function Dashboard() {
   // Render functions
   const renderPieChart = () => {
     if (error) return <div className="alert alert-danger">{error}</div>;
-    if (expenseData.length === 0) return <div className="alert alert-info">No expense data available</div>;
+    if (expenseData.length === 0) return <div className="alert alert-info">No expense data available for this month</div>;
 
     return (
       <ResponsiveContainer width="100%" height={300}>
@@ -131,10 +132,10 @@ function Dashboard() {
     <div className="card boxshadow p-3 mb-5 bg-white rounded text-center h-100">
       <div className="card-body d-flex flex-column">
         <h5 className="card-title">Month Total Expenses</h5>
-        <p className="card-text display-6 my-3">₹ {totalAmount.toLocaleString()}</p>
+        <p className="card-text display-6 my-3"><CountUp end={totalAmount} prefix='₹'/></p>
         <div className="mt-auto">
           <Link 
-            to={`/thismonthexpense?date=${currentYearMonth}`} 
+            to={`/expense?date=${currentYearMonth}`} 
             className="btn btn-primary"
           >
             See This Month's Expenses

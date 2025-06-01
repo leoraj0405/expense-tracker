@@ -239,7 +239,7 @@ function CategoryList() {
 
     return (
         <div className="d-flex category-list-container">
-            <aside className='vh-100'>
+            <aside>
                 <SideBar />
             </aside>
 

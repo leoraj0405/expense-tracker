@@ -6,6 +6,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { useUser } from '../../components/Context';
+import CountUp from 'react-countup';
 
 function ListMyExpense() {
   const location = useLocation();
@@ -22,6 +23,8 @@ function ListMyExpense() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [pageTotalAmount, setPageTotalAmount] = useState(0)
+
 
   // Redirect to login if not logged in
   useEffect(() => {
@@ -84,6 +87,14 @@ function ListMyExpense() {
     }
   };
 
+      useEffect(() => {
+      const total = expenses?.userExpenseData?.reduce(
+        (sum, item) => sum + Number(item.amount),
+        0
+      );
+      setPageTotalAmount(total);
+    }, [expenses])
+
   // Render functions
   const renderExpenseTable = () => {
 
@@ -107,13 +118,14 @@ function ListMyExpense() {
       );
     }
 
+
     return expenses.userExpenseData.map((item, idx) => (
       <tr key={item._id}>
         <td>{(currentPage - 1) * expenses.limit + idx + 1}</td>
         <td>{item.description}</td>
         <td>{item.category?.[0]?.name || '-'}</td>
         <td>{item.date?.split('T')[0]}</td>
-        <td>₹{item.amount}</td>
+        <td><CountUp end={item.amount.toString()} prefix='₹' separator=',' /></td>
         <td>
           <Link
             to={`/editexpense?mode=edit&expense=${item._id}`}
@@ -139,8 +151,8 @@ function ListMyExpense() {
     setCurrentPage(page);
   };
 
-    const today = new Date();
-    const maxMonth = today.toISOString().slice(0, 7); // 'YYYY-MM'
+  const today = new Date();
+  const maxMonth = today.toISOString().slice(0, 7); // 'YYYY-MM'
 
   return (
     <div className="d-flex">
@@ -155,7 +167,7 @@ function ListMyExpense() {
                 <ol className="breadcrumb mb-0">
                   <li className="breadcrumb-item"><Link className="text-secondary" to="/home">Home</Link></li>
                   {pathnames.map((item, i) => {
-                    const label = ['thismonthexpense', 'expense'].includes(item) ? 'Expense' : item;
+                    const label = ['expense'].includes(item) ? 'Expense' : item;
                     const to = `/${pathnames.slice(0, i + 1).join('/')}`;
                     const isLast = i === pathnames.length - 1;
                     return (
@@ -196,14 +208,20 @@ function ListMyExpense() {
             </div>
 
             <div className="table-responsive">
-              <table className="table table-bordered">
+              <table className="table table-bordered table-hover">
                 <thead className="table-light">
                   <tr>
                     <th>S No</th>
                     <th>Description</th>
                     <th>Category</th>
                     <th>Date</th>
-                    <th>Amount</th>
+                    <th className='d-flex flex-column'>
+                      <span>Amount</span>
+                      <span><CountUp
+                        end={pageTotalAmount}
+                        prefix='Total : ₹'
+                        separator=',' /></span>
+                    </th>
                     <th>Actions</th>
                   </tr>
                 </thead>

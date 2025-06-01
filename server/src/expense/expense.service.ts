@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { RequestExpense } from '../request';
@@ -18,6 +18,10 @@ export class ExpenseService {
     date,
     categoryId,
   }: RequestExpense) {
+    if (Number(amount) === 0 ) {
+      throw new HttpException('', HttpStatus.BAD_REQUEST);
+    }
+
     const postExpense = new this.expenseModel({
       userId,
       description,
@@ -61,44 +65,44 @@ export class ExpenseService {
 
   async fetchExpense(id: string): Promise<Expense[] | null> {
     const oneExpense = await this.expenseModel.aggregate([
-    {
-      $match: {
-        _id: new Types.ObjectId(id),
-        deletedAt: null,
+      {
+        $match: {
+          _id: new Types.ObjectId(id),
+          deletedAt: null,
+        },
       },
-    },
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'userId',
-        foreignField: '_id',
-        as: 'user',
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'user',
+        },
       },
-    },
-    { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } }, // 💡 prevent crash if user not found
-    {
-      $lookup: {
-        from: 'categories',
-        localField: 'categoryId',
-        foreignField: '_id',
-        as: 'category',
+      { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } }, // 💡 prevent crash if user not found
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'categoryId',
+          foreignField: '_id',
+          as: 'category',
+        },
       },
-    },
-    { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } }, // 💡 prevent crash if category not found
-    {
-      $project: {
-        _id: 1,
-        'category.name': 1,
-        'category._id': 1,
-        'user.name': 1,
-        'user._id': 1,
-        amount: 1,
-        description: 1,
-        date: 1,
+      { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } }, // 💡 prevent crash if category not found
+      {
+        $project: {
+          _id: 1,
+          'category.name': 1,
+          'category._id': 1,
+          'user.name': 1,
+          'user._id': 1,
+          amount: 1,
+          description: 1,
+          date: 1,
+        },
       },
-    },
-  ]);
-  this.logger.log(`User expense Fetched`);
+    ]);
+    this.logger.log(`User expense Fetched`);
     return oneExpense;
   }
 
@@ -145,6 +149,7 @@ export class ExpenseService {
           as: 'user',
         },
       },
+      { $sort: { date: -1 } },
       { $skip: skip },
       { $limit: limitNo },
       {

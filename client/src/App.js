@@ -30,7 +30,6 @@ function App() {
         <Route path='/home' element={<Dashboard />} />
         <Route path='/registration' element={<SignupPage />} />
         <Route path='/expense' element={<ListMyExpense />} />
-        <Route path='/thismonthexpense' element={<ListMyExpense />} />
         <Route path='/expense/addexpense' element={<AddMyExpense />} />
         <Route path='/editexpense' element={<AddMyExpense />} />
         <Route path='/category' element={<CategoryList />} />

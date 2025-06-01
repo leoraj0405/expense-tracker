@@ -60,7 +60,7 @@ export class CategoryController {
       response.data = getCategory;
       reply.status(200).send(response);
     } catch (error) {
-      reply.status(500).send(response);
+      reply.status(500).send(error);
     }
   }
 
@@ -98,7 +98,7 @@ export class CategoryController {
       response.data = deleteData;
       reply.status(200).send(response);
     } catch (error) {
-      reply.status(500).send(response);
+      reply.status(500).send(error.message);
     }
   }
 

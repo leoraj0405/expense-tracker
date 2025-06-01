@@ -16,7 +16,6 @@ function AddMyExpense() {
     const location = useLocation();
     const pathnames = location.pathname.split('/').filter(Boolean);
 
-    const pageMode = query.get('mode');
     const expenseId = query.get('expense');
 
     const [categories, setCategories] = useState([]);
@@ -24,10 +23,9 @@ function AddMyExpense() {
         id: '',
         category: '',
         date: '',
-        amount: '',
+        amount: 0,
         description: '',
     });
-
     const [alert, setAlert] = useState({ visible: false, msg: '' });
 
     const today = new Date().toISOString().split('T')[0];
@@ -98,9 +96,12 @@ function AddMyExpense() {
     const handleSave = async () => {
         const { id, category, amount, date, description } = formData;
 
+        if(Number(amount) <= 0){
+            return showAlert('Enter valid amount')
+        }
         const payload = {
             description,
-            amount: Math.max(0, Number(amount)),
+            amount: Number(amount),
             userId: loginUser?.data?._id,
             categoryId: category,
             date,
@@ -125,7 +126,7 @@ function AddMyExpense() {
 
     return (
         <div className="d-flex">
-            <aside><SideBar /></aside>
+            <aside ><SideBar /></aside>
             <div className="flex-grow-1">
                 <header><Header /></header>
                 <main className="p-3 bg-light">

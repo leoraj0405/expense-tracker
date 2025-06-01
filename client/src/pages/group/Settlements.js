@@ -268,7 +268,7 @@ const SettlementItemToUser = ({ payerId, owes, members, loginUser }) => {
                     if (owedId === loginUserId) {
                         return (
                             <div key={owedId}>
-                                You receive from {members[payerId] || 'User'}: ₹{amount}
+                                {members[payerId] || 'User'}: ₹{amount}
                             </div>
                         );
                     }
@@ -294,8 +294,7 @@ const SettlementItemToUser = ({ payerId, owes, members, loginUser }) => {
                 </header>
 
                 <main className="p-3 bg-light">
-                    <div className='d-flex justify-content-between m-4'>
-                        <h2>Group Summary</h2>
+                    <div className='d-flex justify-content-end m-4'>
                         <Breadcrumbs />
                     </div>
 

@@ -37,9 +37,13 @@ export class ExpenseController {
       reply.status(200).send(response);
     } catch (error) {
       if (error.name === 'ValidationError') {
-        return reply.status(401).send(response);
+        return reply.status(401).send(error.message);
       } 
-      reply.status(500).send(response);
+      if(error.status === 400) {
+        error.message = 'Enter vaild Amount'
+        return reply.status(400).send(error.message);
+      }
+      reply.status(500).send(error);
     }
   }
   @Put('/:id')
@@ -118,7 +122,8 @@ export class ExpenseController {
       response.data = userExpenses;
       reply.status(200).send(response);
     } catch (error) {
-      reply.status(500).send(response);
+      console.log(error)
+      reply.status(500).send(error);
     }
   }
 }

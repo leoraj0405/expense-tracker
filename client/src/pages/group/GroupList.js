@@ -6,6 +6,7 @@ import Header from '../../layouts/Header';
 import Footer from '../../layouts/Footer';
 import SideBar from '../../layouts/SideBar';
 import { useUser } from '../../components/Context';
+import CountUp from 'react-countup';
 
 function GroupList() {
   const location = useLocation();
@@ -72,7 +73,7 @@ function GroupList() {
         <td>{index + 1}</td>
         <td className="text-nowrap">{group.name}</td>
         <td className="text-nowrap">{group.createdBy.name}</td>
-        <td>₹{expensesTotal[index] || 0}</td>
+        <td><CountUp end={expensesTotal[index] || 0} prefix='₹' separator=',' /></td>
         <td className="d-flex" style={{ gap: '30px' }}>
           {renderActions(group, index)}
         </td>

@@ -33,6 +33,7 @@ export class CategoryService {
     const skip = (pageNo - 1) * limitNo;
     const category = await this.categoryModel
       .find({ deletedAt: null })
+      .sort({name: 1})
       .skip(skip)
       .limit(limitNo)
       .exec();
