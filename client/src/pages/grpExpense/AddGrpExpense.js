@@ -47,16 +47,19 @@ function AddGrpExpense() {
   const [splitMethod, setSplitMethod] = useState('');
   const [unequalShares, setUnequalShares] = useState([]);
   const [isSplitFormOpen, setIsSplitFormOpen] = useState(false);
-  const [equalForm, setEqualForm] = useState(false);
   const [alert, setAlert] = useState({
     show: true,
     message: ''
   });
 
   const splitFormRef = useRef(null);
-  const equalFormRef = useRef(null)
   const pathnames = location.pathname.split('/').filter(Boolean);
   const showSplitOptions = form.amount !== '';
+  const [isOpen, setIsOpen] = useState(false);
+
+  const toggleForm = () => {
+    setIsOpen(true);
+  };
 
   // Effects
   useEffect(() => {
@@ -87,22 +90,11 @@ function AddGrpExpense() {
 
   useEffect(() => {
     if (splitFormRef.current) {
-      console.log('roshan')
       splitFormRef.current.style.maxHeight = isSplitFormOpen
         ? `${splitFormRef.current.scrollHeight}px`
         : '0px';
     }
   }, [isSplitFormOpen]);
-
-
-  useEffect(() => {
-  if (equalFormRef.current) {
-    equalFormRef.current.style.maxHeight =
-      equalForm === 'equal'
-        ? `${equalFormRef.current.scrollHeight}px`
-        : '0px';
-  }
-}, [equalForm]);
 
   // Data fetching functions
   async function fetchGroupMembers() {
@@ -167,7 +159,6 @@ function AddGrpExpense() {
         setIsSplitFormOpen(true);
       } else {
         setSplitMethod('equal');
-        setEqualForm(true)
       }
 
       setUnequalShares(expense.splitUnequal || []);
@@ -185,11 +176,8 @@ function AddGrpExpense() {
   const handleSplitMethodChange = (e) => {
     const method = e.target.value;
     setSplitMethod(method);
-    if (method === 'unequal') {
-      setIsSplitFormOpen(method === 'unequal');
-    } else {
-      setEqualForm(method === 'equal')
-    }
+    setIsSplitFormOpen(method === 'unequal');
+    setIsOpen(false)
   };
 
   const handleShareChange = (e, index) => {
@@ -310,7 +298,7 @@ function AddGrpExpense() {
               {alert.message}
             </div>
 
-            <div className='d-flex justify-content-between m-4'>
+            <div className='d-flex justify-content-between  m-4'>
               <div className="w-50">
                 <input type="hidden" name='id' value={form.id} />
 
@@ -372,7 +360,10 @@ function AddGrpExpense() {
                         type='radio'
                         value='equal'
                         checked={splitMethod === 'equal'}
-                        onChange={handleSplitMethodChange}
+                        onChange={(e) => {
+                          handleSplitMethodChange(e)
+                          toggleForm()
+                        }}
                         className='ms-3 w-25'
                         name='splitMethod'
                       />
@@ -437,19 +428,24 @@ function AddGrpExpense() {
                   </button>
                 </div>
               </div>
-
               <div
-                ref={equalFormRef}
-                className={`split-form-collapse w-50 h-25 ${equalForm !== 'equal' ? 'collapsed' : ''}`}
-                style={{
-                  overflow: 'hidden',
-                  transition: 'max-height 0.3s ease',
-                }}
+                className={`w-50 shadow bg-white rounded ms-4 p-3 form-container ${isOpen ? 'open' : ''}`}
               >
-                <div>
-                  <div>Hello</div>
+                    <div className='d-flex flex-column gap-3'>
+                      <h5 className='text-center fw-bold'>Equal Shares</h5>
+                      {users.map((user, index) => (
+                        <div key={index} className='row mb-2 ps-5 pe-5'>
+                          <span className='col-6 text-start text-nowrap'>{members[user.user?._id]  || `New user ( ${user.user?.email} )`} : </span>
+                          <strong className='col-6 text-end'>{Math.round(Number(form.amount)/users?.length)}</strong>
+                        </div>
+                      ))}
+                      <hr />
+                      <div className='row mb-2 ps-5 pe-5'>
+                        <span className='col-6 text-start'>Total : </span>
+                        <strong className='col-6 text-end'>{form.amount}</strong>
+                      </div>
+                    </div>
                 </div>
-              </div>
             </div>
           </section>
 

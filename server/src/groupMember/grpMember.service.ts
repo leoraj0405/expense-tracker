@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { RequestGrpMember } from '../request';
@@ -54,23 +54,31 @@ export class GrpMemberService {
   }
 
   async deleteGrpMember(id: string): Promise<GroupMember | null> {
-    const isUsed = await this.grpExpenseModel.exists({
-      userId: id,
+    const member = await this.grpMemberModel.find({
+      _id: id,
       deletedAt: null,
     });
+    console.log(member)
+
+    const isUsed = await this.grpMemberModel.find({
+      userId: member[0].userId,
+      deletedAt: null
+    })
+    console.log(isUsed)
     if (isUsed) {
+      console.log('leo')
       this.logger.error(
         `The member is used in group expense and cannot delete : ${id}`,
       );
-      throw new BadRequestException(
-        'The member is used in Group expense and cannot delete',
-      );
     }
-    const delGrpMember = await this.grpMemberModel
-      .findByIdAndUpdate(id, { $set: { deletedAt: new Date() } }, { new: true })
-      .exec();
-    this.logger.error(`The member deleted (soft delete) : ${id}`);
-    return delGrpMember;
+
+    //   throw new HttpException('', HttpStatus.UNAUTHORIZED)
+    // }
+    // const delGrpMember = await this.grpMemberModel
+    //   .findByIdAndUpdate(id, { $set: { deletedAt: new Date() } }, { new: true })
+    //   .exec();
+    // this.logger.error(`The member deleted (soft delete) : ${id}`);
+    return null;
   }
 
   async fetchGroupMemberById(id: string): Promise<GroupMember[] | null> {

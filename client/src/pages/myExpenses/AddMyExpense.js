@@ -168,9 +168,10 @@ function AddMyExpense() {
                                     <label htmlFor="category">Category</label>
                                     <select
                                         name="category"
-                                        className="form-control"
+                                        className="form-select"
                                         value={formData.category}
                                         onChange={handleChange}
+                                        required
                                     >
                                         <option value="">Choose category</option>
                                         {categories.map((cat) => (
@@ -188,6 +189,7 @@ function AddMyExpense() {
                                         min="0"
                                         value={formData.amount}
                                         onChange={handleChange}
+                                        required
                                     />
                                 </div>
 
@@ -200,6 +202,7 @@ function AddMyExpense() {
                                         max={today}
                                         value={formData.date}
                                         onChange={handleChange}
+                                        required
                                     />
                                 </div>
 
@@ -214,6 +217,7 @@ function AddMyExpense() {
                                         className="form-control"
                                         value={formData.description}
                                         onChange={handleChange}
+                                        required
                                     />
                                 </div>
                             </div>

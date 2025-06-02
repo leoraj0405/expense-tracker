@@ -37,11 +37,12 @@ export class ExpenseController {
       reply.status(200).send(response);
     } catch (error) {
       if (error.name === 'ValidationError') {
-        return reply.status(401).send(error.message);
+        error.message = 'Bad Inputs.'
+        return reply.status(400).send(error);
       } 
       if(error.status === 400) {
-        error.message = 'Enter vaild Amount'
-        return reply.status(400).send(error.message);
+        error.message = 'Enter vaild Amount.'
+        return reply.status(400).send(error);
       }
       reply.status(500).send(error);
     }
@@ -76,7 +77,7 @@ export class ExpenseController {
       response.data = deleteData;
       reply.status(200).send(response);
     } catch (error) {
-      reply.status(500).send(response);
+      reply.status(500).send(error);
     }
   }
   @Get('/:id')
@@ -95,7 +96,7 @@ export class ExpenseController {
       response.data = userExpense;
       reply.status(200).send(response); 
     } catch (error) {
-      return reply.status(500).send(response);
+      return reply.status(500).send(error);
     }
   }
   @Get('/userexpense/:id')

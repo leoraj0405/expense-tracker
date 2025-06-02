@@ -7,7 +7,7 @@ import Logo from '../assets/img/websiteLogo.png'
 
 const SideBar = () => {
   return (
-    <div className="d-flex flex-column h-100 p-2 bg-warning" style={{ width: "220px" }}>
+    <div className="d-flex flex-column h-100 p-2 bg-warning" style={{ width: "250px" }}>
       <ul className="nav nav-pills flex-column">
         <li className="nav-item mb-2 d-flex justify-content-around align-items-center">
           <img src={Logo} alt="Logo" width="60" height="60" className="d-inline-block align-top me-2" />
