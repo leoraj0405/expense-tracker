@@ -72,7 +72,7 @@ function GroupList() {
       <tr key={group._id}>
         <td>{index + 1}</td>
         <td className="text-nowrap">{group.name}</td>
-        <td className="text-nowrap">{group.createdBy.name}</td>
+        <td className="text-nowrap">{group.createdBy.name || group.createdBy.email}</td>
         <td><CountUp end={expensesTotal[index] || 0} prefix='₹' separator=',' /></td>
         <td className="d-flex" style={{ gap: '30px' }}>
           {renderActions(group, index)}

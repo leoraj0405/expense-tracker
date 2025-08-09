@@ -208,7 +208,7 @@ function Settlements() {
             <tr key={index}>
                 <td>{index + 1}</td>
                 <td>{item.description}</td>
-                <td>{item.user.name}</td>
+                <td>{item.user.name || 'User '}</td>
                 <td>₹{item.amount}</td>
                 <td>{splitMethod}</td>
                 <td>

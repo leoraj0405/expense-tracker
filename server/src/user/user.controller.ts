@@ -16,11 +16,17 @@ import type { LoginParentReq, LoginUserReq, RequestUser } from '../request';
 import { ResponseDto } from '../response';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname, join } from 'path';
+import { extname } from 'path';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private jwtService: JwtService,
+    private readonly config: ConfigService,
+  ) {}
 
   @Post()
   @UseInterceptors(
@@ -39,11 +45,11 @@ export class UserController {
     @Body() body: RequestUser,
     @Res() reply: any,
   ): Promise<void> {
-    console.log('leo')
+    console.log('leo');
     const response: ResponseDto = {
       data: null,
     };
-    console.log(file, body)
+    console.log(file, body);
     try {
       response.data = await this.userService.createUser(
         {
@@ -107,7 +113,7 @@ export class UserController {
   async loginUser(
     @Res() reply: any,
     @Body() body: LoginUserReq,
-    @Req() request: any,
+    @Req() req: any,
   ): Promise<void> {
     const response: ResponseDto = {
       data: null,
@@ -118,18 +124,34 @@ export class UserController {
         body.password,
       );
       if (!loggedUser) {
-        request.session.isLogged = false;
-        request.session.data = null;
-        return reply.status(401).send(response);
+        return reply.status(401).send('Invalid Credentials.');
       }
-      request.session.isLogged = true;
-      request.session.data = loggedUser;
-      response.data = loggedUser;
-      reply.status(200).send('login successful');
+      const { name, email, profileImage } = loggedUser;
+      const payload = {
+        id: loggedUser?._id?.toString(),
+        name,
+        email,
+        profileImage,
+      };
+      const token = this.jwtService.sign(payload);
+      reply.cookie('jwt', token, {
+        httpOnly: true,
+        secure: false, // set false for local dev
+        sameSite: 'strict',
+        maxAge: 30 * 60 * 1000, // 30 minutes
+      });
+      reply.status(200).json(token);
     } catch (error) {
-      reply.status(500).send(response);
+      console.log(error);
+      reply.status(500).send(error);
     }
   }
+
+  @Get('/me')
+  getMe(@Req() req) {
+    return req.user;
+  }
+
   @Get('/parenthome')
   async parentHome(@Res() reply: any, @Req() request: any): Promise<void> {
     const response: ResponseDto = {
@@ -201,14 +223,15 @@ export class UserController {
       reply.status(500).send(response);
     }
   }
-   @Post('/processotp')
-  async processOTP(
-    @Res() reply: any,
-    @Body() body: any,
-  ): Promise<void> {
+  @Post('/processotp')
+  async processOTP(@Res() reply: any, @Body() body: any): Promise<void> {
     try {
-      const process = await this.userService.processOTP(body.email, body.otp, body.password);
-      console.log(process)
+      const process = await this.userService.processOTP(
+        body.email,
+        body.otp,
+        body.password,
+      );
+      console.log(process);
       if (!process) {
         return reply.status(401).send(null);
       }
@@ -217,7 +240,7 @@ export class UserController {
       reply.status(500).send(error);
     }
   }
-  
+
   @Post('/parentgenerateotp')
   async findParent(
     @Res() reply: any,
@@ -296,5 +319,4 @@ export class UserController {
       reply.status(500).send(error);
     }
   }
-
 }

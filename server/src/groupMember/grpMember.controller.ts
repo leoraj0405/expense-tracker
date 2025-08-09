@@ -105,7 +105,7 @@ export class GrpMemberController {
       response.data = await this.grpMemberService.deleteGrpMember(id);
       reply.status(200).send(response);
     } catch (error) {
-      reply.status(500).send(response);
+      reply.send(error);
     }
   }
   @Get('/:id')

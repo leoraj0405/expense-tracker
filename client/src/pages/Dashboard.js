@@ -4,7 +4,6 @@ import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recha
 import Header from '../layouts/Header';
 import SideBar from '../layouts/SideBar';
 import Footer from '../layouts/Footer';
-import { useUser } from '../components/Context';
 import CountUp from 'react-countup';
 
 // Constants
@@ -17,7 +16,7 @@ const API_URLS = {
 function Dashboard() {
   // Hooks and context
   const navigate = useNavigate();
-  const { loginUser, setLoginUser } = useUser();
+  const [loginUser, setLoginUser] = useState({});
 
   // State management
   const [expenseData, setExpenseData] = useState([]);
@@ -29,39 +28,32 @@ function Dashboard() {
   const currentYearMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
 
   // Data fetching functions
-  const checkLoginStatus = useCallback(async () => {
-    setIsLoading(true);
+
+  async function getLoggedUser() {
     try {
-      const response = await fetch(`${process.env.REACT_APP_FETCH_URL}${API_URLS.USER_HOME}`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error('Session expired. Please log in again.');
+      const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/user/me`,
+        { credentials: 'include' })
+      const data = await response.json()
+      if (response.ok) {
+        setLoginUser(data)
+      } else {
+        navigate('/login')
       }
-
-      const userData = await response.json();
-      setLoginUser(userData);
-    } catch (err) {
-      setError(err.message);
-      setLoginUser(null);
-      navigate('/login');
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      setError(error.message || 'Something error please try again.')
+      navigate('/login')
     }
-  }, [navigate, setLoginUser]);
-
+  }
   const fetchThisMonthExpenses = useCallback(async () => {
-    if (!loginUser?.data?._id) return;
+    if (!loginUser?._id) return;
 
     setIsLoading(true);
-    const today = new Date();
+    const today = new Date('04-05-2025');
     const formattedDate = today.toISOString().split('T')[0]; // YYYY-MM-DD
 
     try {
       const response = await fetch(
-        `${process.env.REACT_APP_FETCH_URL}${API_URLS.USER_EXPENSES}${loginUser.data._id}?date=${formattedDate}`
+        `${process.env.REACT_APP_FETCH_URL}${API_URLS.USER_EXPENSES}${loginUser._id}?date=${formattedDate}`
       );
 
       if (!response.ok) {
@@ -74,6 +66,7 @@ function Dashboard() {
         value: Number(amount)
       }));
 
+      console.log(expenseData)
       setExpenseData(chartData);
       setError(null);
     } catch (err) {
@@ -84,10 +77,9 @@ function Dashboard() {
     }
   }, [loginUser]);
 
-  // Effects
   useEffect(() => {
-    checkLoginStatus();
-  }, [checkLoginStatus]);
+    getLoggedUser()
+  }, [])
 
   useEffect(() => {
     if (loginUser) {
@@ -132,10 +124,10 @@ function Dashboard() {
     <div className="card boxshadow p-3 mb-5 bg-white rounded text-center h-100">
       <div className="card-body d-flex flex-column">
         <h5 className="card-title">Month Total Expenses</h5>
-        <p className="card-text display-6 my-3"><CountUp end={totalAmount} prefix='₹'/></p>
+        <p className="card-text display-6 my-3"><CountUp end={totalAmount} prefix='₹' /></p>
         <div className="mt-auto">
-          <Link 
-            to={`/expense?date=${currentYearMonth}`} 
+          <Link
+            to={`/expense?date=${currentYearMonth}`}
             className="btn btn-primary"
           >
             See This Month's Expenses
@@ -160,7 +152,7 @@ function Dashboard() {
           <section className="main" style={{ minHeight: '80vh' }}>
             <div className="container mt-3">
               <div className="mb-4">
-                <h1 className="ms-2">Welcome {loginUser?.data?.name || 'Buddy'}!</h1>
+                <h1 className="ms-2">Welcome {loginUser?.name || 'Buddy'}!</h1>
                 <p className="ms-2 text-muted">Track your spending. Control your future.</p>
               </div>
 

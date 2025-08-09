@@ -40,13 +40,22 @@ export class GrpExpenseService {
       const splitEqualArr: { memberId: string; share: number }[] = [];
       const groupMembersArr =
         await this.memberService.fetchGroupMembersByGroupId(groupId);
-      const membersId = groupMembersArr?.map((member) => member.user._id);
 
-      membersId?.forEach((id) => {
-        splitEqualArr.push({
-          memberId: id,
-          share: Math.round(Number(amount) / Number(membersId.length)),
-        });
+      if (!groupMembersArr || groupMembersArr.length === 0) {
+        throw new Error('No group members found for equal split.');
+      }
+
+      const membersId = groupMembersArr.map((member) => member.user._id);
+
+      const totalAmount = Number(amount);
+      const memberCount = membersId.length;
+      const baseShare = Math.floor(totalAmount / memberCount);
+      let remainder = totalAmount - baseShare * memberCount;
+
+      membersId.forEach((id) => {
+        const share = baseShare + (remainder > 0 ? 1 : 0);
+        if (remainder > 0) remainder--;
+        splitEqualArr.push({ memberId: id, share });
       });
 
       inputs.splitAmong = splitEqualArr;
@@ -242,12 +251,14 @@ export class GrpExpenseService {
     return groupExpenses;
   }
 
-  async getExpensesByUserId(userId: string, groupId: string): Promise<GroupExpense[] | null> {
-   
+  async getExpensesByUserId(
+    userId: string,
+    groupId: string,
+  ): Promise<GroupExpense[] | null> {
     const user = new Types.ObjectId(userId);
-    const group = new Types.ObjectId(groupId)
+    const group = new Types.ObjectId(groupId);
     const groupExpenses = await this.groupExpensemodel.aggregate([
-      { $match: { userId: user, groupId : group, deletedAt: null } },
+      { $match: { userId: user, groupId: group, deletedAt: null } },
       {
         $lookup: {
           from: 'groups',
@@ -289,7 +300,9 @@ export class GrpExpenseService {
         },
       },
     ]);
-    this.logger.log(`The group expense fetch by user Id : ${userId} in group ${groupId}`);
+    this.logger.log(
+      `The group expense fetch by user Id : ${userId} in group ${groupId}`,
+    );
     return groupExpenses;
   }
 }

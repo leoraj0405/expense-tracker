@@ -3,13 +3,9 @@ import React, { createContext, useState, useContext } from 'react';
 const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
-  const [loginUser, setLoginUser] = useState(null);
-  sessionStorage.setItem('user', JSON.stringify(loginUser))
-  const user = JSON.parse(sessionStorage.getItem('user'));
-
-
+  const [token, setToken] = useState(null)
   return (
-    <UserContext.Provider value={{ loginUser, setLoginUser, user }}>
+    <UserContext.Provider value={{token, setToken }}>
       {children}
     </UserContext.Provider>
   );

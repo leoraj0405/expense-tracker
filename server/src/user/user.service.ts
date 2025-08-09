@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  Logger,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from '../schemas/user.schema';
@@ -7,12 +11,13 @@ import * as bcrypt from 'bcrypt';
 import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
-export class UserService {
+export class UserService{
   private readonly logger = new Logger(User.name);
   constructor(
-    @InjectModel(User.name) private userModel: Model<User>,
+    @InjectModel(User.name) private readonly userModel: Model<User>,
     private readonly mailerService: MailerService,
   ) {}
+
   async createUser(
     { name, email, password, parentEmail }: RequestUser,
     file?: Express.Multer.File,
@@ -78,16 +83,12 @@ export class UserService {
         email: email,
         deletedAt: null,
       })
-      .select('_id name email password profileImage')
-      .exec();
-
+      .select('_id name email password profileImage');
     if (!validateUser || !validateUser.password) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Invalid email or user does not exist');
     }
-
     const hashedPassword = validateUser?.password;
     const isMatch = await bcrypt.compare(password, hashedPassword);
-
     if (!isMatch) {
       this.logger.log(`The user not logged`);
       throw new UnauthorizedException('Invalid User');
@@ -163,7 +164,7 @@ export class UserService {
       .exec();
     if (!isEmail) {
       this.logger.error(`Inavlid Email Address ${email}`);
-      return null
+      return null;
     }
     const characters =
       'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';

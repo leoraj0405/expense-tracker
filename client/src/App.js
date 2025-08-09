@@ -19,11 +19,21 @@ import Profile from './pages/Profile';
 import ParentHome from './pages/ParentHome';
 import ForgetPassword from './pages/ForgetPassword';
 import Settlements from './pages/group/Settlements';
+import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+
+function NavigateToLogin() {
+  const navigate = useNavigate()
+  useEffect(() => {
+    navigate('login')
+  })
+}
 
 function App() {
   return (
     <Router>
       <Routes>
+        <Route path='/' element={<NavigateToLogin/>} />
         <Route path='/login' element={<Login />} />
         <Route path='/parentlogin' element={<ParentLogin />} />
         <Route path='/parenthome' element={<ParentHome />} />

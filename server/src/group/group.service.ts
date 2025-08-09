@@ -63,6 +63,7 @@ export class GroupService {
         $project: {
           _id: 1,
           'user.name': 1,
+          'user.email': 1,
           name: 1,
         },
       },

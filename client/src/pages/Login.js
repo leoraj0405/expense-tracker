@@ -34,7 +34,6 @@ function Login() {
   const handleSubmit = useCallback(async () => {
     try {
       setUiState(prev => ({ ...prev, isLoading: true }));
-      
       const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/user/login`, {
         method: "POST",
         headers: { 
@@ -46,7 +45,6 @@ function Login() {
         }),
         credentials: 'include'
       });
-
       if (response.ok) {
         navigate('/home');
       } else {

@@ -153,7 +153,6 @@ function AddGrpExpense() {
         description: expense.description,
         amount: expense.amount
       });
-
       if (expense.splitUnequal?.length) {
         setSplitMethod('unequal');
         setIsSplitFormOpen(true);
@@ -346,7 +345,6 @@ function AddGrpExpense() {
                     onChange={handleInputChange}
                     value={form.amount}
                     type="number"
-                    min="0"
                     name='amount'
                     className='form-control'
                   />
@@ -392,9 +390,8 @@ function AddGrpExpense() {
                           <div className='w-50'>
                             <input
                               type="number"
-                              min="0"
                               name='share'
-                              value={unequalShares[index]?.share || 0}
+                              value={unequalShares[index]?.share}
                               onChange={(e) => handleShareChange(e, index)}
                               className='form-control w-75'
                               disabled={splitMethod !== 'unequal'}

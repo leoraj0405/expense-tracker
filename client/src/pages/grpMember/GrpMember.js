@@ -87,7 +87,6 @@ function GrpMember() {
         if (!window.confirm('Are you sure you want to delete this member?')) {
             return;
         }
-
         try {
             const response = await fetch(`${process.env.REACT_APP_FETCH_URL}/groupmember/${memberId}`, {
                 method: "DELETE"
@@ -97,9 +96,10 @@ function GrpMember() {
                 const errorInfo = await response.json();
                 throw new Error(errorInfo.message || 'Failed to delete member');
             }
-
+            console.log(response)
             fetchGroupMembers();
         } catch (error) {
+            console.log(error)
             setAlert({
                 show: true,
                 message: error.message

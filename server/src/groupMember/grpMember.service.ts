@@ -1,10 +1,11 @@
-import { BadRequestException, Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { InjectModel, InjectConnection } from '@nestjs/mongoose';
+import mongoose, { Model, Types, Connection } from 'mongoose';
 import { RequestGrpMember } from '../request';
 import { GroupMember } from 'src/schemas/groupMember.schema';
 import { GroupExpense } from 'src/schemas/groupExpense.schema';
 import { MailerService } from '@nestjs-modules/mailer';
+import { ForbiddenException } from '@nestjs/common';
 
 export interface GroupMemberWithUser {
   _id: Types.ObjectId;
@@ -14,19 +15,16 @@ export interface GroupMemberWithUser {
 
 @Injectable()
 export class GrpMemberService {
-  
   private readonly logger = new Logger(GroupMember.name);
   constructor(
+    @InjectConnection() private readonly connection: Connection,
     @InjectModel(GroupMember.name) private grpMemberModel: Model<GroupMember>,
     @InjectModel(GroupExpense.name)
     private grpExpenseModel: Model<GroupExpense>,
     private readonly mailerService: MailerService,
-    
-  )
-   {}
+  ) {}
 
-  
-  async createGroupMember( groupId, userId ) {
+  async createGroupMember(groupId, userId) {
     const createMember = new this.grpMemberModel({
       groupId,
       userId,
@@ -37,7 +35,6 @@ export class GrpMemberService {
     this.logger.log(`Group member created ${userId}`);
     return createMember;
   }
-
   async updateGroupMember(
     id: string,
     updateData: RequestGrpMember,
@@ -52,33 +49,55 @@ export class GrpMemberService {
     this.logger.log(`The group member updated by Id : ${id}`);
     return updateMember;
   }
-
-  async deleteGrpMember(id: string): Promise<GroupMember | null> {
-    const member = await this.grpMemberModel.find({
-      _id: id,
+  async deleteGrpMember(id: string): Promise<GroupMember | null | undefined> {
+    const session = await this.connection.startSession();
+    session.startTransaction();
+    const member = await this.grpMemberModel.findOne({
+      _id: new Types.ObjectId(id),
       deletedAt: null,
     });
-    console.log(member)
-
-    const isUsed = await this.grpMemberModel.find({
-      userId: member[0].userId,
-      deletedAt: null
-    })
-    console.log(isUsed)
-    if (isUsed) {
-      console.log('leo')
-      this.logger.error(
-        `The member is used in group expense and cannot delete : ${id}`,
+    const user = member?.userId.toString();
+    const existsResult = await this.grpExpenseModel.find({
+      deletedAt: null,
+      $or: [
+        { userId: user },
+        {
+          splitAmong: {
+            $elemMatch: {
+              memberId: user,
+            },
+          },
+        },
+        {
+          splitUnequal: {
+            $elemMatch: {
+              memberId: user,
+            },
+          },
+        },
+      ],
+    });
+    for (const expense of existsResult) {
+      const isUserPaidBy = expense?.userId?.toString() === user?.toString();
+      const isUserInSplitAmong = expense?.splitAmong?.some(
+        (m) => m.memberId?.toString() === user?.toString(),
       );
+      const isUserInSplitUnequal = expense?.splitUnequal?.some(
+        (m) => m.memberId?.toString() === user?.toString(),
+      );
+      if (isUserPaidBy || isUserInSplitAmong || isUserInSplitUnequal) {
+        throw new ForbiddenException(
+          `You cannot delete this user because they are involved in a group expense. Delete their expenses first.`,
+        );
+      }
     }
-
-    //   throw new HttpException('', HttpStatus.UNAUTHORIZED)
-    // }
-    // const delGrpMember = await this.grpMemberModel
-    //   .findByIdAndUpdate(id, { $set: { deletedAt: new Date() } }, { new: true })
-    //   .exec();
-    // this.logger.error(`The member deleted (soft delete) : ${id}`);
-    return null;
+    const delGrpMember = await this.grpMemberModel.findByIdAndUpdate(
+      id,
+      { $set: { deletedAt: new Date() } },
+      { new: true },
+    );
+    this.logger.log(`The member deleted (soft delete) : ${id}`);
+    return delGrpMember;
   }
 
   async fetchGroupMemberById(id: string): Promise<GroupMember[] | null> {
@@ -92,7 +111,7 @@ export class GrpMemberService {
           as: 'group',
         },
       },
-      {$unwind: '$group'},
+      { $unwind: '$group' },
       {
         $lookup: {
           from: 'users',
@@ -101,14 +120,14 @@ export class GrpMemberService {
           as: 'user',
         },
       },
-      {$unwind: '$user'},
+      { $unwind: '$user' },
       {
         $project: {
           _id: 1,
           'group.name': 1,
           'group._id': 1,
           'user.name': 1,
-          'user.email' : 1
+          'user.email': 1,
         },
       },
     ]);
@@ -116,8 +135,10 @@ export class GrpMemberService {
     return oneGrpMember;
   }
 
-  async fetchGroupMembersByGroupId(id: string): Promise<GroupMemberWithUser[] | null> {
-    const groupId = new Types.ObjectId(id)
+  async fetchGroupMembersByGroupId(
+    id: string,
+  ): Promise<GroupMemberWithUser[] | null> {
+    const groupId = new Types.ObjectId(id);
     const groupMembers = await this.grpMemberModel.aggregate([
       { $match: { groupId: groupId, deletedAt: null } },
       {
@@ -128,7 +149,7 @@ export class GrpMemberService {
           as: 'group',
         },
       },
-      {$unwind: '$group'},
+      { $unwind: '$group' },
       {
         $lookup: {
           from: 'users',
@@ -137,7 +158,7 @@ export class GrpMemberService {
           as: 'user',
         },
       },
-      {$unwind: '$user'},
+      { $unwind: '$user' },
       {
         $project: {
           _id: 1,
@@ -145,8 +166,8 @@ export class GrpMemberService {
           amount: 1,
           'group.name': 1,
           'user.name': 1,
-          'user._id' : 1,
-          'user.email': 1
+          'user._id': 1,
+          'user.email': 1,
         },
       },
     ]);
@@ -155,7 +176,7 @@ export class GrpMemberService {
   }
 
   async sendLoginCredentialsInfoToUserEmail(email: string): Promise<any> {
-      await this.mailerService.sendMail({
+    await this.mailerService.sendMail({
       to: email,
       subject: 'LOGIN AUTHENTICATION',
       text: `Hi [ New User ],
@@ -165,7 +186,7 @@ export class GrpMemberService {
                after you login kindly change ur other informations.
               Expense Tracker Team`,
     });
-    this.logger.log(`Otp sent to email : ${email}`)
+    this.logger.log(`Otp sent to email : ${email}`);
     return `Otp sent to the your mail id.`;
   }
 }
