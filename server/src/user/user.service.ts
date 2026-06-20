@@ -2,13 +2,16 @@ import {
   Injectable,
   UnauthorizedException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { User } from '../entities/user.entity';
+import { GroupMember } from '../entities/group-member.entity';
 import { LoginParentReq, RequestUser } from '../request';
 import * as bcrypt from 'bcrypt';
 import { MailerService } from '@nestjs-modules/mailer';
+import { buildOtpEmail } from '../utils/email-templates';
 
 @Injectable()
 export class UserService {
@@ -16,6 +19,8 @@ export class UserService {
 
   constructor(
     @InjectRepository(User) private readonly userRepo: Repository<User>,
+    @InjectRepository(GroupMember)
+    private readonly groupMemberRepo: Repository<GroupMember>,
     private readonly mailerService: MailerService,
   ) {}
 
@@ -108,38 +113,85 @@ export class UserService {
     }
     const mailId = parentData.parentEmail;
     await this.userRepo.update({ parentEmail: mailId }, { parentOtp: otp });
+    const emailContent = buildOtpEmail({
+      subject: 'Parent login verification — Expense Tracker',
+      preheader: `Your parent portal code is ${otp}`,
+      title: 'Verify parent login',
+      greeting: 'Hi Parent,',
+      intro:
+        'Use the verification code below to sign in to the parent portal and review your children\'s spending.',
+      otp,
+      expiryNote:
+        'This code is for parent portal access only. If you did not request it, please ignore this email.',
+    });
     await this.mailerService.sendMail({
       to: mailId,
-      subject: 'LOGIN AUTHENTICATION',
-      text: `Hi [ Parent ],
-              Your One-Time Password (OTP) for logging into the Expense Tracker app is:
-              🔐 ${otp} 
-              Please do not share this code with anyone.
-              Thanks you,
-              Expense Tracker Team`,
+      subject: emailContent.subject,
+      text: emailContent.plainText,
+      html: emailContent.html,
     });
     this.logger.log(`Otp sent to email : ${parentData.parentEmail}`);
     return `Otp sent to the your mail id.`;
   }
 
-  async parentProcessOtp(email, otp): Promise<User[]> {
+  async parentProcessOtp(email: string, otp: string): Promise<User[] | null> {
+    const normalizedEmail = email.trim();
+    const normalizedOtp = otp.trim();
+
     const parentInfo = await this.userRepo.findOne({
-      where: { parentEmail: email, parentOtp: otp },
+      where: { parentEmail: normalizedEmail, parentOtp: normalizedOtp, deletedAt: IsNull() },
     });
     const parentSavedOtp = parentInfo?.parentOtp;
-    if (parentSavedOtp === otp) {
+    if (parentSavedOtp === normalizedOtp) {
       const parentData = await this.userRepo.find({
-        where: { parentEmail: email },
+        where: { parentEmail: normalizedEmail, deletedAt: IsNull() },
       });
       this.logger.log(`Parent Email and OTP is correct`);
       return parentData;
     }
-    this.logger.error(`Invalid Email : ${email} or Wrong OTP : ${otp} `);
-    throw new UnauthorizedException('Invalid Email or Wrong OTP');
+    this.logger.error(`Invalid Email : ${normalizedEmail} or Wrong OTP : ${normalizedOtp} `);
+    return null;
+  }
+
+  async findChildrenByParentEmail(parentEmail: string): Promise<User[]> {
+    return this.userRepo.find({
+      where: { parentEmail: parentEmail.trim(), deletedAt: IsNull() },
+    });
   }
 
   async checkUserByEmail(email: string): Promise<User[] | null> {
     return this.userRepo.find({ where: { email, deletedAt: IsNull() } });
+  }
+
+  async searchUsers(query: string, groupId?: string, limit = 10): Promise<User[]> {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) return [];
+
+    const excludeUserIds: string[] = [];
+    if (groupId) {
+      const members = await this.groupMemberRepo.find({
+        where: { groupId, deletedAt: IsNull() },
+        select: ['userId'],
+      });
+      excludeUserIds.push(...members.map((m) => m.userId));
+    }
+
+    const qb = this.userRepo
+      .createQueryBuilder('user')
+      .select(['user.id', 'user.name', 'user.email'])
+      .where('user.deletedAt IS NULL')
+      .andWhere(
+        '(LOWER(user.email) LIKE LOWER(:q) OR LOWER(user.name) LIKE LOWER(:q))',
+        { q: `%${trimmed}%` },
+      )
+      .orderBy('user.name', 'ASC')
+      .take(limit);
+
+    if (excludeUserIds.length) {
+      qb.andWhere('user.id NOT IN (:...excludeUserIds)', { excludeUserIds });
+    }
+
+    return qb.getMany();
   }
 
   async generateOTP(email: string) {
@@ -159,15 +211,20 @@ export class UserService {
       otp += characters[randomIndex];
     }
     await this.userRepo.update({ email }, { otp });
+    const emailContent = buildOtpEmail({
+      subject: 'Reset your password — Expense Tracker',
+      preheader: `Your password reset code is ${otp}`,
+      title: 'Reset your password',
+      greeting: 'Hi there,',
+      intro:
+        'We received a request to reset your Expense Tracker password. Enter the code below to continue.',
+      otp,
+    });
     await this.mailerService.sendMail({
       to: email,
-      subject: 'RESET PASSWORD VERIFICATION',
-      text: `Hi [ User ],
-              Your One-Time Password (OTP) for rest your password
-              🔐 ${otp} 
-              Please do not share this code with anyone.
-              Thanks you,
-              Expense Tracker Team`,
+      subject: emailContent.subject,
+      text: emailContent.plainText,
+      html: emailContent.html,
     });
     this.logger.log(`Otp sent to email : ${email}`);
     return `Otp sent to the your mail id.`;

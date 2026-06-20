@@ -11,22 +11,29 @@ interface PageBreadcrumbsProps {
 }
 
 export function PageBreadcrumbs({ items = [] }: PageBreadcrumbsProps) {
+  if (items.length === 0) return null;
+
   return (
-    <Breadcrumbs>
-      <Anchor component={Link} to="/home" size="sm" c="dimmed">
+    <Breadcrumbs className="et-breadcrumbs" separator="›">
+      <Anchor component={Link} to="/home" className="et-crumb-link">
         Home
       </Anchor>
       {items.map((item, index) => {
         const isLast = index === items.length - 1;
         if (isLast) {
           return (
-            <Text key={item.label} size="sm" c="dimmed">
+            <Text key={`${item.label}-${index}`} className="et-crumb-current" component="span">
               {item.label}
             </Text>
           );
         }
         return (
-          <Anchor key={item.label} component={Link} to={item.to} size="sm" c="dimmed">
+          <Anchor
+            key={`${item.label}-${index}`}
+            component={Link}
+            to={item.to}
+            className="et-crumb-link"
+          >
             {item.label}
           </Anchor>
         );

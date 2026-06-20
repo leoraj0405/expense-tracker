@@ -15,10 +15,11 @@ import { IconUser, IconLock, IconArrowDown } from '@tabler/icons-react';
 import AuthLayout from '../layouts/AuthLayout';
 import { userService } from '../services/userService';
 import { ApiError } from '../services/apiClient';
+import { saveParentSession } from '../utils/authStorage';
 
 function ParentLogin() {
   const [formData, setFormData] = useState({
-    email: 'iamnotraj02@gmail.com',
+    email: 'leoparent@gmail.com',
     otp: '',
   });
   const [uiState, setUiState] = useState({
@@ -55,19 +56,29 @@ function ParentLogin() {
   };
 
   const handleProcessOtp = async () => {
+    if (!formData.otp.trim()) {
+      setErrorMessage('Please enter the OTP');
+      setUiState((prev) => ({ ...prev, showErrorAlert: true }));
+      return;
+    }
+
     try {
-      setUiState((prev) => ({ ...prev, isLoading: true }));
-      await userService.parentProcessOtp({
-        parentEmail: formData.email,
-        parentotp: formData.otp,
+      setUiState((prev) => ({ ...prev, isLoading: true, showErrorAlert: false }));
+      const res = await userService.parentProcessOtp({
+        parentEmail: formData.email.trim(),
+        parentotp: formData.otp.trim(),
+      });
+
+      const payload = res.item!;
+      saveParentSession({
+        token: payload.token,
+        children: payload.children,
       });
       navigate('/parenthome');
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Network error. Please try again.';
       setErrorMessage(msg);
       setUiState((prev) => ({ ...prev, showErrorAlert: true, isLoading: false }));
-    } finally {
-      setUiState((prev) => ({ ...prev, isLoading: false }));
     }
   };
 

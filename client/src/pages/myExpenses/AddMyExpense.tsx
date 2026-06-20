@@ -1,21 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import {
-  Title,
   Group,
   Button,
-  Alert,
-  Paper,
   Stack,
   TextInput,
   Textarea,
   Select,
-  Grid,
 } from '@mantine/core';
+import { DatePickerInput } from '@mantine/dates';
+import { IconCalendar } from '@tabler/icons-react';
 import AppShellLayout from '../../layouts/AppShellLayout';
-import { PageBreadcrumbs } from '../../components/PageBreadcrumbs';
+import { PageHero } from '../../components/ui/PageHero';
+import { Panel } from '../../components/ui/Panel';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
 import { getUserId, getCategoryId, getEntityId } from '../../utils/entity';
+import { toInputDate, parseLocalDate } from '../../utils/date';
 import { categoryService } from '../../services/categoryService';
 import { expenseService } from '../../services/expenseService';
 import { ApiError } from '../../services/apiClient';
@@ -50,8 +50,6 @@ function AddMyExpense() {
   });
   const [alert, setAlert] = useState({ visible: false, msg: '' });
 
-  const today = new Date().toISOString().split('T')[0];
-
   const showAlert = (msg: string) => setAlert({ visible: true, msg });
 
   useEffect(() => {
@@ -78,7 +76,7 @@ function AddMyExpense() {
         setFormData({
           id: getEntityId(expense) || '',
           category: getCategoryId(expense.category),
-          date: expense.date.split('T')[0],
+          date: toInputDate(expense.date),
           amount: expense.amount,
           description: expense.description,
         });
@@ -137,78 +135,69 @@ function AddMyExpense() {
 
   return (
     <AppShellLayout>
-      <Stack gap="lg">
-        <Group justify="space-between" align="flex-start" wrap="wrap">
-          <Title order={2}>{isEdit ? 'Edit Expense' : 'Add Expense'}</Title>
-          <PageBreadcrumbs
-            items={[
-              { label: 'Expenses', to: '/expense' },
-              { label: isEdit ? 'Edit Expense' : 'Add Expense', to: '#' },
-            ]}
+      <PageHero
+        title={isEdit ? 'Edit expense' : 'Add expense'}
+        subtitle={isEdit ? 'Update an existing transaction.' : 'Log a new personal expense.'}
+      />
+
+      {alert.visible && <div className="et-alert et-alert-error">{alert.msg}</div>}
+
+      <Panel title="Expense details">
+        <Stack gap="md" maw={640}>
+          <Select
+            label="Category"
+            name="category"
+            placeholder="Choose category"
+            data={categoryOptions}
+            value={formData.category}
+            onChange={(value) => setFormData((prev) => ({ ...prev, category: value || '' }))}
+            required
           />
-        </Group>
 
-        {alert.visible && (
-          <Alert color="red" variant="light">
-            {alert.msg}
-          </Alert>
-        )}
-
-        <Paper shadow="sm" p="xl" radius="md" withBorder maw={700}>
-          <Stack gap="md">
-            <Select
-              label="Category"
-              name="category"
-              placeholder="Choose category"
-              data={categoryOptions}
-              value={formData.category}
-              onChange={(value) => setFormData((prev) => ({ ...prev, category: value || '' }))}
-              required
-            />
-
-            <Grid>
-              <Grid.Col span={{ base: 12, sm: 6 }}>
-                <TextInput
-                  label="Amount"
-                  type="number"
-                  name="amount"
-                  min={0}
-                  value={formData.amount}
-                  onChange={handleChange}
-                  required
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6 }}>
-                <TextInput
-                  label="Date"
-                  type="date"
-                  name="date"
-                  max={today}
-                  value={formData.date}
-                  onChange={handleChange}
-                  required
-                />
-              </Grid.Col>
-            </Grid>
-
-            <Textarea
-              label="Description"
-              name="description"
-              value={formData.description}
+          <div className="et-form-grid">
+            <TextInput
+              label="Amount"
+              type="number"
+              name="amount"
+              min={0}
+              value={formData.amount}
               onChange={handleChange}
-              minRows={3}
               required
             />
+            <DatePickerInput
+              label="Date"
+              value={formData.date ? parseLocalDate(formData.date) : null}
+              onChange={(date) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  date: date ? toInputDate(date) : '',
+                }))
+              }
+              maxDate={new Date()}
+              leftSection={<IconCalendar size={16} stroke={1.75} />}
+              required
+            />
+          </div>
 
-            <Group justify="flex-end" mt="md">
-              <Button component={Link} to="/expense" variant="light" color="gray">
-                Cancel
-              </Button>
-              <Button onClick={handleSave}>Submit</Button>
-            </Group>
-          </Stack>
-        </Paper>
-      </Stack>
+          <Textarea
+            label="Description"
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            minRows={3}
+            required
+          />
+
+          <Group justify="flex-end" mt="md">
+            <Button component={Link} to="/expense" variant="default" className="et-btn et-btn-ghost">
+              Cancel
+            </Button>
+            <Button onClick={handleSave} className="et-btn et-btn-primary">
+              Submit
+            </Button>
+          </Group>
+        </Stack>
+      </Panel>
     </AppShellLayout>
   );
 }

@@ -1,24 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Title,
-  Group,
-  Button,
-  Alert,
-  Table,
-  Text,
-  Paper,
-  Stack,
-  Center,
-  Loader,
-  Menu,
-  ActionIcon,
-} from '@mantine/core';
 import { modals } from '@mantine/modals';
+import { Center, Loader, Text, Menu, ActionIcon } from '@mantine/core';
 import { IconEdit, IconTrash, IconPlus, IconDots } from '@tabler/icons-react';
 import CountUp from 'react-countup';
 import AppShellLayout from '../../layouts/AppShellLayout';
-import { PageBreadcrumbs } from '../../components/PageBreadcrumbs';
+import { PageHero } from '../../components/ui/PageHero';
+import { Panel } from '../../components/ui/Panel';
+import { ResponsiveTable } from '../../components/ui/ResponsiveTable';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
 import { getUserId, getEntityId } from '../../utils/entity';
 import { groupService } from '../../services/groupService';
@@ -99,64 +88,58 @@ function GroupList() {
   }, [userGroups]);
 
   const rows = isLoading ? (
-    <Table.Tr>
-      <Table.Td colSpan={5}>
+    <tr className="et-tr-full">
+      <td colSpan={5}>
         <Center py="xl">
-          <Loader />
+          <Loader color="navy" />
         </Center>
-      </Table.Td>
-    </Table.Tr>
+      </td>
+    </tr>
   ) : userGroups.length === 0 ? (
-    <Table.Tr>
-      <Table.Td colSpan={5}>
-        <Text ta="center" c="dimmed" py="lg">
-          No groups found
-        </Text>
-      </Table.Td>
-    </Table.Tr>
+    <tr className="et-tr-full">
+      <td colSpan={5}>
+        <p className="et-empty-note">No groups found</p>
+      </td>
+    </tr>
   ) : (
     userGroups.map((group, index) => {
       const isOwner = getEntityId(group.createdBy) === userId;
       const groupId = getEntityId(group);
 
       return (
-        <Table.Tr key={groupId || index}>
-          <Table.Td>{index + 1}</Table.Td>
-          <Table.Td>{group.name}</Table.Td>
-          <Table.Td>{group.createdBy.name || group.createdBy.email}</Table.Td>
-          <Table.Td>
+        <tr key={groupId || index}>
+          <td data-label="S No">{index + 1}</td>
+          <td data-label="Group Name" style={{ fontWeight: 600 }}>
+            {group.name}
+          </td>
+          <td data-label="Created By">{group.createdBy.name || group.createdBy.email}</td>
+          <td data-label="Total Expense" style={{ fontWeight: 700 }}>
             <CountUp end={expensesTotal[index] || 0} prefix="₹" separator="," />
-          </Table.Td>
-          <Table.Td>
-            <Group gap="xs" wrap="wrap">
-              <Button
-                component={Link}
+          </td>
+          <td data-label="Actions" className="et-td-actions">
+            <div className="et-actions-wrap">
+              <Link
                 to={`/group/groupmember?grpid=${groupId}&grpname=${group.name}&leader=${getEntityId(group.createdBy)}`}
-                size="xs"
-                variant="light"
+                className="et-btn et-btn-ghost et-btn-sm"
               >
-                {isOwner ? 'Members' : 'View Members'}
-              </Button>
-              <Button
-                component={Link}
+                {isOwner ? 'Members' : 'View'}
+              </Link>
+              <Link
                 to={`/group/groupexpense?grpid=${groupId}&grpname=${group.name}&leader=${getEntityId(group.createdBy)}`}
-                size="xs"
-                variant="light"
+                className="et-btn et-btn-ghost et-btn-sm"
               >
                 Expenses
-              </Button>
-              <Button
-                component={Link}
+              </Link>
+              <Link
                 to={`/group/settlement?grpid=${groupId}&grpname=${group.name}`}
-                size="xs"
-                variant="light"
+                className="et-btn et-btn-ghost et-btn-sm"
               >
-                Settlements
-              </Button>
+                Settle
+              </Link>
               {isOwner && (
                 <Menu shadow="md" width={160}>
                   <Menu.Target>
-                    <ActionIcon variant="light" size="sm">
+                    <ActionIcon variant="subtle" size="sm" color="navy">
                       <IconDots size={14} />
                     </ActionIcon>
                   </Menu.Target>
@@ -178,50 +161,41 @@ function GroupList() {
                   </Menu.Dropdown>
                 </Menu>
               )}
-            </Group>
-          </Table.Td>
-        </Table.Tr>
+            </div>
+          </td>
+        </tr>
       );
     })
   );
 
   return (
     <AppShellLayout>
-      <Stack gap="lg">
-        <Group justify="space-between" align="flex-start" wrap="wrap">
-          <Title order={2}>Groups</Title>
-          <PageBreadcrumbs items={[{ label: 'Groups', to: '/group' }]} />
-        </Group>
+      <PageHero
+        title="Groups"
+        subtitle="Shared expenses with friends and family."
+        action={
+          <Link to="addgroup" className="et-btn et-btn-primary">
+            <IconPlus size={15} /> Create group
+          </Link>
+        }
+      />
 
-        <Group justify="flex-end">
-          <Button component={Link} to="addgroup" leftSection={<IconPlus size={16} />}>
-            Create New Group
-          </Button>
-        </Group>
+      {alert.visible && <div className="et-alert et-alert-error">{alert.msg}</div>}
 
-        {alert.visible && (
-          <Alert color="red" variant="light">
-            {alert.msg}
-          </Alert>
-        )}
-
-        <Paper shadow="sm" radius="md" withBorder>
-          <Table.ScrollContainer minWidth={700}>
-            <Table striped highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>S No</Table.Th>
-                  <Table.Th>Group Name</Table.Th>
-                  <Table.Th>Created By</Table.Th>
-                  <Table.Th>Total Expense</Table.Th>
-                  <Table.Th>Actions</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>{rows}</Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        </Paper>
-      </Stack>
+      <Panel title="Your groups" hint={`${userGroups.length} group${userGroups.length !== 1 ? 's' : ''}`}>
+        <ResponsiveTable minWidth={720}>
+          <thead>
+            <tr>
+              <th>S No</th>
+              <th>Group Name</th>
+              <th>Created By</th>
+              <th>Total Expense</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>{rows}</tbody>
+        </ResponsiveTable>
+      </Panel>
     </AppShellLayout>
   );
 }

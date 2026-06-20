@@ -1,22 +1,12 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Title,
-  Group,
-  Button,
-  Alert,
-  Table,
-  Text,
-  Paper,
-  Stack,
-  Center,
-  Loader,
-  Pagination,
-} from '@mantine/core';
 import { modals } from '@mantine/modals';
+import { Center, Loader, Pagination, Text } from '@mantine/core';
 import { IconEdit, IconTrash, IconPlus } from '@tabler/icons-react';
 import AppShellLayout from '../../layouts/AppShellLayout';
-import { PageBreadcrumbs } from '../../components/PageBreadcrumbs';
+import { PageHero } from '../../components/ui/PageHero';
+import { Panel } from '../../components/ui/Panel';
+import { ResponsiveTable } from '../../components/ui/ResponsiveTable';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
 import { getEntityId } from '../../utils/entity';
 import { categoryService } from '../../services/categoryService';
@@ -93,98 +83,91 @@ function CategoryList() {
   );
 
   const rows = isLoading ? (
-    <Table.Tr>
-      <Table.Td colSpan={3}>
+    <tr className="et-tr-full">
+      <td colSpan={3}>
         <Center py="xl">
-          <Loader />
+          <Loader color="navy" />
         </Center>
-      </Table.Td>
-    </Table.Tr>
+      </td>
+    </tr>
   ) : categories.length === 0 ? (
-    <Table.Tr>
-      <Table.Td colSpan={3}>
-        <Text ta="center" c="dimmed" py="lg">
-          No categories found
-        </Text>
-      </Table.Td>
-    </Table.Tr>
+    <tr className="et-tr-full">
+      <td colSpan={3}>
+        <p className="et-empty-note">No categories found</p>
+      </td>
+    </tr>
   ) : (
     categories.map((category, index) => (
-      <Table.Tr key={getEntityId(category) || index}>
-        <Table.Td>{index + 1}</Table.Td>
-        <Table.Td>{category.name}</Table.Td>
-        <Table.Td>
-          <Group gap="xs">
-            <Button
-              component={Link}
+      <tr key={getEntityId(category) || index}>
+        <td data-label="#">{index + 1}</td>
+        <td data-label="Category Name" style={{ fontWeight: 600 }}>
+          {category.name}
+        </td>
+        <td data-label="Actions" className="et-td-actions">
+          <div className="et-actions-wrap">
+            <Link
               to={`editcategory/${getEntityId(category)}`}
-              size="xs"
-              variant="light"
-              color="yellow"
-              leftSection={<IconEdit size={14} />}
+              className="et-btn et-btn-ghost et-btn-sm"
             >
-              Edit
-            </Button>
-            <Button
-              size="xs"
-              variant="light"
-              color="red"
-              leftSection={<IconTrash size={14} />}
+              <IconEdit size={14} /> Edit
+            </Link>
+            <button
+              type="button"
+              className="et-btn et-btn-ghost et-btn-sm"
+              style={{ color: 'var(--et-red)' }}
               onClick={() => handleDelete(getEntityId(category))}
             >
-              Delete
-            </Button>
-          </Group>
-        </Table.Td>
-      </Table.Tr>
+              <IconTrash size={14} /> Delete
+            </button>
+          </div>
+        </td>
+      </tr>
     ))
   );
 
   return (
     <AppShellLayout>
-      <Stack gap="lg">
-        <Group justify="space-between" align="flex-start" wrap="wrap">
-          <Title order={2}>Categories</Title>
-          <PageBreadcrumbs items={[{ label: 'Categories', to: '/category' }]} />
-        </Group>
+      <PageHero
+        title="Categories"
+        subtitle="Organize how spending gets grouped."
+        action={
+          <Link to="addcategory" className="et-btn et-btn-primary">
+            <IconPlus size={15} /> Add category
+          </Link>
+        }
+      />
 
-        <Group justify="flex-end">
-          <Button component={Link} to="addcategory" leftSection={<IconPlus size={16} />}>
-            Add Category
-          </Button>
-        </Group>
+      {alert.show && (
+        <div
+          className={`et-alert ${alert.type === 'success' ? 'et-alert-success' : 'et-alert-error'}`}
+        >
+          {alert.message}
+        </div>
+      )}
 
-        {alert.show && (
-          <Alert color={alert.type === 'success' ? 'green' : 'red'} variant="light">
-            {alert.message}
-          </Alert>
-        )}
+      <Panel title="All categories" hint={`${categories.length} total`}>
+        <ResponsiveTable minWidth={400}>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Category Name</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>{rows}</tbody>
+        </ResponsiveTable>
+      </Panel>
 
-        <Paper shadow="sm" radius="md" withBorder>
-          <Table.ScrollContainer minWidth={400}>
-            <Table striped highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>#</Table.Th>
-                  <Table.Th>Category Name</Table.Th>
-                  <Table.Th>Actions</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>{rows}</Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        </Paper>
-
-        {categories.length > 0 && (
-          <Center>
-            <Pagination
-              value={pagination.currentPage}
-              onChange={(page) => setPagination((prev) => ({ ...prev, currentPage: page }))}
-              total={pagination.totalPages}
-            />
-          </Center>
-        )}
-      </Stack>
+      {categories.length > 0 && (
+        <div className="et-pagination-wrap">
+          <Pagination
+            value={pagination.currentPage}
+            onChange={(page) => setPagination((prev) => ({ ...prev, currentPage: page }))}
+            total={pagination.totalPages}
+            color="navy"
+          />
+        </div>
+      )}
     </AppShellLayout>
   );
 }

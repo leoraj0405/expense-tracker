@@ -1,42 +1,26 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import {
-  Title,
-  Group,
-  Paper,
-  Stack,
-  Table,
-  Text,
-  Center,
-  Loader,
-  Grid,
-  Badge,
-} from '@mantine/core';
+import { Center, Loader, Text } from '@mantine/core';
 import AppShellLayout from '../../layouts/AppShellLayout';
-import { PageBreadcrumbs } from '../../components/PageBreadcrumbs';
+import { PageHero } from '../../components/ui/PageHero';
+import { Panel } from '../../components/ui/Panel';
+import { DonutChart } from '../../components/ui/DonutChart';
+import { ResponsiveTable } from '../../components/ui/ResponsiveTable';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
 import { getUserId, getEntityId } from '../../utils/entity';
 import { groupExpenseService } from '../../services/groupExpenseService';
 import { groupMemberService } from '../../services/groupMemberService';
+import { CHART_COLORS, formatCurrency } from '../../utils/format';
 import { ApiError } from '../../services/apiClient';
 import type { GroupExpense } from '../../types/entities';
-
-const COLORS = ['#ff6384', '#36a2eb', '#4bc0c0', '#9966ff', '#ff9f40'];
 
 function useQuery() {
   return new URLSearchParams(useLocation().search);
 }
 
-interface ChartDatum {
-  name: string;
-  value: number;
-}
-
 type ExpenseGroupMap = Record<string, Record<string, number>>;
 
 function Settlements() {
-  const location = useLocation();
   const query = useQuery();
   const loginUser = useRequireAuth();
 
@@ -45,9 +29,28 @@ function Settlements() {
 
   const [expenses, setExpenses] = useState<GroupExpense[]>([]);
   const [members, setMembers] = useState<Record<string, string>>({});
-  const [chartData, setChartData] = useState<ChartDatum[]>([]);
   const [groupExpenses, setGroupedExpenses] = useState<ExpenseGroupMap>({});
   const [isLoading, setIsLoading] = useState(true);
+
+  const chartSegments = useMemo(
+    () =>
+      expenses
+        .map((item) => ({
+          name: item.description?.trim() || 'Expense',
+          value: Number(item.amount),
+        }))
+        .filter((item) => item.value > 0)
+        .map((item, index) => ({
+          ...item,
+          color: CHART_COLORS[index % CHART_COLORS.length],
+        })),
+    [expenses],
+  );
+
+  const chartTotal = useMemo(
+    () => chartSegments.reduce((sum, segment) => sum + segment.value, 0),
+    [chartSegments],
+  );
 
   const fetchExpenses = useCallback(async () => {
     if (!groupId) return;
@@ -55,9 +58,7 @@ function Settlements() {
     setIsLoading(true);
     try {
       const res = await groupExpenseService.listByGroup(groupId);
-      const data = res.items;
-      setExpenses(data);
-      setChartData(data.map((item) => ({ name: item.description, value: item.amount })));
+      setExpenses(res.items);
     } catch (err) {
       if (err instanceof ApiError) {
         console.error('Error fetching expenses:', err.message);
@@ -147,59 +148,63 @@ function Settlements() {
   }, [expenses, groupExpensesSummary]);
 
   const expenseRows = isLoading ? (
-    <Table.Tr>
-      <Table.Td colSpan={6}>
+    <tr className="et-tr-full">
+      <td colSpan={6}>
         <Center py="xl">
-          <Loader />
+          <Loader color="navy" />
         </Center>
-      </Table.Td>
-    </Table.Tr>
+      </td>
+    </tr>
   ) : expenses.length === 0 ? (
-    <Table.Tr>
-      <Table.Td colSpan={6}>
-        <Text ta="center" c="dimmed" py="lg">
-          No records
-        </Text>
-      </Table.Td>
-    </Table.Tr>
+    <tr className="et-tr-full">
+      <td colSpan={6}>
+        <p className="et-empty-note">No records</p>
+      </td>
+    </tr>
   ) : (
     expenses.map((item, index) => {
       const splitMethod = item.splitAmong ? 'Equal' : 'Unequal';
       return (
-        <Table.Tr key={getEntityId(item) || index}>
-          <Table.Td>{index + 1}</Table.Td>
-          <Table.Td>{item.description}</Table.Td>
-          <Table.Td>{item.user?.name || 'User'}</Table.Td>
-          <Table.Td>₹{item.amount}</Table.Td>
-          <Table.Td>
-            <Badge variant="light">{splitMethod}</Badge>
-          </Table.Td>
-          <Table.Td>
-            {item.splitAmong && <Text size="sm">Each member ₹{item.splitAmong[0]?.share}</Text>}
+        <tr key={getEntityId(item) || index}>
+          <td data-label="S No">{index + 1}</td>
+          <td data-label="Description">{item.description}</td>
+          <td data-label="Paid By">{item.user?.name || 'User'}</td>
+          <td data-label="Total Amount">₹{item.amount}</td>
+          <td data-label="Split Method">
+            <span className="et-cat-pill" style={{ background: 'var(--et-surface)' }}>
+              {splitMethod}
+            </span>
+          </td>
+          <td data-label="Shares">
+            {item.splitAmong && <div>Each member ₹{item.splitAmong[0]?.share}</div>}
             {item.splitUnequal?.map((shareItem, shareIndex) => (
-              <Text key={shareIndex} size="sm">
+              <div key={shareIndex}>
                 {members[shareItem.memberId] || 'User'}: ₹{shareItem.share}
-              </Text>
+              </div>
             ))}
-          </Table.Td>
-        </Table.Tr>
+          </td>
+        </tr>
       );
     })
   );
 
   const SettlementItem = ({ payerId, owes }: { payerId: string; owes: Record<string, number> }) => (
-    <Paper key={payerId} p="md" withBorder radius="md" mb="sm">
-      <Text fw={600} mb="xs">
-        To pay {members[payerId] || 'User'}
-      </Text>
-      <Stack gap={4}>
-        {Object.entries(owes).map(([owedId, amount]) => (
-          <Text key={owedId} size="sm">
-            {members[owedId] || 'User'}: ₹{amount}
-          </Text>
-        ))}
-      </Stack>
-    </Paper>
+    <div
+      key={payerId}
+      style={{
+        padding: '13px 14px',
+        borderRadius: 12,
+        border: '1px solid var(--et-line)',
+        marginBottom: 10,
+      }}
+    >
+      <div style={{ fontWeight: 700, marginBottom: 8 }}>To pay {members[payerId] || 'User'}</div>
+      {Object.entries(owes).map(([owedId, amount]) => (
+        <div key={owedId} style={{ fontSize: 13.5, marginTop: 4 }}>
+          {members[owedId] || 'User'}: ₹{amount}
+        </div>
+      ))}
+    </div>
   );
 
   const SettlementItemToUser = ({
@@ -215,128 +220,108 @@ function Settlements() {
     if (!isLoginUserInvolved) return null;
 
     return (
-      <Paper key={payerId} p="md" withBorder radius="md" mb="sm" bg="indigo.0">
-        <Text fw={600} mb="xs">
+      <div
+        key={payerId}
+        style={{
+          padding: '13px 14px',
+          borderRadius: 12,
+          border: '1px solid var(--et-line)',
+          marginBottom: 10,
+          background: 'var(--et-amber-soft)',
+        }}
+      >
+        <div style={{ fontWeight: 700, marginBottom: 8 }}>
           {payerId === loginUserId
             ? 'Others need to pay you'
             : `You need to pay ${members[payerId] || 'User'}`}
-        </Text>
-        <Stack gap={4}>
-          {Object.entries(owes).map(([owedId, amount]) => {
-            if (payerId === loginUserId && owedId !== loginUserId) {
-              return (
-                <Text key={owedId} size="sm">
-                  {members[owedId] || 'User'}: ₹{amount}
-                </Text>
-              );
-            }
-            if (owedId === loginUserId) {
-              return (
-                <Text key={owedId} size="sm">
-                  {members[payerId] || 'User'}: ₹{amount}
-                </Text>
-              );
-            }
-            return null;
-          })}
-        </Stack>
-      </Paper>
+        </div>
+        {Object.entries(owes).map(([owedId, amount]) => {
+          if (payerId === loginUserId && owedId !== loginUserId) {
+            return (
+              <div key={owedId} style={{ fontSize: 13.5, marginTop: 4 }}>
+                {members[owedId] || 'User'}: ₹{amount}
+              </div>
+            );
+          }
+          if (owedId === loginUserId) {
+            return (
+              <div key={owedId} style={{ fontSize: 13.5, marginTop: 4 }}>
+                {members[payerId] || 'User'}: ₹{amount}
+              </div>
+            );
+          }
+          return null;
+        })}
+      </div>
     );
   };
 
   return (
     <AppShellLayout>
-      <Stack gap="lg">
-        <Group justify="space-between" align="flex-start" wrap="wrap">
-          <Title order={2}>{groupName} — Settlements</Title>
-          <PageBreadcrumbs
-            items={[
-              { label: 'Groups', to: '/group' },
-              { label: 'Settlements', to: location.pathname + location.search },
-            ]}
-          />
-        </Group>
+      <PageHero
+        title={`${groupName} — Settlements`}
+        subtitle="Who owes whom across this group."
+      />
 
-        <Grid gutter="lg">
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <Paper shadow="sm" p="lg" radius="md" withBorder>
-              <Title order={4} ta="center" mb="md">
-                {groupName} Expense Summary
-              </Title>
-              {chartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={280}>
-                  <PieChart>
-                    <Pie data={chartData} cx="50%" cy="50%" outerRadius={90} dataKey="value" label>
-                      {chartData.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <Text ta="center" c="dimmed" py="xl">
-                  No chart data available
-                </Text>
-              )}
-            </Paper>
-          </Grid.Col>
+      <div className="et-settle-grid">
+        <Panel title="Expense summary" hint={groupName}>
+          {isLoading ? (
+            <Center py="xl">
+              <Loader color="navy" />
+            </Center>
+          ) : chartSegments.length > 0 ? (
+            <>
+              <DonutChart segments={chartSegments} size={180} />
+              <Text size="sm" c="dimmed" mt="md">
+                {formatCurrency(chartTotal)} total across {chartSegments.length} expense
+                {chartSegments.length === 1 ? '' : 's'}
+              </Text>
+            </>
+          ) : (
+            <p className="et-empty-note">No chart data available</p>
+          )}
+        </Panel>
 
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <Paper shadow="sm" p="lg" radius="md" withBorder h="100%">
-              <Title order={4} ta="center" mb="md">
-                Your Settlements
-              </Title>
-              {Object.keys(groupExpenses).length === 0 ? (
-                <Text ta="center" c="dimmed">
-                  No settlements for you
-                </Text>
-              ) : (
-                Object.entries(groupExpenses).map(([payerId, owes]) => (
-                  <SettlementItemToUser key={payerId} payerId={payerId} owes={owes} />
-                ))
-              )}
-            </Paper>
-          </Grid.Col>
-        </Grid>
-
-        <Paper shadow="sm" radius="md" withBorder>
-          <Stack gap="md" p="md">
-            <Title order={4}>{groupName} Expense Details</Title>
-            <Table.ScrollContainer minWidth={700}>
-              <Table striped highlightOnHover>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>S No</Table.Th>
-                    <Table.Th>Description</Table.Th>
-                    <Table.Th>Paid By</Table.Th>
-                    <Table.Th>Total Amount</Table.Th>
-                    <Table.Th>Split Method</Table.Th>
-                    <Table.Th>Shares</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>{expenseRows}</Table.Tbody>
-              </Table>
-            </Table.ScrollContainer>
-          </Stack>
-        </Paper>
-
-        <Paper shadow="sm" p="lg" radius="md" withBorder>
-          <Title order={4} ta="center" mb="md">
-            Overall Member Settlements
-          </Title>
+        <Panel title="Your settlements" hint="Personal balance">
           {Object.keys(groupExpenses).length === 0 ? (
-            <Text ta="center" c="dimmed">
-              All settled up!
-            </Text>
+            <p className="et-empty-note">No settlements for you</p>
+          ) : (
+            Object.entries(groupExpenses).map(([payerId, owes]) => (
+              <SettlementItemToUser key={payerId} payerId={payerId} owes={owes} />
+            ))
+          )}
+        </Panel>
+      </div>
+
+      <div style={{ marginTop: 20 }}>
+        <Panel title="Expense details" hint={`${expenses.length} records`}>
+          <ResponsiveTable minWidth={760}>
+            <thead>
+              <tr>
+                <th>S No</th>
+                <th>Description</th>
+                <th>Paid By</th>
+                <th>Total Amount</th>
+                <th>Split Method</th>
+                <th>Shares</th>
+              </tr>
+            </thead>
+            <tbody>{expenseRows}</tbody>
+          </ResponsiveTable>
+        </Panel>
+      </div>
+
+      <div style={{ marginTop: 20 }}>
+        <Panel title="Overall member settlements" hint="All outstanding payments">
+          {Object.keys(groupExpenses).length === 0 ? (
+            <p className="et-empty-note">All settled up!</p>
           ) : (
             Object.entries(groupExpenses).map(([payerId, owes]) => (
               <SettlementItem key={payerId} payerId={payerId} owes={owes} />
             ))
           )}
-        </Paper>
-      </Stack>
+        </Panel>
+      </div>
     </AppShellLayout>
   );
 }

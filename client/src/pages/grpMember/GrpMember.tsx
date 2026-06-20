@@ -1,21 +1,12 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import {
-  Title,
-  Group,
-  Button,
-  Alert,
-  Table,
-  Text,
-  Paper,
-  Stack,
-  Center,
-  Loader,
-} from '@mantine/core';
 import { modals } from '@mantine/modals';
+import { Center, Loader, Text } from '@mantine/core';
 import { IconTrash, IconPlus } from '@tabler/icons-react';
 import AppShellLayout from '../../layouts/AppShellLayout';
-import { PageBreadcrumbs } from '../../components/PageBreadcrumbs';
+import { PageHero } from '../../components/ui/PageHero';
+import { Panel } from '../../components/ui/Panel';
+import { ResponsiveTable } from '../../components/ui/ResponsiveTable';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
 import { getUserId, getEntityId } from '../../utils/entity';
 import { groupMemberService } from '../../services/groupMemberService';
@@ -27,7 +18,6 @@ function useQuery() {
 }
 
 function GrpMember() {
-  const location = useLocation();
   const queryParams = useQuery();
   const loginUser = useRequireAuth();
 
@@ -39,6 +29,7 @@ function GrpMember() {
   const groupName = queryParams.get('grpname') || 'Group';
   const groupLeader = queryParams.get('leader');
   const isGroupLeader = groupLeader === getUserId(loginUser);
+  const colSpan = isGroupLeader ? 3 : 2;
 
   const fetchGroupMembers = useCallback(async () => {
     if (!groupId) return;
@@ -87,90 +78,71 @@ function GrpMember() {
   };
 
   const rows = isLoading ? (
-    <Table.Tr>
-      <Table.Td colSpan={isGroupLeader ? 3 : 2}>
+    <tr className="et-tr-full">
+      <td colSpan={colSpan}>
         <Center py="xl">
-          <Loader />
+          <Loader color="navy" />
         </Center>
-      </Table.Td>
-    </Table.Tr>
+      </td>
+    </tr>
   ) : groupMembers.length === 0 ? (
-    <Table.Tr>
-      <Table.Td colSpan={isGroupLeader ? 3 : 2}>
-        <Text ta="center" c="dimmed" py="lg">
-          No members found
-        </Text>
-      </Table.Td>
-    </Table.Tr>
+    <tr className="et-tr-full">
+      <td colSpan={colSpan}>
+        <p className="et-empty-note">No members found</p>
+      </td>
+    </tr>
   ) : (
     groupMembers.map((member, index) => (
-      <Table.Tr key={getEntityId(member) || index}>
-        <Table.Td>{index + 1}</Table.Td>
-        <Table.Td>{member.user?.name || `New user (${member.user?.email})`}</Table.Td>
+      <tr key={getEntityId(member) || index}>
+        <td data-label="#">{index + 1}</td>
+        <td data-label="Member">{member.user?.name || `New user (${member.user?.email})`}</td>
         {isGroupLeader && (
-          <Table.Td>
-            <Button
-              size="xs"
-              variant="light"
-              color="red"
-              leftSection={<IconTrash size={14} />}
-              onClick={() => handleDeleteMember(getEntityId(member))}
-            >
-              Remove
-            </Button>
-          </Table.Td>
+          <td data-label="Actions" className="et-td-actions">
+            <div className="et-actions-wrap">
+              <button
+                type="button"
+                className="et-btn et-btn-ghost et-btn-sm"
+                style={{ color: 'var(--et-red)' }}
+                onClick={() => handleDeleteMember(getEntityId(member))}
+              >
+                <IconTrash size={14} /> Remove
+              </button>
+            </div>
+          </td>
         )}
-      </Table.Tr>
+      </tr>
     ))
   );
 
   return (
     <AppShellLayout>
-      <Stack gap="lg">
-        <Group justify="space-between" align="flex-start" wrap="wrap">
-          <Title order={2}>{groupName} — Members</Title>
-          <PageBreadcrumbs
-            items={[
-              { label: 'Groups', to: '/group' },
-              { label: 'Group Members', to: location.pathname + location.search },
-            ]}
-          />
-        </Group>
-
-        {alert.show && (
-          <Alert color="red" variant="light">
-            {alert.message}
-          </Alert>
-        )}
-
-        <Group justify="flex-end">
-          <Button
-            component={Link}
-            to={{
-              pathname: 'addgroupmember',
-              search: `?grpid=${groupId}&grpname=${groupName}&leader=${groupLeader}`,
-            }}
-            leftSection={<IconPlus size={16} />}
+      <PageHero
+        title={`${groupName} — Members`}
+        subtitle="People sharing this group."
+        action={
+          <Link
+            to={`/group/groupmember/addgroupmember?grpid=${groupId}&grpname=${encodeURIComponent(groupName)}&leader=${groupLeader || ''}`}
+            className="et-btn et-btn-primary"
           >
-            Add Members
-          </Button>
-        </Group>
+            <IconPlus size={15} /> Add members
+          </Link>
+        }
+      />
 
-        <Paper shadow="sm" radius="md" withBorder>
-          <Table.ScrollContainer minWidth={400}>
-            <Table striped highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>#</Table.Th>
-                  <Table.Th>Member</Table.Th>
-                  {isGroupLeader && <Table.Th>Actions</Table.Th>}
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>{rows}</Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        </Paper>
-      </Stack>
+      {alert.show && <div className="et-alert et-alert-error">{alert.message}</div>}
+
+      <Panel title="Group members" hint={`${groupMembers.length} member${groupMembers.length !== 1 ? 's' : ''}`}>
+        <ResponsiveTable minWidth={400}>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Member</th>
+              {isGroupLeader && <th>Actions</th>}
+            </tr>
+          </thead>
+          <tbody>{rows}</tbody>
+        </ResponsiveTable>
+      </Panel>
     </AppShellLayout>
   );
 }

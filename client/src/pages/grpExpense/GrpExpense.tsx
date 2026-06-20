@@ -1,22 +1,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import {
-  Title,
-  Group,
-  Button,
-  Alert,
-  Table,
-  Text,
-  Paper,
-  Stack,
-  Center,
-  Loader,
-} from '@mantine/core';
 import { modals } from '@mantine/modals';
+import { Center, Loader, Text } from '@mantine/core';
 import { IconEdit, IconTrash, IconPlus } from '@tabler/icons-react';
 import CountUp from 'react-countup';
 import AppShellLayout from '../../layouts/AppShellLayout';
-import { PageBreadcrumbs } from '../../components/PageBreadcrumbs';
+import { PageHero } from '../../components/ui/PageHero';
+import { Panel } from '../../components/ui/Panel';
+import { ResponsiveTable } from '../../components/ui/ResponsiveTable';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
 import { getUserId, getEntityId } from '../../utils/entity';
 import { groupExpenseService } from '../../services/groupExpenseService';
@@ -28,7 +19,6 @@ function useQuery() {
 }
 
 function GrpExpense() {
-  const location = useLocation();
   const query = useQuery();
   const loginUser = useRequireAuth();
 
@@ -40,6 +30,8 @@ function GrpExpense() {
   const [alert, setAlert] = useState({ visible: false, message: '' });
   const [groupExpenses, setGroupExpenses] = useState<GroupExpense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const colSpan = isGroupLeader ? 6 : 5;
 
   const fetchGroupExpenses = useCallback(async () => {
     if (!groupId) return;
@@ -87,107 +79,85 @@ function GrpExpense() {
   };
 
   const rows = isLoading ? (
-    <Table.Tr>
-      <Table.Td colSpan={isGroupLeader ? 6 : 5}>
+    <tr className="et-tr-full">
+      <td colSpan={colSpan}>
         <Center py="xl">
-          <Loader />
+          <Loader color="navy" />
         </Center>
-      </Table.Td>
-    </Table.Tr>
+      </td>
+    </tr>
   ) : groupExpenses.length === 0 ? (
-    <Table.Tr>
-      <Table.Td colSpan={isGroupLeader ? 6 : 5}>
-        <Text ta="center" c="dimmed" py="lg">
-          No expenses found
-        </Text>
-      </Table.Td>
-    </Table.Tr>
+    <tr className="et-tr-full">
+      <td colSpan={colSpan}>
+        <p className="et-empty-note">No expenses found</p>
+      </td>
+    </tr>
   ) : (
     groupExpenses.map((expense, index) => (
-      <Table.Tr key={getEntityId(expense) || index}>
-        <Table.Td>{index + 1}</Table.Td>
-        <Table.Td>{expense.user?.name || 'New user (profile not updated)'}</Table.Td>
-        <Table.Td>{expense.description || '-'}</Table.Td>
-        <Table.Td>
+      <tr key={getEntityId(expense) || index}>
+        <td data-label="S No">{index + 1}</td>
+        <td data-label="Paid By">{expense.user?.name || 'New user (profile not updated)'}</td>
+        <td data-label="Description">{expense.description || '-'}</td>
+        <td data-label="Amount">
           <CountUp end={expense.amount} prefix="₹" separator="," />
-        </Table.Td>
-        <Table.Td>{expense.category?.name || '-'}</Table.Td>
+        </td>
+        <td data-label="Category">{expense.category?.name || '-'}</td>
         {isGroupLeader && (
-          <Table.Td>
-            <Group gap="xs">
-              <Button
-                component={Link}
+          <td data-label="Actions" className="et-td-actions">
+            <div className="et-actions-wrap">
+              <Link
                 to={`/group/groupexpense/editgroupexpense?grpexpid=${getEntityId(expense)}&grpid=${groupId}&grpname=${grpName}&leader=${groupLeader}`}
-                size="xs"
-                variant="light"
-                color="yellow"
-                leftSection={<IconEdit size={14} />}
+                className="et-btn et-btn-ghost et-btn-sm"
               >
-                Edit
-              </Button>
-              <Button
-                size="xs"
-                variant="light"
-                color="red"
-                leftSection={<IconTrash size={14} />}
+                <IconEdit size={14} /> Edit
+              </Link>
+              <button
+                type="button"
+                className="et-btn et-btn-ghost et-btn-sm"
+                style={{ color: 'var(--et-red)' }}
                 onClick={() => handleDelete(getEntityId(expense))}
               >
-                Delete
-              </Button>
-            </Group>
-          </Table.Td>
+                <IconTrash size={14} /> Delete
+              </button>
+            </div>
+          </td>
         )}
-      </Table.Tr>
+      </tr>
     ))
   );
 
   return (
     <AppShellLayout>
-      <Stack gap="lg">
-        <Group justify="space-between" align="flex-start" wrap="wrap">
-          <Title order={2}>{grpName} — Expenses</Title>
-          <PageBreadcrumbs
-            items={[
-              { label: 'Groups', to: '/group' },
-              { label: 'Group Expenses', to: location.pathname + location.search },
-            ]}
-          />
-        </Group>
-
-        {alert.visible && (
-          <Alert color="red" variant="light">
-            {alert.message}
-          </Alert>
-        )}
-
-        <Group justify="flex-end">
-          <Button
-            component={Link}
+      <PageHero
+        title={`${grpName} — Expenses`}
+        subtitle="Shared group transactions and splits."
+        action={
+          <Link
             to={`/group/groupexpense/addgroupexpense?grpid=${groupId}&grpname=${grpName}&leader=${groupLeader}`}
-            leftSection={<IconPlus size={16} />}
+            className="et-btn et-btn-primary"
           >
-            Add Expense
-          </Button>
-        </Group>
+            <IconPlus size={15} /> Add expense
+          </Link>
+        }
+      />
 
-        <Paper shadow="sm" radius="md" withBorder>
-          <Table.ScrollContainer minWidth={700}>
-            <Table striped highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>S No</Table.Th>
-                  <Table.Th>Paid By</Table.Th>
-                  <Table.Th>Description</Table.Th>
-                  <Table.Th>Amount</Table.Th>
-                  <Table.Th>Category</Table.Th>
-                  {isGroupLeader && <Table.Th>Actions</Table.Th>}
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>{rows}</Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        </Paper>
-      </Stack>
+      {alert.visible && <div className="et-alert et-alert-error">{alert.message}</div>}
+
+      <Panel title="Group expenses" hint={`${groupExpenses.length} total`}>
+        <ResponsiveTable minWidth={700}>
+          <thead>
+            <tr>
+              <th>S No</th>
+              <th>Paid By</th>
+              <th>Description</th>
+              <th>Amount</th>
+              <th>Category</th>
+              {isGroupLeader && <th>Actions</th>}
+            </tr>
+          </thead>
+          <tbody>{rows}</tbody>
+        </ResponsiveTable>
+      </Panel>
     </AppShellLayout>
   );
 }

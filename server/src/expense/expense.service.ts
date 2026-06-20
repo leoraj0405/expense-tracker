@@ -8,6 +8,7 @@ import {
   formatUserRef,
   mongoId,
 } from '../utils/mongo-compat';
+import { resolveExpenseDateRange } from '../utils/date.util';
 
 @Injectable()
 export class ExpenseService {
@@ -90,28 +91,27 @@ export class ExpenseService {
 
   async fetchUserExpenses(
     id: string,
-    date: string,
-    limit: number,
-    page: number,
+    startDate?: string,
+    endDate?: string,
+    limit?: number,
+    page?: number,
+    month?: string,
   ): Promise<Expense | {}> {
     const limitNo = limit ?? 5;
     const pageNo = page ?? 1;
     const skip = (pageNo - 1) * limitNo;
 
+    const { start, end } = resolveExpenseDateRange({
+      startDate,
+      endDate,
+      month,
+    });
+
     const where: Record<string, unknown> = {
       userId: id,
       deletedAt: IsNull(),
+      date: Between(start, end),
     };
-
-    if (date) {
-      const inputDate = new Date(date);
-      const year = inputDate.getFullYear();
-      const month = inputDate.getMonth() + 1;
-      const fromDate = new Date(year, month - 1, 1);
-      const toDate = new Date(year, month, 1);
-      where.date = Between(fromDate, toDate);
-    }
-
     const [expenses, totalCount] = await this.expenseRepo.findAndCount({
       where,
       relations: ['user', 'category'],

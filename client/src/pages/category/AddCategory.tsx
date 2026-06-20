@@ -1,16 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link, useParams } from 'react-router-dom';
-import {
-  Title,
-  Group,
-  Button,
-  Alert,
-  Paper,
-  Stack,
-  TextInput,
-} from '@mantine/core';
+import { Stack, TextInput, Group, Button } from '@mantine/core';
 import AppShellLayout from '../../layouts/AppShellLayout';
-import { PageBreadcrumbs } from '../../components/PageBreadcrumbs';
+import { PageHero } from '../../components/ui/PageHero';
+import { Panel } from '../../components/ui/Panel';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
 import { categoryService } from '../../services/categoryService';
 import { ApiError } from '../../services/apiClient';
@@ -23,11 +16,7 @@ function AddCategory() {
   const [formData, setFormData] = useState({ categoryName: '' });
   const [alertBlock, setAlertBlock] = useState({ blockState: true, msg: '' });
 
-  useEffect(() => {
-    if (id) fetchCategory(id);
-  }, [id]);
-
-  const fetchCategory = async (categoryId: string) => {
+  const fetchCategory = useCallback(async (categoryId: string) => {
     try {
       const res = await categoryService.getById(categoryId);
       setFormData({ categoryName: res.item!.name });
@@ -35,7 +24,11 @@ function AddCategory() {
       const msg = err instanceof ApiError ? err.message : 'Error fetching category.';
       setAlertBlock({ blockState: false, msg });
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (id) fetchCategory(id);
+  }, [id, fetchCategory]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -57,42 +50,33 @@ function AddCategory() {
 
   return (
     <AppShellLayout>
-      <Stack gap="lg">
-        <Group justify="space-between" align="flex-start" wrap="wrap">
-          <Title order={2}>{id ? 'Edit Category' : 'Add Category'}</Title>
-          <PageBreadcrumbs
-            items={[
-              { label: 'Categories', to: '/category' },
-              { label: id ? 'Edit Category' : 'Add Category', to: '#' },
-            ]}
+      <PageHero
+        title={id ? 'Edit category' : 'Add category'}
+        subtitle="Organize how spending gets grouped."
+      />
+
+      {!alertBlock.blockState && <div className="et-alert et-alert-error">{alertBlock.msg}</div>}
+
+      <Panel title="Category details">
+        <Stack gap="md" maw={520}>
+          <TextInput
+            label="Category Name"
+            name="categoryName"
+            value={formData.categoryName}
+            onChange={handleChange}
+            placeholder="Enter category name"
           />
-        </Group>
 
-        {!alertBlock.blockState && (
-          <Alert color="red" variant="light">
-            {alertBlock.msg}
-          </Alert>
-        )}
-
-        <Paper shadow="sm" p="xl" radius="md" withBorder maw={500}>
-          <Stack gap="md">
-            <TextInput
-              label="Category Name"
-              name="categoryName"
-              value={formData.categoryName}
-              onChange={handleChange}
-              placeholder="Enter category name"
-            />
-
-            <Group justify="flex-end" mt="md">
-              <Button component={Link} to="/category" variant="light" color="gray">
-                Cancel
-              </Button>
-              <Button onClick={handleSave}>Submit</Button>
-            </Group>
-          </Stack>
-        </Paper>
-      </Stack>
+          <Group justify="flex-end" mt="md" wrap="wrap">
+            <Button component={Link} to="/category" variant="default" className="et-btn et-btn-ghost">
+              Cancel
+            </Button>
+            <Button onClick={handleSave} className="et-btn et-btn-primary">
+              Submit
+            </Button>
+          </Group>
+        </Stack>
+      </Panel>
     </AppShellLayout>
   );
 }

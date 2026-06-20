@@ -2,15 +2,31 @@ import { API_PATHS, apiRequest } from './apiClient';
 import type { ExpenseRequest } from '../types/api';
 import type { Expense, PaginationMeta } from '../types/entities';
 
+export interface ExpenseListParams {
+  page?: number;
+  limit?: number;
+  /** YYYY-MM-DD */
+  startDate?: string;
+  /** YYYY-MM-DD */
+  endDate?: string;
+  /** Legacy month filter YYYY-MM */
+  month?: string;
+  parentAuth?: boolean;
+}
+
 export const expenseService = {
-  listByUser(userId: string, params: { page?: number; date?: string; limit?: number } = {}) {
+  listByUser(userId: string, params: ExpenseListParams = {}) {
+    const { parentAuth, ...queryParams } = params;
     const query = new URLSearchParams();
-    if (params.page) query.append('page', String(params.page));
-    if (params.date) query.append('date', params.date);
-    if (params.limit) query.append('limit', String(params.limit));
+    if (queryParams.page) query.append('page', String(queryParams.page));
+    if (queryParams.limit) query.append('limit', String(queryParams.limit));
+    if (queryParams.startDate) query.append('startDate', queryParams.startDate);
+    if (queryParams.endDate) query.append('endDate', queryParams.endDate);
+    if (queryParams.month) query.append('date', queryParams.month);
     const qs = query.toString();
     return apiRequest<PaginationMeta, Expense>(
-      `${API_PATHS.EXPENSE}/userexpense/${userId}${qs ? `?${qs}` : ''}`
+      `${API_PATHS.EXPENSE}/userexpense/${userId}${qs ? `?${qs}` : ''}`,
+      parentAuth ? { auth: false, parentAuth: true } : undefined,
     );
   },
 

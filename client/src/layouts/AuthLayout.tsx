@@ -1,6 +1,8 @@
-import { Box, Container, Group, Paper, Text, Stack } from '@mantine/core';
+import { Box, Container, Group, Stack, Text } from '@mantine/core';
+import { IconSun, IconMoon } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
+import { useAppTheme } from '../hooks/useAppTheme';
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -8,49 +10,59 @@ interface AuthLayoutProps {
 }
 
 function AuthLayout({ children, sidePanel }: AuthLayoutProps) {
+  const { isDark, toggleTheme } = useAppTheme();
+
   return (
     <Box
       mih="100vh"
       style={{
-        background:
-          'linear-gradient(135deg, var(--mantine-color-indigo-0) 0%, var(--mantine-color-gray-0) 50%, var(--mantine-color-brand-0) 100%)',
+        background: 'var(--et-surface)',
+        color: 'var(--et-ink)',
       }}
       py={{ base: 'xl', md: 'xl' }}
     >
       <Container size="lg">
-        <Group align="stretch" justify="center" gap="lg" wrap="wrap">
-          <Paper
-            shadow="md"
-            radius="lg"
-            p={{ base: 'lg', sm: 'xl' }}
-            style={{ flex: '1 1 340px', maxWidth: 480 }}
-            withBorder
+        <Group justify="flex-end" mb="md">
+          <button
+            type="button"
+            className="et-icon-btn"
+            onClick={toggleTheme}
+            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label="Toggle theme"
+          >
+            {isDark ? <IconSun size={16} /> : <IconMoon size={16} />}
+          </button>
+        </Group>
+        <Group align="stretch" justify="center" gap="lg" wrap="wrap" className="et-auth-stack">
+          <div
+            className="et-panel et-auth-panel"
+            style={{ flex: '1 1 340px', maxWidth: 480, padding: '28px 32px' }}
           >
             {children}
-          </Paper>
+          </div>
 
           {sidePanel && (
-            <Paper
-              shadow="md"
-              radius="lg"
-              p={{ base: 'lg', sm: 'xl' }}
+            <div
+              className="et-auth-panel"
               style={{
                 flex: '1 1 280px',
                 maxWidth: 380,
-                background:
-                  'linear-gradient(160deg, var(--mantine-color-indigo-6), var(--mantine-color-indigo-8))',
+                borderRadius: 'var(--et-radius-lg)',
+                padding: '28px 32px',
+                background: 'linear-gradient(160deg, var(--et-navy), var(--et-navy-deep))',
+                color: '#fff',
               }}
             >
               {sidePanel}
-            </Paper>
+            </div>
           )}
         </Group>
 
         <Stack align="center" mt="xl" gap={4}>
-          <Text size="sm" c="dimmed">
+          <Text size="sm" style={{ color: 'var(--et-ink-soft)' }}>
             Designed by Leo
           </Text>
-          <Text size="xs" c="dimmed">
+          <Text size="xs" style={{ color: 'var(--et-ink-soft)' }}>
             <Link to="/login" style={{ color: 'inherit' }}>
               Expense Tracker
             </Link>

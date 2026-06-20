@@ -1,27 +1,33 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
-  Title,
-  Group,
   Button,
-  Alert,
-  Paper,
   Stack,
   TextInput,
-  FileInput,
-  Avatar,
   Text,
-  Grid,
   Center,
   Loader,
+  Group,
+  Divider,
 } from '@mantine/core';
+import {
+  IconMail,
+  IconUser,
+  IconUsers,
+  IconCalendar,
+  IconShield,
+} from '@tabler/icons-react';
 import AppShellLayout from '../layouts/AppShellLayout';
-import { PageBreadcrumbs } from '../components/PageBreadcrumbs';
+import { PageHero } from '../components/ui/PageHero';
+import { Panel } from '../components/ui/Panel';
+import { ProfilePhotoUpload } from '../components/ui/ProfilePhotoUpload';
 import { useRequireAuth } from '../hooks/useRequireAuth';
 import defaultImage from '../assets/img/profile.png';
 import { userService } from '../services/userService';
 import { ApiError, apiUrl } from '../services/apiClient';
 import { saveAuthSession, getToken } from '../utils/authStorage';
 import { getUserId, normalizeUser } from '../utils/entity';
+import { formatDisplayDate } from '../utils/date';
+import { getInitials } from '../utils/format';
 import type { User } from '../types/entities';
 
 interface ProfileForm {
@@ -29,6 +35,26 @@ interface ProfileForm {
   email: string;
   parentEmail: string;
   profile: File | null;
+}
+
+function ProfileInfoRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="et-profile-info-row">
+      <div className="et-profile-info-icon">{icon}</div>
+      <div>
+        <div className="et-profile-info-label">{label}</div>
+        <div className="et-profile-info-value">{value}</div>
+      </div>
+    </div>
+  );
 }
 
 function Profile() {
@@ -42,6 +68,7 @@ function Profile() {
     parentEmail: '',
     profile: null,
   });
+  const [isSaving, setIsSaving] = useState(false);
   const [alert, setAlert] = useState({ visible: false, message: '', isError: false });
 
   useEffect(() => {
@@ -71,22 +98,42 @@ function Profile() {
     return () => clearTimeout(timer);
   }, [alert.visible]);
 
+  const profileSrc = useMemo(() => {
+    if (user?.profileUrl && user.profileUrl !== '/uploads/null') {
+      return apiUrl(user.profileUrl);
+    }
+    return defaultImage;
+  }, [user]);
+
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (form.profile instanceof File) {
+      const url = URL.createObjectURL(form.profile);
+      setPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+    setPreviewUrl(null);
+  }, [form.profile]);
+
+  const displayPreview = previewUrl || profileSrc;
+  const hasCustomAvatar =
+    Boolean(user?.profileImage && user.profileImage !== 'null') || Boolean(form.profile);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (file: File | null) => {
-    setForm((prev) => ({ ...prev, profile: file }));
-  };
-
-  const handleSubmit = async () => {
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (!userId) return;
 
+    setIsSaving(true);
     const formData = new FormData();
-    formData.append('name', form.userName);
-    formData.append('email', form.email);
-    formData.append('parentEmail', form.parentEmail);
+    formData.append('name', form.userName.trim());
+    formData.append('email', form.email.trim());
+    formData.append('parentEmail', form.parentEmail.trim());
     if (form.profile) formData.append('profileImage', form.profile);
 
     try {
@@ -94,6 +141,7 @@ function Profile() {
       setAlert({ visible: true, message: 'Profile updated successfully!', isError: false });
       const updatedUser = res.item!;
       setUser(updatedUser);
+      setForm((prev) => ({ ...prev, profile: null }));
       const normalized = normalizeUser(updatedUser);
       if (normalized) {
         saveAuthSession({ user: normalized, token: getToken() || '' });
@@ -101,99 +149,143 @@ function Profile() {
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Something went wrong!';
       setAlert({ visible: true, message: msg, isError: true });
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const profileSrc =
-    user?.profileUrl && user.profileUrl !== '/uploads/null'
-      ? apiUrl(user.profileUrl)
-      : defaultImage;
-
-  const previewSrc =
-    form.profile instanceof File ? URL.createObjectURL(form.profile) : profileSrc;
+  const joinedLabel = user?.createdAt
+    ? formatDisplayDate(user.createdAt.split('T')[0])
+    : '—';
 
   return (
     <AppShellLayout>
-      <Stack gap="lg">
-        <Group justify="space-between" align="flex-start" wrap="wrap">
-          <Title order={2}>User Profile</Title>
-          <PageBreadcrumbs items={[{ label: 'User Profile', to: '/userprofile' }]} />
-        </Group>
+      <PageHero
+        title="My profile"
+        subtitle="Manage your personal details and profile photo."
+      />
 
-        {alert.visible && (
-          <Alert color={alert.isError ? 'red' : 'green'} variant="light">
-            {alert.message}
-          </Alert>
-        )}
+      {alert.visible && (
+        <div className={`et-alert ${alert.isError ? 'et-alert-error' : 'et-alert-success'}`}>
+          {alert.message}
+        </div>
+      )}
 
-        {!user ? (
-          <Center py="xl">
-            <Loader />
-          </Center>
-        ) : (
-          <Grid gutter="lg">
-            <Grid.Col span={{ base: 12, md: 4 }}>
-              <Paper shadow="sm" p="xl" radius="md" withBorder>
-                <Stack align="center" gap="sm">
-                  <Avatar src={previewSrc} size={120} radius="xl" />
-                  <Title order={3}>{user.name?.toUpperCase() || 'User'}</Title>
-                  <Text size="sm" c="dimmed">
-                    {user.email}
-                  </Text>
-                  {user.parentEmail && (
-                    <Text size="sm">
-                      <Text span fw={500}>
-                        Parent:
-                      </Text>{' '}
-                      {user.parentEmail}
-                    </Text>
+      {!user ? (
+        <Center py="xl">
+          <Loader color="navy" />
+        </Center>
+      ) : (
+        <div className="et-profile-layout">
+          <aside className="et-profile-sidebar">
+            <div className="et-profile-identity">
+              <div className="et-profile-identity-banner" aria-hidden />
+              <div className="et-profile-identity-body">
+                <div className="et-profile-identity-avatar">
+                  {hasCustomAvatar ? (
+                    <img src={displayPreview} alt={user.name || 'Profile'} />
+                  ) : (
+                    <span>{getInitials(user.name || 'User')}</span>
                   )}
-                  <Text size="sm" c="dimmed">
-                    Joined: {user.createdAt?.split('T')[0]}
-                  </Text>
-                </Stack>
-              </Paper>
-            </Grid.Col>
+                </div>
+                <Text className="et-profile-identity-name">{user.name || 'User'}</Text>
+                <Text className="et-profile-identity-email">{user.email}</Text>
+                <span className="et-profile-identity-badge">
+                  <IconShield size={14} />
+                  Personal account
+                </span>
+              </div>
+            </div>
 
-            <Grid.Col span={{ base: 12, md: 8 }}>
-              <Paper shadow="sm" p="xl" radius="md" withBorder>
-                <Stack gap="md">
-                  <Title order={4}>Edit Profile</Title>
-                  <TextInput
-                    label="Name"
-                    name="userName"
-                    value={form.userName}
-                    onChange={handleChange}
-                  />
-                  <TextInput
-                    label="Email"
-                    name="email"
-                    type="email"
-                    value={form.email}
-                    onChange={handleChange}
-                  />
-                  <TextInput
-                    label="Parent Email"
-                    name="parentEmail"
-                    type="email"
-                    value={form.parentEmail}
-                    onChange={handleChange}
-                  />
-                  <FileInput
-                    label="Profile Image"
-                    accept="image/*"
-                    value={form.profile}
-                    onChange={handleFileChange}
-                  />
-                  <Group justify="flex-end">
-                    <Button onClick={handleSubmit}>Save Changes</Button>
+            <Panel title="Account details" hint="Your registered information">
+              <Stack gap="sm">
+                <ProfileInfoRow
+                  icon={<IconUser size={18} />}
+                  label="Full name"
+                  value={user.name || '—'}
+                />
+                <ProfileInfoRow
+                  icon={<IconMail size={18} />}
+                  label="Email"
+                  value={user.email || '—'}
+                />
+                <ProfileInfoRow
+                  icon={<IconUsers size={18} />}
+                  label="Parent email"
+                  value={user.parentEmail || 'Not set'}
+                />
+                <ProfileInfoRow
+                  icon={<IconCalendar size={18} />}
+                  label="Member since"
+                  value={joinedLabel}
+                />
+              </Stack>
+            </Panel>
+          </aside>
+
+          <section className="et-profile-main">
+            <Panel title="Edit profile" hint="Update your details and photo">
+              <form onSubmit={handleSubmit}>
+                <Stack gap="lg">
+                  <div>
+                    <Text fw={600} size="sm" mb="md">
+                      Profile photo
+                    </Text>
+                    <ProfilePhotoUpload
+                      previewSrc={displayPreview}
+                      file={form.profile}
+                      onChange={(file) => setForm((prev) => ({ ...prev, profile: file }))}
+                      userName={form.userName}
+                    />
+                  </div>
+
+                  <Divider />
+
+                  <div className="et-profile-form-grid">
+                    <TextInput
+                      label="Full name"
+                      name="userName"
+                      placeholder="Your name"
+                      value={form.userName}
+                      onChange={handleChange}
+                      required
+                    />
+                    <TextInput
+                      label="Email address"
+                      name="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={form.email}
+                      onChange={handleChange}
+                      required
+                    />
+                    <TextInput
+                      label="Parent email"
+                      name="parentEmail"
+                      type="email"
+                      placeholder="parent@example.com"
+                      description="Used for parent dashboard access"
+                      value={form.parentEmail}
+                      onChange={handleChange}
+                      className="et-profile-form-full"
+                    />
+                  </div>
+
+                  <Group justify="flex-end" mt="sm" wrap="wrap">
+                    <Button
+                      type="submit"
+                      loading={isSaving}
+                      className="et-btn et-btn-primary"
+                    >
+                      Save changes
+                    </Button>
                   </Group>
                 </Stack>
-              </Paper>
-            </Grid.Col>
-          </Grid>
-        )}
-      </Stack>
+              </form>
+            </Panel>
+          </section>
+        </div>
+      )}
     </AppShellLayout>
   );
 }

@@ -1,0 +1,41 @@
+export const dashboardMock = {
+  monthTotal: 298,
+  monthDelta: 12,
+  monthDeltaUp: true,
+  topCategory: { name: 'Movies', pct: 66 },
+  owed: { amount: 540, groups: 2 },
+  owe: { amount: 120, to: 'Karthik' },
+  recentExpenses: [
+    {
+      id: '1',
+      name: 'test',
+      category: 'Entertainment',
+      date: new Date().toISOString(),
+      amount: 100,
+      emoji: '🎬',
+      color: '#6a63d1',
+    },
+    {
+      id: '2',
+      name: 'Mankatha movie',
+      category: 'Entertainment',
+      date: new Date(Date.now() - 2 * 86400000).toISOString(),
+      amount: 198,
+      emoji: '🍿',
+      color: '#2f8f5b',
+    },
+    {
+      id: '3',
+      name: 'Lunch with team',
+      category: 'Food',
+      date: new Date(Date.now() - 8 * 86400000).toISOString(),
+      amount: 450,
+      emoji: '🍔',
+      color: '#e8a23d',
+    },
+  ],
+  categoryBreakdown: [
+    { name: 'Mankatha movie', value: 198, color: '#2f8f5b' },
+    { name: 'test', value: 100, color: '#6a63d1' },
+  ],
+};

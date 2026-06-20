@@ -6,6 +6,7 @@ import { GroupMember } from '../entities/group-member.entity';
 import { GroupExpense } from '../entities/group-expense.entity';
 import { GroupExpenseSplit } from '../entities/group-expense-split.entity';
 import { MailerService } from '@nestjs-modules/mailer';
+import { buildWelcomeCredentialsEmail } from '../utils/email-templates';
 import {
   formatGroupRef,
   formatUserRef,
@@ -137,15 +138,15 @@ export class GrpMemberService {
   }
 
   async sendLoginCredentialsInfoToUserEmail(email: string): Promise<any> {
+    const emailContent = buildWelcomeCredentialsEmail({
+      email,
+      password: '12345678',
+    });
     await this.mailerService.sendMail({
       to: email,
-      subject: 'LOGIN AUTHENTICATION',
-      text: `Hi [ New User ],
-              You are recently register in the expense tracker web application 
-              your login credentials 
-              [ user name or email : ${email} password : 12345678 ]
-               after you login kindly change ur other informations.
-              Expense Tracker Team`,
+      subject: emailContent.subject,
+      text: emailContent.plainText,
+      html: emailContent.html,
     });
     this.logger.log(`Otp sent to email : ${email}`);
     return `Otp sent to the your mail id.`;

@@ -65,12 +65,21 @@ export class ExpenseController {
   async fetchExpensesByUserId(
     @Param('id') id: string,
     @Res() reply: Response,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
     @Query('date') date: string,
     @Query('limit') limit: number,
     @Query('page') page: number,
   ): Promise<void> {
     try {
-      const result = await this.expenseService.fetchUserExpenses(id, date, limit, page);
+      const result = await this.expenseService.fetchUserExpenses(
+        id,
+        startDate,
+        endDate,
+        limit,
+        page,
+        date,
+      );
       const data = result as {
         limit: number;
         page: number;

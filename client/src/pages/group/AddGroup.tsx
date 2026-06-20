@@ -1,16 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import {
-  Title,
-  Group,
-  Button,
-  Alert,
-  Paper,
-  Stack,
-  TextInput,
-} from '@mantine/core';
+import { Stack, TextInput, Group, Button } from '@mantine/core';
 import AppShellLayout from '../../layouts/AppShellLayout';
-import { PageBreadcrumbs } from '../../components/PageBreadcrumbs';
+import { PageHero } from '../../components/ui/PageHero';
+import { Panel } from '../../components/ui/Panel';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
 import { getUserId, getEntityId } from '../../utils/entity';
 import { groupService } from '../../services/groupService';
@@ -36,17 +29,6 @@ function AddGroup() {
   const [alert, setAlert] = useState({ show: false, message: '', type: 'danger' as 'danger' | 'success' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (groupId) fetchGroupData(groupId);
-  }, [groupId]);
-
-  useEffect(() => {
-    if (alert.show) {
-      const timer = setTimeout(() => setAlert((prev) => ({ ...prev, show: false })), 10000);
-      return () => clearTimeout(timer);
-    }
-  }, [alert.show]);
-
   const fetchGroupData = useCallback(async (id: string) => {
     try {
       const res = await groupService.getById(id);
@@ -57,6 +39,17 @@ function AddGroup() {
       showAlert(msg, 'danger');
     }
   }, []);
+
+  useEffect(() => {
+    if (groupId) fetchGroupData(groupId);
+  }, [groupId, fetchGroupData]);
+
+  useEffect(() => {
+    if (alert.show) {
+      const timer = setTimeout(() => setAlert((prev) => ({ ...prev, show: false })), 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [alert.show]);
 
   const showAlert = (message: string, type: 'danger' | 'success' = 'danger') => {
     setAlert({ show: true, message, type });
@@ -112,45 +105,38 @@ function AddGroup() {
 
   return (
     <AppShellLayout>
-      <Stack gap="lg">
-        <Group justify="space-between" align="flex-start" wrap="wrap">
-          <Title order={2}>{groupId ? 'Edit Group' : 'Create Group'}</Title>
-          <PageBreadcrumbs
-            items={[
-              { label: 'Groups', to: '/group' },
-              { label: groupId ? 'Edit Group' : 'Add Group', to: '#' },
-            ]}
+      <PageHero
+        title={groupId ? 'Edit group' : 'Create group'}
+        subtitle={groupId ? 'Update group details.' : 'Start a new shared expense group.'}
+      />
+
+      {alert.show && (
+        <div className={`et-alert ${alert.type === 'success' ? 'et-alert-success' : 'et-alert-error'}`}>
+          {alert.message}
+        </div>
+      )}
+
+      <Panel title="Group details">
+        <Stack gap="md" maw={520}>
+          <TextInput
+            label="Group Name"
+            name="grpName"
+            value={formData.grpName}
+            onChange={handleChange}
+            placeholder="Enter group name"
+            disabled={isSubmitting}
           />
-        </Group>
 
-        {alert.show && (
-          <Alert color={alert.type === 'success' ? 'green' : 'red'} variant="light">
-            {alert.message}
-          </Alert>
-        )}
-
-        <Paper shadow="sm" p="xl" radius="md" withBorder maw={500}>
-          <Stack gap="md">
-            <TextInput
-              label="Group Name"
-              name="grpName"
-              value={formData.grpName}
-              onChange={handleChange}
-              placeholder="Enter group name"
-              disabled={isSubmitting}
-            />
-
-            <Group justify="flex-end" mt="md">
-              <Button component={Link} to="/group" variant="light" color="gray" disabled={isSubmitting}>
-                Cancel
-              </Button>
-              <Button onClick={handleSubmit} loading={isSubmitting}>
-                {groupId ? 'Update' : 'Create'}
-              </Button>
-            </Group>
-          </Stack>
-        </Paper>
-      </Stack>
+          <Group justify="flex-end" mt="md" wrap="wrap">
+            <Button component={Link} to="/group" variant="default" className="et-btn et-btn-ghost" disabled={isSubmitting}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit} loading={isSubmitting} className="et-btn et-btn-primary">
+              {groupId ? 'Update' : 'Create'}
+            </Button>
+          </Group>
+        </Stack>
+      </Panel>
     </AppShellLayout>
   );
 }

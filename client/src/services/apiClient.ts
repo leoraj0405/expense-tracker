@@ -1,4 +1,4 @@
-import { getToken } from '../utils/authStorage';
+import { getToken, getParentToken } from '../utils/authStorage';
 import type { ApiResponse } from '../types/api';
 
 const BASE_URL = process.env.REACT_APP_FETCH_URL || 'http://localhost:1000';
@@ -26,14 +26,20 @@ export class ApiError extends Error {
 
 export interface ApiFetchOptions extends RequestInit {
   auth?: boolean;
+  parentAuth?: boolean;
   headers?: Record<string, string>;
 }
 
 export async function apiFetch(path: string, options: ApiFetchOptions = {}): Promise<Response> {
-  const { auth = true, headers = {}, ...rest } = options;
+  const { auth = true, parentAuth = false, headers = {}, ...rest } = options;
   const requestHeaders: Record<string, string> = { ...headers };
 
-  if (auth) {
+  if (parentAuth) {
+    const parentToken = getParentToken();
+    if (parentToken) {
+      requestHeaders.Authorization = `Bearer ${parentToken}`;
+    }
+  } else if (auth) {
     const token = getToken();
     if (token) {
       requestHeaders.Authorization = `Bearer ${token}`;
@@ -42,6 +48,7 @@ export async function apiFetch(path: string, options: ApiFetchOptions = {}): Pro
 
   return fetch(apiUrl(path), {
     ...rest,
+    credentials: rest.credentials ?? (parentAuth ? 'include' : 'same-origin'),
     headers: requestHeaders,
   });
 }

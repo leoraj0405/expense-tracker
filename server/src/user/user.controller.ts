@@ -20,6 +20,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { sendError, sendSuccess, buildSuccess } from '../utils/api-response.util';
+import { DashboardService } from './dashboard.service';
 
 const profileStorage = diskStorage({
   destination: './uploads',
@@ -35,6 +36,7 @@ export class UserController {
     private readonly userService: UserService,
     private jwtService: JwtService,
     private readonly config: ConfigService,
+    private readonly dashboardService: DashboardService,
   ) {}
 
   @Post()
@@ -116,10 +118,26 @@ export class UserController {
   @Get('/parenthome')
   async parentHome(@Res() reply: Response, @Req() request: any): Promise<void> {
     try {
-      if (request.session?.parentIsLogged) {
-        return sendSuccess(reply, { items: request.session.parentData || [] });
+      const parent = request.parent as { parentEmail?: string } | undefined;
+      if (!parent?.parentEmail) {
+        return sendError(reply, 'Parent not logged in', 401);
       }
-      sendError(reply, 'Parent not logged in', 400);
+
+      const children = await this.userService.findChildrenByParentEmail(
+        parent.parentEmail,
+      );
+
+      sendSuccess(reply, {
+        items: children.map((child) => ({
+          id: child.id,
+          _id: child.id,
+          name: child.name,
+          email: child.email,
+          parentEmail: child.parentEmail,
+          profileImage: child.profileImage,
+          createdAt: child.createdAt,
+        })),
+      });
     } catch (error) {
       sendError(reply, error?.message || 'Failed to fetch parent home', 500);
     }
@@ -212,24 +230,44 @@ export class UserController {
   async processOtp(
     @Res() reply: Response,
     @Body() body: LoginParentReq,
-    @Req() request: any,
   ): Promise<void> {
     try {
-      const email = body.parentEmail;
-      const otp = body.parentotp;
-      const processOtp = await this.userService.parentProcessOtp(email, otp);
-      if (!processOtp) {
-        if (request.session) {
-          request.session.parentIsLogged = false;
-          request.session.parentData = [];
-        }
-        return sendError(reply, 'Invalid OTP', 404);
+      const email = body.parentEmail?.trim();
+      const otp = body.parentotp?.trim();
+
+      if (!email || !otp) {
+        return sendError(reply, 'Email and OTP are required', 400);
       }
-      if (request.session) {
-        request.session.parentIsLogged = true;
-        request.session.parentData = processOtp;
+
+      const children = await this.userService.parentProcessOtp(email, otp);
+      if (!children?.length) {
+        return sendError(reply, 'Invalid OTP', 401);
       }
-      sendSuccess(reply, { item: 'You successfully logged in' });
+
+      const childIds = children.map((child) => child.id);
+      const token = this.jwtService.sign(
+        { role: 'parent', parentEmail: email, childIds },
+        {
+          secret: this.config.get<string>('SEMETRIC_KEY'),
+          expiresIn: '8h',
+        },
+      );
+
+      sendSuccess(reply, {
+        item: {
+          token,
+          message: 'You successfully logged in',
+          children: children.map((child) => ({
+            id: child.id,
+            _id: child.id,
+            name: child.name,
+            email: child.email,
+            parentEmail: child.parentEmail,
+            profileImage: child.profileImage,
+            createdAt: child.createdAt,
+          })),
+        },
+      });
     } catch (error) {
       sendError(reply, error?.message || 'Failed to process parent OTP', 500);
     }
@@ -261,6 +299,46 @@ export class UserController {
       sendSuccess(reply, { item: createOTP });
     } catch (error) {
       sendError(reply, error?.message || 'Failed to generate OTP', 500);
+    }
+  }
+  @Post('/search')
+  async searchUsers(
+    @Res() reply: Response,
+    @Body() body: { query: string; groupId?: string; limit?: number },
+  ): Promise<void> {
+    try {
+      const users = await this.userService.searchUsers(
+        body.query || '',
+        body.groupId,
+        body.limit,
+      );
+      sendSuccess(reply, {
+        items: users.map((user) => ({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        })),
+      });
+    } catch (error) {
+      sendError(reply, error?.message || 'Failed to search users', 500);
+    }
+  }
+
+  @Post('/dashboard')
+  async dashboard(
+    @Res() reply: Response,
+    @Body() body: { userId: string; startDate?: string; endDate?: string },
+  ): Promise<void> {
+    try {
+      const data = await this.dashboardService.getDashboard(
+        body.userId,
+        body.startDate,
+        body.endDate,
+      );
+      sendSuccess(reply, { item: data });
+    } catch (error) {
+      const status = error?.status || 500;
+      sendError(reply, error?.message || 'Failed to fetch dashboard', status);
     }
   }
 }

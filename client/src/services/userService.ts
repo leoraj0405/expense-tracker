@@ -3,9 +3,11 @@ import type {
   LoginRequest,
   OtpRequest,
   ParentOtpRequest,
+  ParentLoginResponse,
   ProcessOtpRequest,
 } from '../types/api';
 import type { LoginResponse, User } from '../types/entities';
+import type { DashboardData } from '../types/dashboard';
 
 export const userService = {
   login(data: LoginRequest) {
@@ -64,11 +66,10 @@ export const userService = {
   },
 
   parentProcessOtp(data: ParentOtpRequest) {
-    return apiRequest<string>(`${API_PATHS.USER}/parentproccessotp`, {
+    return apiRequest<ParentLoginResponse>(`${API_PATHS.USER}/parentproccessotp`, {
       method: 'POST',
       auth: false,
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify(data),
     });
   },
@@ -77,7 +78,23 @@ export const userService = {
     return apiRequest<null, User>(`${API_PATHS.USER}/parenthome`, {
       method: 'GET',
       auth: false,
-      credentials: 'include',
+      parentAuth: true,
+    });
+  },
+
+  dashboard(userId: string, params?: { startDate?: string; endDate?: string }) {
+    return apiRequest<DashboardData>(`${API_PATHS.USER}/dashboard`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, ...params }),
+    });
+  },
+
+  searchUsers(query: string, groupId?: string) {
+    return apiRequest<null, User>(`${API_PATHS.USER}/search`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, groupId }),
     });
   },
 };

@@ -1,23 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import {
-  Title,
   Group,
   Button,
-  Alert,
-  Paper,
   Stack,
   TextInput,
   Textarea,
   Select,
   Radio,
-  Grid,
   Collapse,
   Text,
   Divider,
 } from '@mantine/core';
 import AppShellLayout from '../../layouts/AppShellLayout';
-import { PageBreadcrumbs } from '../../components/PageBreadcrumbs';
+import { PageHero } from '../../components/ui/PageHero';
+import { Panel } from '../../components/ui/Panel';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
 import { getEntityId } from '../../utils/entity';
 import { groupMemberService } from '../../services/groupMemberService';
@@ -195,144 +192,131 @@ function AddGrpExpense() {
 
   return (
     <AppShellLayout>
-      <Stack gap="lg">
-        <Group justify="space-between" align="flex-start" wrap="wrap">
-          <Title order={2}>{grpExpenseId ? 'Edit' : 'Add'} Group Expense</Title>
-          <PageBreadcrumbs
-            items={[
-              { label: 'Groups', to: '/group' },
-              {
-                label: 'Group Expenses',
-                to: `/group/groupexpense?grpid=${grpId}&grpname=${grpName}&leader=${groupLeader}`,
-              },
-              { label: grpExpenseId ? 'Edit Expense' : 'Add Expense', to: '#' },
-            ]}
-          />
-        </Group>
+      <PageHero
+        title={`${grpExpenseId ? 'Edit' : 'Add'} group expense`}
+        subtitle={`Log a shared expense for ${grpName}.`}
+      />
 
-        {!alert.show && alert.message && (
-          <Alert color="red" variant="light">
-            {alert.message}
-          </Alert>
-        )}
+      {alert.show && alert.message && (
+        <div className="et-alert et-alert-error">{alert.message}</div>
+      )}
 
-        <Grid gutter="lg">
-          <Grid.Col span={{ base: 12, md: 7 }}>
-            <Paper shadow="sm" p="xl" radius="md" withBorder>
-              <Stack gap="md">
-                <Text c="dimmed" fw={500}>
-                  Group: {grpName}
-                </Text>
+      <div className="et-content-grid">
+        <Panel title="Expense details">
+          <Stack gap="md">
+            <Text style={{ color: 'var(--et-ink-soft)' }} fw={500}>
+              Group: {grpName}
+            </Text>
 
-                <Select
-                  label="Paid By"
-                  placeholder="Select member"
-                  data={memberOptions}
-                  value={form.userId}
-                  onChange={(value) => setForm((prev) => ({ ...prev, userId: value || '' }))}
-                />
+            <Select
+              label="Paid By"
+              placeholder="Select member"
+              data={memberOptions}
+              value={form.userId}
+              onChange={(value) => setForm((prev) => ({ ...prev, userId: value || '' }))}
+            />
 
-                <Select
-                  label="Category"
-                  placeholder="Select category"
-                  data={categoryOptions}
-                  value={form.categoryId}
-                  onChange={(value) => setForm((prev) => ({ ...prev, categoryId: value || '' }))}
-                />
+            <Select
+              label="Category"
+              placeholder="Select category"
+              data={categoryOptions}
+              value={form.categoryId}
+              onChange={(value) => setForm((prev) => ({ ...prev, categoryId: value || '' }))}
+            />
 
-                <TextInput
-                  label="Amount"
-                  type="number"
-                  name="amount"
-                  value={form.amount}
-                  onChange={handleInputChange}
-                />
+            <TextInput
+              label="Amount"
+              type="number"
+              name="amount"
+              value={form.amount}
+              onChange={handleInputChange}
+            />
 
-                {showSplitOptions && (
-                  <>
-                    <Radio.Group
-                      label="Split method"
-                      value={splitMethod}
-                      onChange={setSplitMethod}
-                    >
-                      <Group mt="xs">
-                        <Radio value="equal" label="Equal" />
-                        <Radio value="unequal" label="Unequal" />
-                      </Group>
-                    </Radio.Group>
-
-                    <Collapse in={splitMethod === 'unequal'}>
-                      <Stack gap="sm" mt="sm">
-                        {users.map((user, index) => (
-                          <Group key={getEntityId(user.user) || index} justify="space-between" wrap="nowrap">
-                            <Text size="sm" style={{ flex: 1 }}>
-                              {members[getEntityId(user.user) || ''] ||
-                                `New user (${user.user?.email})`}
-                            </Text>
-                            <TextInput
-                              type="number"
-                              value={unequalShares[index]?.share || ''}
-                              onChange={(e) => handleShareChange(e, index)}
-                              w={120}
-                              min={0}
-                            />
-                          </Group>
-                        ))}
-                      </Stack>
-                    </Collapse>
-                  </>
-                )}
-
-                <Textarea
-                  label="Description"
-                  name="description"
-                  value={form.description}
-                  onChange={handleInputChange}
-                  minRows={2}
-                />
-
-                <Group justify="flex-end">
-                  <Button
-                    component={Link}
-                    to={`/group/groupexpense?grpid=${grpId}&grpname=${grpName}&leader=${groupLeader}`}
-                    variant="light"
-                    color="gray"
-                  >
-                    Cancel
-                  </Button>
-                  <Button onClick={handleSubmit}>Submit</Button>
-                </Group>
-              </Stack>
-            </Paper>
-          </Grid.Col>
-
-          {showSplitOptions && splitMethod === 'equal' && (
-            <Grid.Col span={{ base: 12, md: 5 }}>
-              <Paper shadow="sm" p="xl" radius="md" withBorder>
-                <Title order={5} ta="center" mb="md">
-                  Equal Shares
-                </Title>
-                <Stack gap="sm">
-                  {users.map((user) => (
-                    <Group key={getEntityId(user.user) || user.groupId} justify="space-between">
-                      <Text size="sm">
-                        {members[getEntityId(user.user) || ''] ||
-                          `New user (${user.user?.email})`}
-                      </Text>
-                      <Text fw={600}>₹{equalShare}</Text>
-                    </Group>
-                  ))}
-                  <Divider />
-                  <Group justify="space-between">
-                    <Text fw={500}>Total</Text>
-                    <Text fw={700}>₹{form.amount}</Text>
+            {showSplitOptions && (
+              <>
+                <Radio.Group label="Split method" value={splitMethod} onChange={setSplitMethod}>
+                  <Group mt="xs" wrap="wrap">
+                    <Radio value="equal" label="Equal" />
+                    <Radio value="unequal" label="Unequal" />
                   </Group>
-                </Stack>
-              </Paper>
-            </Grid.Col>
-          )}
-        </Grid>
-      </Stack>
+                </Radio.Group>
+
+                <Collapse in={splitMethod === 'unequal'}>
+                  <Stack gap="sm" mt="sm">
+                    {users.map((user, index) => (
+                      <Group
+                        key={getEntityId(user.user) || index}
+                        justify="space-between"
+                        wrap="wrap"
+                        className="et-split-row"
+                      >
+                        <Text size="sm" style={{ flex: 1, minWidth: 120 }}>
+                          {members[getEntityId(user.user) || ''] ||
+                            `New user (${user.user?.email})`}
+                        </Text>
+                        <TextInput
+                          type="number"
+                          value={unequalShares[index]?.share || ''}
+                          onChange={(e) => handleShareChange(e, index)}
+                          style={{ flex: '0 1 140px', minWidth: 100 }}
+                          min={0}
+                        />
+                      </Group>
+                    ))}
+                  </Stack>
+                </Collapse>
+              </>
+            )}
+
+            <Textarea
+              label="Description"
+              name="description"
+              value={form.description}
+              onChange={handleInputChange}
+              minRows={2}
+            />
+
+            <Group justify="flex-end" wrap="wrap">
+              <Button
+                component={Link}
+                to={`/group/groupexpense?grpid=${grpId}&grpname=${grpName}&leader=${groupLeader}`}
+                variant="default"
+                className="et-btn et-btn-ghost"
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleSubmit} className="et-btn et-btn-primary">
+                Submit
+              </Button>
+            </Group>
+          </Stack>
+        </Panel>
+
+        {showSplitOptions && splitMethod === 'equal' && (
+          <Panel title="Equal shares">
+            <Stack gap="sm">
+              {users.map((user) => (
+                <Group
+                  key={getEntityId(user.user) || user.groupId}
+                  justify="space-between"
+                  wrap="nowrap"
+                >
+                  <Text size="sm" style={{ minWidth: 0 }}>
+                    {members[getEntityId(user.user) || ''] ||
+                      `New user (${user.user?.email})`}
+                  </Text>
+                  <Text fw={600}>₹{equalShare}</Text>
+                </Group>
+              ))}
+              <Divider />
+              <Group justify="space-between">
+                <Text fw={500}>Total</Text>
+                <Text fw={700}>₹{form.amount}</Text>
+              </Group>
+            </Stack>
+          </Panel>
+        )}
+      </div>
     </AppShellLayout>
   );
 }

@@ -74,7 +74,6 @@ export class AppModule implements NestModule {
       .exclude(
         { path: 'api/user/login', method: RequestMethod.POST },
         { path: 'api/user', method: RequestMethod.POST },
-        { path: 'api/user/parenthome/', method: RequestMethod.GET },
         { path: 'api/user/processotp', method: RequestMethod.POST },
         { path: 'api/user/parentgenerateotp', method: RequestMethod.POST },
         { path: 'api/user/parentproccessotp', method: RequestMethod.POST },

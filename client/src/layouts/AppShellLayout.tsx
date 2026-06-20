@@ -1,18 +1,6 @@
-import {
-  AppShell,
-  Burger,
-  Group,
-  NavLink,
-  Avatar,
-  Menu,
-  Text,
-  UnstyledButton,
-  Box,
-  Image,
-  rem,
-  ScrollArea,
-} from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
+import { useState, type ReactNode, type ComponentType } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Menu } from '@mantine/core';
 import {
   IconHome,
   IconReceipt,
@@ -21,23 +9,70 @@ import {
   IconLogout,
   IconUser,
   IconChevronDown,
+  IconMenu2,
+  IconSun,
+  IconMoon,
+  IconClock,
 } from '@tabler/icons-react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import type { ReactNode, CSSProperties } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useAppTheme } from '../hooks/useAppTheme';
 import { apiUrl } from '../services/apiClient';
+import { getInitials } from '../utils/format';
 import defaultImage from '../assets/img/profile.png';
-import Logo from '../assets/img/websiteLogo.png';
 
-const NAV_ITEMS: {
+const ROUTE_META: Record<string, { title: string; sub: string }> = {
+  '/home': { title: 'Home', sub: '· this month' },
+  '/expense': { title: 'Expenses', sub: '· all transactions' },
+  '/group': { title: 'Group', sub: '· shared expenses' },
+  '/category': { title: 'Category', sub: '· manage tags' },
+  '/userprofile': { title: 'Profile', sub: '· account settings' },
+};
+
+const NAV_SECTIONS: {
   label: string;
-  to: string;
-  icon: React.ComponentType<{ style?: CSSProperties }>;
+  items: {
+    label: string;
+    to: string;
+    icon: ComponentType<{ size?: number; stroke?: number }>;
+    match: (p: string) => boolean;
+    badge?: boolean;
+  }[];
 }[] = [
-  { label: 'Home', to: '/home', icon: IconHome },
-  { label: 'Expenses', to: '/expense', icon: IconReceipt },
-  { label: 'Groups', to: '/group', icon: IconUsersGroup },
-  { label: 'Categories', to: '/category', icon: IconCategory },
+  {
+    label: 'Overview',
+    items: [
+      { label: 'Home', to: '/home', icon: IconHome, match: (p: string) => p === '/home' },
+      {
+        label: 'Expenses',
+        to: '/expense',
+        icon: IconReceipt,
+        match: (p: string) => p.startsWith('/expense') || p.startsWith('/editexpense'),
+      },
+    ],
+  },
+  {
+    label: 'Shared',
+    items: [
+      {
+        label: 'Group',
+        to: '/group',
+        icon: IconUsersGroup,
+        match: (p: string) => p.startsWith('/group'),
+        badge: true,
+      },
+    ],
+  },
+  {
+    label: 'Setup',
+    items: [
+      {
+        label: 'Category',
+        to: '/category',
+        icon: IconCategory,
+        match: (p: string) => p.startsWith('/category'),
+      },
+    ],
+  },
 ];
 
 interface AppShellLayoutProps {
@@ -45,10 +80,11 @@ interface AppShellLayoutProps {
 }
 
 function AppShellLayout({ children }: AppShellLayoutProps) {
-  const [opened, { toggle }] = useDisclosure();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { loginUser, logout } = useAuth();
+  const { isDark, toggleTheme } = useAppTheme();
 
   const userName = loginUser?.name || loginUser?.data?.name || 'User';
   const profileImage = loginUser?.profileImage || loginUser?.data?.profileImage;
@@ -57,107 +93,124 @@ function AppShellLayout({ children }: AppShellLayoutProps) {
       ? apiUrl(`/uploads/${profileImage}`)
       : defaultImage;
 
+  const meta =
+    Object.entries(ROUTE_META).find(([path]) => location.pathname.startsWith(path))?.[1] ||
+    { title: 'Expense Tracker', sub: '' };
+
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const isActive = (path: string) => {
-    if (path === '/home') return location.pathname === '/home';
-    return location.pathname.startsWith(path);
-  };
-
   return (
-    <AppShell
-      header={{ height: 60 }}
-      navbar={{
-        width: 260,
-        breakpoint: 'sm',
-        collapsed: { mobile: !opened },
-      }}
-      padding="md"
-    >
-      <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
-          <Group>
-            <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-            <Text fw={700} size="lg" c="indigo">
-              Expense Tracker
-            </Text>
-          </Group>
+    <div className="et-app">
+      <div
+        className={`et-mobile-overlay ${mobileOpen ? 'open' : ''}`}
+        onClick={() => setMobileOpen(false)}
+        aria-hidden="true"
+      />
+
+      <aside className={`et-sidebar ${mobileOpen ? 'open' : ''}`}>
+        <div className="et-brand">
+          <div className="et-brand-mark">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 14c1.5-1.5 1.5-4 0-5.5C17.5 7 15 7 13.5 8.5L12 10l-1.5-1.5C9 7 6.5 7 5 8.5c-1.5 1.5-1.5 4 0 5.5l7 7 7-7z" />
+            </svg>
+          </div>
+          <div className="et-brand-text">
+            <div className="et-brand-word">Expense Tracker</div>
+            <div className="et-brand-tag">Finance workspace</div>
+          </div>
+        </div>
+
+        <nav className="et-nav">
+          {NAV_SECTIONS.map((section) => (
+            <div key={section.label}>
+              <div className="et-nav-label">{section.label}</div>
+              {section.items.map(({ label, to, icon: Icon, match, badge }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className={`et-nav-item ${match(location.pathname) ? 'active' : ''}`}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <Icon size={18} stroke={1.75} />
+                  {label}
+                  {badge && <span className="et-badge">•</span>}
+                </Link>
+              ))}
+            </div>
+          ))}
+        </nav>
+
+        <div className="et-sidebar-foot">
+          <div className="et-sidebar-foot-row">
+            <IconClock size={15} stroke={1.75} />
+            Designed by Leo
+          </div>
+        </div>
+      </aside>
+
+      <header className="et-header">
+        <div className="et-header-left">
+          <button
+            type="button"
+            className="et-icon-btn et-mobile-nav-toggle"
+            onClick={() => setMobileOpen(true)}
+            aria-label="Open menu"
+          >
+            <IconMenu2 size={16} />
+          </button>
+          <div className="et-page-title">{meta.title}</div>
+        </div>
+
+        <div className="et-header-right">
+          <button
+            type="button"
+            className="et-icon-btn"
+            onClick={toggleTheme}
+            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label="Toggle theme"
+          >
+            {isDark ? <IconSun size={16} /> : <IconMoon size={16} />}
+          </button>
 
           <Menu shadow="md" width={200} position="bottom-end">
             <Menu.Target>
-              <UnstyledButton>
-                <Group gap="xs">
-                  <Text size="sm" visibleFrom="sm" c="dimmed">
-                    {userName}
-                  </Text>
-                  <Avatar src={avatarSrc} radius="xl" size={36} />
-                  <IconChevronDown style={{ width: rem(14), height: rem(14) }} />
-                </Group>
-              </UnstyledButton>
+              <button type="button" className="et-user-chip">
+                <div className="et-avatar">
+                  {profileImage && profileImage !== 'null' ? (
+                    <img src={avatarSrc} alt={userName} />
+                  ) : (
+                    getInitials(userName)
+                  )}
+                </div>
+                <div>
+                  <span className="et-name">{userName}</span>
+                  <span className="et-role">Personal account</span>
+                </div>
+                <IconChevronDown size={14} stroke={1.75} />
+              </button>
             </Menu.Target>
             <Menu.Dropdown>
               <Menu.Item
-                leftSection={<IconUser style={{ width: rem(14), height: rem(14) }} />}
+                leftSection={<IconUser size={14} />}
                 component={Link}
                 to="/userprofile"
               >
                 Profile
               </Menu.Item>
               <Menu.Divider />
-              <Menu.Item
-                color="red"
-                leftSection={<IconLogout style={{ width: rem(14), height: rem(14) }} />}
-                onClick={handleLogout}
-              >
+              <Menu.Item color="red" leftSection={<IconLogout size={14} />} onClick={handleLogout}>
                 Logout
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
-        </Group>
-      </AppShell.Header>
+        </div>
+      </header>
 
-      <AppShell.Navbar p="md">
-        <AppShell.Section mb="md">
-          <Group gap="sm">
-            <Image src={Logo} alt="Logo" w={40} h={40} radius="md" />
-            <Text fw={700} size="lg">
-              ET
-            </Text>
-          </Group>
-        </AppShell.Section>
-
-        <AppShell.Section grow component={ScrollArea}>
-          {NAV_ITEMS.map(({ label, to, icon: Icon }) => (
-            <NavLink
-              key={to}
-              component={Link}
-              to={to}
-              label={label}
-              leftSection={<Icon style={{ width: rem(18), height: rem(18) }} />}
-              active={isActive(to)}
-              variant="light"
-              mb={4}
-              onClick={() => {
-                if (opened) toggle();
-              }}
-            />
-          ))}
-        </AppShell.Section>
-
-        <AppShell.Section>
-          <Text size="xs" c="dimmed" ta="center">
-            Designed by Leo
-          </Text>
-        </AppShell.Section>
-      </AppShell.Navbar>
-
-      <AppShell.Main>
-        <Box mih="calc(100vh - 120px)">{children}</Box>
-      </AppShell.Main>
-    </AppShell>
+      <main className="et-main">{children}</main>
+    </div>
   );
 }
 

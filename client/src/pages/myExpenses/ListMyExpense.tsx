@@ -1,57 +1,91 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import {
-  Title,
-  Group,
-  Button,
-  Alert,
-  Table,
-  Text,
-  Paper,
-  Stack,
-  Center,
-  Loader,
-  Pagination,
-  TextInput,
-} from '@mantine/core';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { modals } from '@mantine/modals';
+import { Center, Loader, Pagination, Text } from '@mantine/core';
 import { IconEdit, IconTrash, IconPlus } from '@tabler/icons-react';
 import CountUp from 'react-countup';
 import AppShellLayout from '../../layouts/AppShellLayout';
-import { PageBreadcrumbs } from '../../components/PageBreadcrumbs';
+import { PageHero } from '../../components/ui/PageHero';
+import { Panel } from '../../components/ui/Panel';
+import { ResponsiveTable } from '../../components/ui/ResponsiveTable';
+import { ExpenseMonthFilter } from '../../components/ui/ExpenseMonthFilter';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
 import { getUserId, getCategoryName, getEntityId } from '../../utils/entity';
 import { expenseService } from '../../services/expenseService';
 import { ApiError } from '../../services/apiClient';
+import {
+  formatDisplayDate,
+  getCurrentMonthRange,
+  resolveInitialDateRange,
+} from '../../utils/date';
 import type { Expense } from '../../types/entities';
 
 function ListMyExpense() {
   const location = useLocation();
+  const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
-  const queryDate = queryParams.get('date');
 
   const loginUser = useRequireAuth();
   const userId = getUserId(loginUser);
 
+  const initialRange = resolveInitialDateRange({
+    startDate: queryParams.get('startDate'),
+    endDate: queryParams.get('endDate'),
+    month: queryParams.get('date'),
+  });
+
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [limit, setLimit] = useState(10);
   const [alert, setAlert] = useState({ success: true, error: false, msg: '' });
-  const [date, setDate] = useState(queryDate || '');
+  const [startDate, setStartDate] = useState(initialRange.startDate);
+  const [endDate, setEndDate] = useState(initialRange.endDate);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [pageTotalAmount, setPageTotalAmount] = useState(0);
 
+  const syncUrl = useCallback(
+    (from: string, to: string) => {
+      const params = new URLSearchParams();
+      params.set('startDate', from);
+      params.set('endDate', to);
+      navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
+    },
+    [location.pathname, navigate]
+  );
+
+  const applyRange = useCallback(
+    (from: string, to: string) => {
+      setStartDate(from);
+      setEndDate(to);
+      setCurrentPage(1);
+      syncUrl(from, to);
+    },
+    [syncUrl]
+  );
+
   useEffect(() => {
-    if (queryDate) setDate(queryDate);
-  }, [queryDate]);
+    const hasRange =
+      queryParams.get('startDate') ||
+      queryParams.get('endDate') ||
+      queryParams.get('date');
+    if (!hasRange) {
+      const range = getCurrentMonthRange();
+      syncUrl(range.startDate, range.endDate);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchExpenses = useCallback(async () => {
     if (!userId) return;
 
     setIsLoading(true);
     try {
-      const res = await expenseService.listByUser(userId, { page: currentPage, date: date || undefined });
+      const res = await expenseService.listByUser(userId, {
+        page: currentPage,
+        startDate,
+        endDate,
+      });
       setExpenses(res.items);
       const meta = res.item!;
       setLimit(meta.limit);
@@ -64,7 +98,7 @@ function ListMyExpense() {
     } finally {
       setIsLoading(false);
     }
-  }, [userId, date, currentPage]);
+  }, [userId, startDate, endDate, currentPage]);
 
   useEffect(() => {
     fetchExpenses();
@@ -101,121 +135,102 @@ function ListMyExpense() {
     setPageTotalAmount(total || 0);
   }, [expenses]);
 
-  const today = new Date();
-  const maxMonth = today.toISOString().slice(0, 7);
-
   const rows = isLoading ? (
-    <Table.Tr>
-      <Table.Td colSpan={6}>
+    <tr className="et-tr-full">
+      <td colSpan={6}>
         <Center py="xl">
-          <Loader />
+          <Loader color="navy" />
         </Center>
-      </Table.Td>
-    </Table.Tr>
+      </td>
+    </tr>
   ) : expenses.length === 0 ? (
-    <Table.Tr>
-      <Table.Td colSpan={6}>
-        <Text ta="center" c="dimmed" py="lg">
-          No expenses found
-        </Text>
-      </Table.Td>
-    </Table.Tr>
+    <tr className="et-tr-full">
+      <td colSpan={6}>
+        <p className="et-empty-note">No expenses found for this month</p>
+      </td>
+    </tr>
   ) : (
     expenses.map((item, idx) => (
-      <Table.Tr key={getEntityId(item) || idx}>
-        <Table.Td>{(currentPage - 1) * limit + idx + 1}</Table.Td>
-        <Table.Td>{item.description}</Table.Td>
-        <Table.Td>{getCategoryName(item.category)}</Table.Td>
-        <Table.Td>{item.date?.split('T')[0]}</Table.Td>
-        <Table.Td>
+      <tr key={getEntityId(item) || idx}>
+        <td data-label="S No">{(currentPage - 1) * limit + idx + 1}</td>
+        <td data-label="Description">{item.description}</td>
+        <td data-label="Category">{getCategoryName(item.category)}</td>
+        <td data-label="Date">{formatDisplayDate(item.date)}</td>
+        <td data-label="Amount" style={{ fontWeight: 700 }}>
           <CountUp end={Number(item.amount)} prefix="₹" separator="," />
-        </Table.Td>
-        <Table.Td>
-          <Group gap="xs" wrap="nowrap">
-            <Button
-              component={Link}
+        </td>
+        <td data-label="Actions" className="et-td-actions">
+          <div className="et-actions-wrap">
+            <Link
               to={`/editexpense?mode=edit&expense=${getEntityId(item)}`}
-              size="xs"
-              variant="light"
-              color="yellow"
-              leftSection={<IconEdit size={14} />}
+              className="et-btn et-btn-ghost et-btn-sm"
             >
-              Edit
-            </Button>
-            <Button
-              size="xs"
-              variant="light"
-              color="red"
-              leftSection={<IconTrash size={14} />}
+              <IconEdit size={14} /> Edit
+            </Link>
+            <button
+              type="button"
+              className="et-btn et-btn-ghost et-btn-sm"
+              style={{ color: 'var(--et-red)' }}
               onClick={() => handleDelete(getEntityId(item))}
             >
-              Delete
-            </Button>
-          </Group>
-        </Table.Td>
-      </Table.Tr>
+              <IconTrash size={14} /> Delete
+            </button>
+          </div>
+        </td>
+      </tr>
     ))
   );
 
   return (
     <AppShellLayout>
-      <Stack gap="lg">
-        <Group justify="space-between" align="flex-start" wrap="wrap">
-          <Title order={2}>My Expenses</Title>
-          <PageBreadcrumbs items={[{ label: 'Expenses', to: '/expense' }]} />
-        </Group>
+      <PageHero
+        title="Expenses"
+        subtitle="Every transaction you've logged, in one place."
+        action={
+          <Link to="/expense/addexpense" className="et-btn et-btn-primary">
+            <IconPlus size={15} /> Add expense
+          </Link>
+        }
+      />
 
-        {alert.msg && (
-          <Alert color={alert.error ? 'red' : 'green'} variant="light">
-            {alert.msg}
-          </Alert>
-        )}
+      {alert.msg && (
+        <div className={`et-alert ${alert.error ? 'et-alert-error' : 'et-alert-success'}`}>
+          {alert.msg}
+        </div>
+      )}
 
-        <Group justify="space-between" align="flex-end" wrap="wrap">
-          <TextInput
-            label="Filter by month"
-            type="month"
-            value={date}
-            max={maxMonth}
-            onChange={(e) => setDate(e.target.value)}
-            w={{ base: '100%', xs: 200 }}
-          />
-          <Button component={Link} to="/expense/addexpense" leftSection={<IconPlus size={16} />}>
-            Add New Expense
-          </Button>
-        </Group>
+      <div className="et-date-range">
+        <ExpenseMonthFilter startDate={startDate} endDate={endDate} onChange={applyRange} />
+      </div>
 
-        <Paper shadow="sm" radius="md" withBorder>
-          <Table.ScrollContainer minWidth={600}>
-            <Table striped highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>S No</Table.Th>
-                  <Table.Th>Description</Table.Th>
-                  <Table.Th>Category</Table.Th>
-                  <Table.Th>Date</Table.Th>
-                  <Table.Th>
-                    <Stack gap={0}>
-                      <Text size="sm">Amount</Text>
-                      <Text size="xs" c="dimmed">
-                        Total: <CountUp end={pageTotalAmount} prefix="₹" separator="," />
-                      </Text>
-                    </Stack>
-                  </Table.Th>
-                  <Table.Th>Actions</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>{rows}</Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        </Paper>
+      <Panel
+        title="All expenses"
+        hint={
+          expenses.length > 0
+            ? `${formatDisplayDate(startDate)} – ${formatDisplayDate(endDate)} · Page total: ₹${pageTotalAmount.toLocaleString('en-IN')}`
+            : `${formatDisplayDate(startDate)} – ${formatDisplayDate(endDate)}`
+        }
+      >
+        <ResponsiveTable minWidth={640}>
+          <thead>
+            <tr>
+              <th>S No</th>
+              <th>Description</th>
+              <th>Category</th>
+              <th>Date</th>
+              <th>Amount</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>{rows}</tbody>
+        </ResponsiveTable>
+      </Panel>
 
-        {expenses.length > 0 && (
-          <Center>
-            <Pagination value={currentPage} onChange={setCurrentPage} total={totalPages} />
-          </Center>
-        )}
-      </Stack>
+      {expenses.length > 0 && (
+        <div className="et-pagination-wrap">
+          <Pagination value={currentPage} onChange={setCurrentPage} total={totalPages} color="navy" />
+        </div>
+      )}
     </AppShellLayout>
   );
 }

@@ -44,6 +44,12 @@ export interface ParentOtpRequest {
   parentotp?: string;
 }
 
+export interface ParentLoginResponse {
+  token: string;
+  message: string;
+  children: import('./entities').User[];
+}
+
 export interface CategoryRequest {
   name: string;
 }

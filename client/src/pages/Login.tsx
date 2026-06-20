@@ -7,7 +7,6 @@ import {
   PasswordInput,
   Button,
   Stack,
-  Alert,
   Group,
   Anchor,
 } from '@mantine/core';
@@ -66,14 +65,14 @@ function Login() {
     <AuthLayout
       sidePanel={
         <Stack justify="center" align="center" h="100%" gap="md">
-          <Title order={2} c="white" ta="center">
+          <Title order={2} style={{ color: '#fff', textAlign: 'center', fontFamily: 'Space Grotesk, sans-serif' }}>
             Parent Login
           </Title>
-          <Text c="indigo.1" ta="center">
+          <Text style={{ color: 'rgba(255,255,255,0.75)', textAlign: 'center' }}>
             Are you a parent?
           </Text>
           <IconArrowDown color="white" size={24} />
-          <Button component={Link} to="/parentlogin" color="brand" size="md" fullWidth>
+          <Button component={Link} to="/parentlogin" className="et-btn et-btn-amber" style={{ width: '100%' }}>
             Parent Login
           </Button>
         </Stack>
@@ -81,10 +80,10 @@ function Login() {
     >
       <Stack gap="lg">
         <div>
-          <Title order={2} ta="center">
+          <Title order={2} ta="center" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             Welcome back
           </Title>
-          <Text c="dimmed" size="sm" ta="center" mt={4}>
+          <Text size="sm" ta="center" mt={4} style={{ color: 'var(--et-ink-soft)' }}>
             Sign in to manage your expenses
           </Text>
         </div>
@@ -111,22 +110,25 @@ function Login() {
         </Stack>
 
         {uiState.error.show && (
-          <Alert color="red" variant="light">
-            {uiState.error.message}
-          </Alert>
+          <div className="et-alert et-alert-error">{uiState.error.message}</div>
         )}
 
         <Group justify="space-between" align="center">
-          <Button onClick={handleSubmit} loading={uiState.isLoading} fullWidth style={{ flex: 1 }}>
+          <Button
+            onClick={handleSubmit}
+            loading={uiState.isLoading}
+            className="et-btn et-btn-primary"
+            style={{ width: '100%' }}
+          >
             Login
           </Button>
         </Group>
 
         <Group justify="space-between">
-          <Anchor component={Link} to="/forgetpassword" size="sm">
+          <Anchor component={Link} to="/forgetpassword" size="sm" style={{ color: 'var(--et-navy)' }}>
             Forgot password?
           </Anchor>
-          <Anchor component={Link} to="/registration" size="sm">
+          <Anchor component={Link} to="/registration" size="sm" style={{ color: 'var(--et-navy)' }}>
             Create account
           </Anchor>
         </Group>
