@@ -4,10 +4,11 @@ import * as cookieParser from 'cookie-parser';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { ConfigService } from '@nestjs/config';
+import { ApiExceptionFilter } from './filters/api-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  // mongoose.set('debug', true); // Enable Mongoose debug mode
+  app.useGlobalFilters(new ApiExceptionFilter());
 
   app.use(cookieParser());
   const configService = app.get(ConfigService);

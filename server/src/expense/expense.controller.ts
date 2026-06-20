@@ -9,122 +9,94 @@ import {
   Param,
   Query,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { ExpenseService } from './expense.service';
 import { RequestExpense } from 'src/request';
-import { ResponseDto } from 'src/response';
-import { Expense } from 'src/schemas/expense.schma';
+import { sendError, sendPaginated, sendSuccess } from 'src/utils/api-response.util';
 
-@Controller('expense')
+@Controller('api/expense')
 export class ExpenseController {
   constructor(private readonly expenseService: ExpenseService) {}
 
   @Post()
-  async createExpense(
-    @Body() body: RequestExpense,
-    @Res() reply: any,
-  ): Promise<void | Expense> {
-    const response: ResponseDto = {
-      data: null,
-    };
+  async createExpense(@Body() body: RequestExpense, @Res() reply: Response): Promise<void> {
     try {
-      response.data = await this.expenseService.createExpense({
+      const expense = await this.expenseService.createExpense({
         userId: body.userId,
         description: body.description,
         amount: body.amount,
         date: body.date,
         categoryId: body.categoryId,
       });
-      reply.status(200).send(response);
+      sendSuccess(reply, { item: expense });
     } catch (error) {
-      if (error.name === 'ValidationError') {
-        error.message = 'Bad Inputs.'
-        return reply.status(400).send(error);
-      } 
-      if(error.status === 400) {
-        error.message = 'Enter vaild Amount.'
-        return reply.status(400).send(error);
+      if (error?.name === 'ValidationError' || error?.status === 400) {
+        return sendError(reply, 'Enter valid amount.', 400);
       }
-      reply.status(500).send(error);
+      sendError(reply, error?.message || 'Failed to create expense', 500);
     }
   }
+
   @Put('/:id')
   async updateExpenseById(
     @Param('id') id: string,
-    @Res() reply: any,
+    @Res() reply: Response,
     @Body() body: RequestExpense,
-  ): Promise<Expense | void> {
-    const response: ResponseDto = {
-      data: null,
-    };
+  ): Promise<void> {
     try {
-      const putExpense = await this.expenseService.updateExpense(id, body);
-      response.data = putExpense;
-      reply.status(200).send(response);
+      const expense = await this.expenseService.updateExpense(id, body);
+      sendSuccess(reply, { item: expense });
     } catch (error) {
-      reply.status(500).send(response);
+      sendError(reply, error?.message || 'Failed to update expense', 500);
     }
   }
+
   @Delete('/:id')
-  async deleteExepenseById(
-    @Param('id') id: string,
-    @Res() reply: any,
-  ): Promise<Expense | void> {
-    const response : ResponseDto = {
-      data: null
-    }
+  async deleteExepenseById(@Param('id') id: string, @Res() reply: Response): Promise<void> {
     try {
-      const deleteData = await this.expenseService.deleteExpense(id);
-      response.data = deleteData;
-      reply.status(200).send(response);
+      const expense = await this.expenseService.deleteExpense(id);
+      sendSuccess(reply, { item: expense });
     } catch (error) {
-      reply.status(500).send(error);
+      sendError(reply, error?.message || 'Failed to delete expense', 500);
     }
   }
-  @Get('/:id')
-  async fetchExpenseById(
-    @Param('id') id: string,
-    @Res() reply: any,
-  ): Promise<Expense[] | void> {
-    const response: ResponseDto = {
-      data: null,
-    };
-    try {
-      const userExpense = await this.expenseService.fetchExpense(id);
-      if (!userExpense?.length) {
-        return reply.status(404).send(response);
-      } 
-      response.data = userExpense;
-      reply.status(200).send(response); 
-    } catch (error) {
-      return reply.status(500).send(error);
-    }
-  }
+
   @Get('/userexpense/:id')
   async fetchExpensesByUserId(
     @Param('id') id: string,
-    @Res() reply: any,
+    @Res() reply: Response,
     @Query('date') date: string,
     @Query('limit') limit: number,
     @Query('page') page: number,
-  ): Promise<Expense | void> {
-    const response: ResponseDto = {
-      data: null,
-    };
+  ): Promise<void> {
     try {
-      const userExpenses = await this.expenseService.fetchUserExpenses(
-        id,
-        date,
-        limit,
-        page,
-      );
-      if (!Array(userExpenses).length) {
-        return reply.status(200).send(response);
-      } 
-      response.data = userExpenses;
-      reply.status(200).send(response);
+      const result = await this.expenseService.fetchUserExpenses(id, date, limit, page);
+      const data = result as {
+        limit: number;
+        page: number;
+        total: number;
+        userExpenseData: unknown[];
+      };
+      sendPaginated(reply, data.userExpenseData || [], {
+        limit: data.limit,
+        page: data.page,
+        total: data.total,
+      });
     } catch (error) {
-      console.log(error)
-      reply.status(500).send(error);
+      sendError(reply, error?.message || 'Failed to fetch expenses', 500);
+    }
+  }
+
+  @Get('/:id')
+  async fetchExpenseById(@Param('id') id: string, @Res() reply: Response): Promise<void> {
+    try {
+      const expenses = await this.expenseService.fetchExpense(id);
+      if (!expenses?.length) {
+        return sendError(reply, 'Expense not found', 404);
+      }
+      sendSuccess(reply, { item: expenses[0] });
+    } catch (error) {
+      sendError(reply, error?.message || 'Failed to fetch expense', 500);
     }
   }
 }

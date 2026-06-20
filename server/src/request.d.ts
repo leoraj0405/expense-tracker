@@ -1,52 +1,52 @@
-import { User } from "./schemas/user.schema"
-import { Category } from "./schemas/category.schema"
+import { User } from './entities/user.entity';
+import { Category } from './entities/category.entity';
 
 export interface RequestUser {
-    name: User.name,
-    email: User.email,
-    password: User.password,
-    parentEmail: User.parentEmail,
+  name: User['name'];
+  email: User['email'];
+  password: User['password'];
+  parentEmail: User['parentEmail'];
 }
 
 export interface RequestCategory {
-    name: Category.name
+  name: Category['name'];
 }
 
 export interface RequestExpense {
-    userId: string,
-    description: string,
-    amount: number,
-    date: string,
-    categoryId: string
+  userId: string;
+  description: string;
+  amount: number;
+  date: string;
+  categoryId: string;
 }
 
 export interface RequestGroup {
-    name: string,
-    createdBy: string
+  name: string;
+  createdBy: string;
 }
 
 export interface RequestGrpExpense {
-    groupId: string,
-    description: string,
-    amount: number,
-    userId: string,
-    categoryId: string,
-    splitMethod: string
-    usersAndShares: {memberId: string, share: number }[] 
+  groupId: string;
+  description: string;
+  amount: number;
+  userId: string;
+  categoryId: string;
+  splitMethod: string;
+  usersAndShares: { memberId: string; share: number }[];
 }
 
 export interface RequestGrpMember {
-    groupId: string,
-    email?: string,
-    userId?: string
+  groupId: string;
+  email?: string;
+  userId?: string;
 }
 
 export interface LoginUserReq {
-    email: string,
-    password: string
+  email: string;
+  password: string;
 }
 
 export interface LoginParentReq {
-    parentEmail : string,
-    parentotp:? string
+  parentEmail: string;
+  parentotp?: string;
 }

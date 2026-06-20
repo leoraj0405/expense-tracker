@@ -13,14 +13,23 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import type { LoginParentReq, LoginUserReq, RequestUser } from '../request';
-import { ResponseDto } from '../response';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { Response } from 'express';
+import { sendError, sendSuccess, buildSuccess } from '../utils/api-response.util';
 
-@Controller('user')
+const profileStorage = diskStorage({
+  destination: './uploads',
+  filename: (_req, file, cb) => {
+    const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, `${uniqueName}${extname(file.originalname)}`);
+  },
+});
+
+@Controller('api/user')
 export class UserController {
   constructor(
     private readonly userService: UserService,
@@ -29,29 +38,14 @@ export class UserController {
   ) {}
 
   @Post()
-  @UseInterceptors(
-    FileInterceptor('profileImage', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, cb) => {
-          const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          cb(null, `${uniqueName}${extname(file.originalname)}`);
-        },
-      }),
-    }),
-  )
+  @UseInterceptors(FileInterceptor('profileImage', { storage: profileStorage }))
   async createUser(
     @UploadedFile() file: Express.Multer.File,
     @Body() body: RequestUser,
-    @Res() reply: any,
+    @Res() reply: Response,
   ): Promise<void> {
-    console.log('leo');
-    const response: ResponseDto = {
-      data: null,
-    };
-    console.log(file, body);
     try {
-      response.data = await this.userService.createUser(
+      const user = await this.userService.createUser(
         {
           name: body.name,
           email: body.email,
@@ -60,263 +54,213 @@ export class UserController {
         },
         file,
       );
-      reply.status(200).send(response);
+      sendSuccess(reply, { item: user });
     } catch (error) {
-      reply.status(500).send(response);
+      sendError(reply, error?.message || 'Failed to create user', 500);
     }
   }
+
   @Put('/:id')
-  @UseInterceptors(
-    FileInterceptor('profileImage', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, cb) => {
-          const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          cb(null, `${uniqueName}${extname(file.originalname)}`);
-        },
-      }),
-    }),
-  )
+  @UseInterceptors(FileInterceptor('profileImage', { storage: profileStorage }))
   async updateUser(
     @Body() body: RequestUser,
-    @Param('id') id: any,
-    @Res() reply: any,
+    @Param('id') id: string,
+    @Res() reply: Response,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<void> {
-    const response: ResponseDto = {
-      data: null,
-    };
     try {
-      response.data = await this.userService.updateUser(
-        { id, updateData: body },
-        file,
-      );
-      reply.status(200).send(response);
+      const user = await this.userService.updateUser({ id, updateData: body }, file);
+      sendSuccess(reply, { item: user });
     } catch (error) {
-      reply.status(500).send(response);
+      sendError(reply, error?.message || 'Failed to update user', 500);
     }
   }
+
   @Delete('/:id')
-  async deleteUser(@Param('id') id: any, @Res() reply: any): Promise<void> {
-    const response: ResponseDto = {
-      data: null,
-    };
+  async deleteUser(@Param('id') id: string, @Res() reply: Response): Promise<void> {
     try {
-      response.data = await this.userService.deleteUser(id);
-      reply.status(200).send(response);
+      const user = await this.userService.deleteUser(id);
+      sendSuccess(reply, { item: user });
     } catch (error) {
-      reply.status(500).send(response);
+      sendError(reply, error?.message || 'Failed to delete user', 500);
     }
   }
 
   @Post('/login')
-  async loginUser(
-    @Res() reply: any,
-    @Body() body: LoginUserReq,
-    @Req() req: any,
-  ): Promise<void> {
-    const response: ResponseDto = {
-      data: null,
-    };
+  async loginUser(@Res() reply: Response, @Body() body: LoginUserReq): Promise<void> {
     try {
-      const loggedUser = await this.userService.loginUser(
-        body.email,
-        body.password,
-      );
+      const loggedUser = await this.userService.loginUser(body.email, body.password);
       if (!loggedUser) {
-        return reply.status(401).send('Invalid Credentials.');
+        return sendError(reply, 'Invalid Credentials.', 401);
       }
       const { name, email, profileImage } = loggedUser;
-      const payload = {
-        id: loggedUser?._id?.toString(),
-        name,
-        email,
-        profileImage,
-      };
+      const payload = { id: loggedUser.id, name, email, profileImage };
       const token = this.jwtService.sign(payload);
-      reply.cookie('jwt', token, {
-        httpOnly: true,
-        secure: false, // set false for local dev
-        sameSite: 'strict',
-        maxAge: 30 * 60 * 1000, // 30 minutes
+      sendSuccess(reply, {
+        item: {
+          token,
+          loggedUserData: { name, email, profileImage, id: loggedUser.id },
+        },
       });
-      reply.status(200).json(token);
     } catch (error) {
-      console.log(error);
-      reply.status(500).send(error);
+      sendError(reply, error?.message || 'Login failed', 500);
     }
   }
 
   @Get('/me')
-  getMe(@Req() req) {
-    return req.user;
+  getMe(@Req() req: { user: Record<string, unknown> }) {
+    const user = req.user;
+    return buildSuccess({ item: { ...user, _id: user.id } });
   }
 
   @Get('/parenthome')
-  async parentHome(@Res() reply: any, @Req() request: any): Promise<void> {
-    const response: ResponseDto = {
-      data: null,
-    };
+  async parentHome(@Res() reply: Response, @Req() request: any): Promise<void> {
     try {
-      if (request.session.parentIsLogged) {
-        response.data = request.session.parentData;
-        return reply.status(200).send(response);
+      if (request.session?.parentIsLogged) {
+        return sendSuccess(reply, { items: request.session.parentData || [] });
       }
-      response.data = [];
-      reply.status(400).send(response);
+      sendError(reply, 'Parent not logged in', 400);
     } catch (error) {
-      reply.status(500).send(response);
+      sendError(reply, error?.message || 'Failed to fetch parent home', 500);
     }
   }
 
   @Get('/home')
-  async homeUser(@Res() reply: any, @Req() request: any): Promise<void> {
-    const response: ResponseDto = {
-      data: null,
-    };
+  async homeUser(@Res() reply: Response, @Req() request: any): Promise<void> {
     try {
-      if (!request.session.isLogged) {
-        return reply.status(401).send('First you need to login.');
+      if (!request.session?.isLogged) {
+        return sendError(reply, 'First you need to login.', 401);
       }
-      response.data = request.session.data;
       const userProfile = request.session.data.profileImage;
-      response.profileUrl = `/uploads/${userProfile}`;
-      reply.status(200).send(response);
-    } catch (error) {
-      reply.status(500).send(response);
-    }
-  }
-  @Get('/logout')
-  async logoutUser(@Res() reply: any, @Req() request: any): Promise<void> {
-    const response: ResponseDto = {
-      data: null,
-    };
-    try {
-      if (!request.session.isLogged) {
-        return reply.status(400).send(response);
-      }
-      request.session.destroy((err) => {
-        if (err) {
-          return reply.status(500).send(response);
-        }
-        reply.status(200).send(response);
+      sendSuccess(reply, {
+        item: {
+          ...request.session.data,
+          profileUrl: `/uploads/${userProfile}`,
+        },
       });
     } catch (error) {
-      return reply.status(500).send(response);
+      sendError(reply, error?.message || 'Failed to fetch home', 500);
     }
   }
+
+  @Get('/logout')
+  async logoutUser(@Res() reply: Response, @Req() request: any): Promise<void> {
+    try {
+      if (!request.session?.isLogged) {
+        return sendError(reply, 'Not logged in', 400);
+      }
+      request.session.destroy((err: Error) => {
+        if (err) {
+          return sendError(reply, 'Logout failed', 500);
+        }
+        sendSuccess(reply, { item: null });
+      });
+    } catch (error) {
+      sendError(reply, error?.message || 'Logout failed', 500);
+    }
+  }
+
   @Get('/:id')
-  async findOneUser(@Res() reply: any, @Param('id') id: string): Promise<void> {
-    const response: ResponseDto = {
-      data: null,
-    };
+  async findOneUser(@Res() reply: Response, @Param('id') id: string): Promise<void> {
     try {
       const oneUser = await this.userService.findOneUser(id);
       if (!oneUser) {
-        return reply.status(404).send(response);
-      } else {
-        response.profileUrl = `/uploads/${oneUser.profileImage}`;
-        response.data = oneUser;
-        reply.status(200).send(response);
+        return sendError(reply, 'User not found', 404);
       }
+      sendSuccess(reply, {
+        item: {
+          ...oneUser,
+          profileUrl: `/uploads/${oneUser.profileImage}`,
+        },
+      });
     } catch (error) {
-      reply.status(500).send(response);
+      sendError(reply, error?.message || 'Failed to fetch user', 500);
     }
   }
+
   @Post('/processotp')
-  async processOTP(@Res() reply: any, @Body() body: any): Promise<void> {
+  async processOTP(@Res() reply: Response, @Body() body: any): Promise<void> {
     try {
       const process = await this.userService.processOTP(
         body.email,
         body.otp,
         body.password,
       );
-      console.log(process);
       if (!process) {
-        return reply.status(401).send(null);
+        return sendError(reply, 'Invalid email or OTP', 401);
       }
-      reply.status(200).send(process);
+      sendSuccess(reply, { item: process });
     } catch (error) {
-      reply.status(500).send(error);
+      sendError(reply, error?.message || 'Failed to process OTP', 500);
     }
   }
 
   @Post('/parentgenerateotp')
-  async findParent(
-    @Res() reply: any,
-    @Body() body: LoginParentReq,
-  ): Promise<void> {
-    const response: ResponseDto = {
-      data: null,
-    };
+  async findParent(@Res() reply: Response, @Body() body: LoginParentReq): Promise<void> {
     try {
       const findParent = await this.userService.parentGenerateOtp(body);
       if (!findParent) {
-        return reply.status(404).send(response);
+        return sendError(reply, 'Parent not found', 404);
       }
-      response.data = findParent;
-      reply.status(200).send(response);
+      sendSuccess(reply, { item: findParent });
     } catch (error) {
-      reply.status(500).send(response);
+      sendError(reply, error?.message || 'Failed to generate OTP', 500);
     }
   }
+
   @Post('/parentproccessotp')
   async processOtp(
-    @Res() reply: any,
+    @Res() reply: Response,
     @Body() body: LoginParentReq,
     @Req() request: any,
   ): Promise<void> {
-    const response: ResponseDto = {
-      data: null,
-    };
     try {
-      let email = body.parentEmail;
-      let otp = body.parentotp;
+      const email = body.parentEmail;
+      const otp = body.parentotp;
       const processOtp = await this.userService.parentProcessOtp(email, otp);
       if (!processOtp) {
-        request.session.parentIsLogged = false;
-        request.session.parentData = [];
-        return reply.status(404).send(response);
+        if (request.session) {
+          request.session.parentIsLogged = false;
+          request.session.parentData = [];
+        }
+        return sendError(reply, 'Invalid OTP', 404);
       }
-      request.session.parentIsLogged = true;
-      request.session.parentData = processOtp;
-      response.data = 'You succesfully logged';
-      reply.status(200).send(response);
+      if (request.session) {
+        request.session.parentIsLogged = true;
+        request.session.parentData = processOtp;
+      }
+      sendSuccess(reply, { item: 'You successfully logged in' });
     } catch (error) {
-      reply.status(500).send(response);
+      sendError(reply, error?.message || 'Failed to process parent OTP', 500);
     }
   }
+
   @Post('/checkuser')
-  async checkUserByEmail(@Res() reply: any, @Body() body: any): Promise<void> {
-    const response: ResponseDto = {
-      data: null,
-    };
+  async checkUserByEmail(@Res() reply: Response, @Body() body: { email: string }): Promise<void> {
     try {
-      let email = body.email;
-      const isUser = await this.userService.checkUserByEmail(email);
+      const isUser = await this.userService.checkUserByEmail(body.email);
       if (!isUser?.length) {
-        return reply.status(404).send(response);
+        return sendError(reply, 'User not found', 404);
       }
-      response.data = isUser[0];
-      reply.status(200).send(response);
+      sendSuccess(reply, { item: isUser[0] });
     } catch (error) {
-      reply.status(500).send(response);
+      sendError(reply, error?.message || 'Failed to check user', 500);
     }
   }
 
   @Post('/generateotp')
   async generateOTPByUserEmail(
-    @Res() reply: any,
-    @Body() body: any,
+    @Res() reply: Response,
+    @Body() body: { email: string },
   ): Promise<void> {
     try {
       const createOTP = await this.userService.generateOTP(body.email);
       if (!createOTP) {
-        return reply.status(401).send(null);
+        return sendError(reply, 'Invalid email address', 401);
       }
-      reply.status(200).send(createOTP);
+      sendSuccess(reply, { item: createOTP });
     } catch (error) {
-      reply.status(500).send(error);
+      sendError(reply, error?.message || 'Failed to generate OTP', 500);
     }
   }
 }

@@ -1,37 +1,13 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { CategoryController } from './category.controller';
 import { CategoryService } from './category.service';
-import { Category, CategorySchema } from 'src/schemas/category.schema';
-import { MongooseModule } from '@nestjs/mongoose';
-import { Expense, ExpenseSchema } from 'src/schemas/expense.schma';
-import {
-  GroupExpense,
-  GroupExpenseSchema,
-} from 'src/schemas/groupExpense.schema';
+import { Category } from '../entities/category.entity';
+import { Expense } from '../entities/expense.entity';
+import { GroupExpense } from '../entities/group-expense.entity';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([
-      {
-        name: Category.name,
-        schema: CategorySchema,
-      },
-    ]),
-    MongooseModule.forFeature([
-      {
-        name: Expense.name,
-        schema: ExpenseSchema,
-      },
-    ]),
-
-    MongooseModule.forFeature([
-      {
-        name: GroupExpense.name,
-        schema: GroupExpenseSchema,
-      },
-    ]),
-  ],
-
+  imports: [TypeOrmModule.forFeature([Category, Expense, GroupExpense])],
   providers: [CategoryService],
   controllers: [CategoryController],
 })

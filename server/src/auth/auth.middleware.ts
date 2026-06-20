@@ -15,7 +15,7 @@ export class AuthMiddleware implements NestMiddleware {
   ) {}
 
   use(req: Request, res: Response, next: NextFunction) {
-    const token = req.cookies?.jwt;
+    const token = req.headers.authorization?.split(' ')[1];
 
     if (!token) {
       throw new UnauthorizedException('Token missing');
@@ -25,21 +25,6 @@ export class AuthMiddleware implements NestMiddleware {
         secret: this.configService.get<string>('SEMETRIC_KEY'),
       });
       req['user'] = decoded;
-      const newToken = this.jwtService.sign(
-        { id: decoded.id, email: decoded.email },
-        {
-          secret: this.configService.get<string>('SEMETRIC_KEY'),
-          expiresIn: '30m',
-        },
-      );
-
-      res.cookie('jwt', newToken, {
-        httpOnly: true,
-        secure: false, 
-        sameSite: 'strict',
-        maxAge: 30 * 60 * 1000, // 30 mins
-      });
-
       next();
     } catch (error) {
       throw new UnauthorizedException('Invalid or expired token');

@@ -1,11 +1,10 @@
 import {
-  Inject,
   Module,
   MiddlewareConsumer,
   NestModule,
   RequestMethod,
 } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './user/user.module';
 import { CategoryModule } from './category/category.module';
 import { ExpenseModule } from './expense/expense.module';
@@ -17,11 +16,24 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthMiddleware } from './auth/auth.middleware';
 import { JwtModule } from '@nestjs/jwt';
 
-
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+    }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        type: 'mysql',
+        host: config.get<string>('DB_HOST', 'localhost'),
+        port: config.get<number>('DB_PORT', 3306),
+        username: config.get<string>('DB_USER', 'root'),
+        password: config.get<string>('DB_PASSWORD', 'Root1234@'),
+        database: config.get<string>('DB_NAME', 'expensestracker'),
+        autoLoadEntities: true,
+        synchronize: true,
+      }),
     }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -47,7 +59,6 @@ import { JwtModule } from '@nestjs/jwt';
         },
       }),
     }),
-    MongooseModule.forRoot('mongodb://localhost:27017/expenseTracker'),
     UserModule,
     CategoryModule,
     ExpenseModule,
@@ -56,20 +67,19 @@ import { JwtModule } from '@nestjs/jwt';
     GroupMemberModule,
   ],
 })
-
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(AuthMiddleware)
       .exclude(
-        'user/login',
-        'user/registration',
-        'user/parenthome/',
-        'user/processotp',
-        'user/parentgenerateotp',
-        'user/parentproccessotp',
-        'user/generateotp',
-        'user/checkuser'
+        { path: 'api/user/login', method: RequestMethod.POST },
+        { path: 'api/user', method: RequestMethod.POST },
+        { path: 'api/user/parenthome/', method: RequestMethod.GET },
+        { path: 'api/user/processotp', method: RequestMethod.POST },
+        { path: 'api/user/parentgenerateotp', method: RequestMethod.POST },
+        { path: 'api/user/parentproccessotp', method: RequestMethod.POST },
+        { path: 'api/user/generateotp', method: RequestMethod.POST },
+        { path: 'api/user/checkuser', method: RequestMethod.POST },
       )
       .forRoutes({ path: '*', method: RequestMethod.ALL });
   }

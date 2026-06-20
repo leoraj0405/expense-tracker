@@ -9,116 +9,89 @@ import {
   Param,
   Query,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { CategoryService } from './category.service';
 import { RequestCategory } from 'src/request';
-import { ResponseDto } from 'src/response';
-import { Category } from 'src/schemas/category.schema';
+import { sendError, sendPaginated, sendSuccess } from 'src/utils/api-response.util';
 
-@Controller('category')
+@Controller('api/category')
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
   @Post('/')
   async createNewCategory(
     @Body() body: RequestCategory,
-    @Res() reply: any,
-  ): Promise<void | Category> {
-    const response: ResponseDto = {
-      data: null,
-    };
+    @Res() reply: Response,
+  ): Promise<void> {
     try {
-      response.data = await this.categoryService.createCategory({
-        name: body.name,
-      });
-      reply.status(200).send(response);
+      const category = await this.categoryService.createCategory({ name: body.name });
+      sendSuccess(reply, { item: category });
     } catch (error) {
-      if (error.code === 11000) {
-        return reply.status(409).send('This entry already exists');
+      if (error?.code === 11000) {
+        return sendError(reply, 'This entry already exists', 409);
       }
-      reply.status(500).send(response);
+      sendError(reply, error?.message || 'Failed to create category', 500);
     }
   }
 
   @Get('/')
   async fetchAllCategory(
-    @Res() reply: any,
+    @Res() reply: Response,
     @Query('limit') limit: number,
     @Query('page') page: number,
-  ): Promise<void | Category> {
-    const response: ResponseDto = {
-      data: null,
-    };
+  ): Promise<void> {
     try {
-      const getCategory = await this.categoryService.findAllCategory(
-        page,
-        limit,
-      );
-      if (!Array(getCategory).length) {
-        response.data = [];
-        return reply.status(404).send(response);
-      }
-      response.data = getCategory;
-      reply.status(200).send(response);
+      const result = await this.categoryService.findAllCategory(page, limit);
+      const data = result as {
+        limit: number;
+        page: number;
+        total: number;
+        categoryData: unknown[];
+      };
+      sendPaginated(reply, data.categoryData || [], {
+        limit: data.limit,
+        page: data.page,
+        total: data.total,
+      });
     } catch (error) {
-      reply.status(500).send(error);
+      sendError(reply, error?.message || 'Failed to fetch categories', 500);
     }
   }
 
   @Put('/:id')
   async putCategory(
     @Param('id') id: string,
-    @Res() reply: any,
+    @Res() reply: Response,
     @Body() body: RequestCategory,
-  ): Promise<Category | void> {
-    const response: ResponseDto = {
-      data: null,
-    };
+  ): Promise<void> {
     try {
-      const putCategory = await this.categoryService.updateCategoryById(
-        id,
-        body,
-      );
-      response.data = putCategory;
-      reply.status(200).send(response);
+      const category = await this.categoryService.updateCategoryById(id, body);
+      sendSuccess(reply, { item: category });
     } catch (error) {
-      reply.status(500).send(response);
+      sendError(reply, error?.message || 'Failed to update category', 500);
     }
   }
 
   @Delete('/:id')
-  async deleteCategory(
-    @Param('id') id: string,
-    @Res() reply: any,
-  ): Promise<Category | void> {
-    const response: ResponseDto = {
-      data: null,
-    };
+  async deleteCategory(@Param('id') id: string, @Res() reply: Response): Promise<void> {
     try {
-      const deleteData = await this.categoryService.deleteCategory(id);
-      response.data = deleteData;
-      reply.status(200).send(response);
+      const category = await this.categoryService.deleteCategory(id);
+      sendSuccess(reply, { item: category });
     } catch (error) {
-      reply.status(500).send(error.message);
+      sendError(reply, error?.message || 'Failed to delete category', 500);
     }
   }
 
   @Get('/:id')
-  async getSingleCategory(
-    @Param('id') id: string,
-    @Res() reply: any,
-  ): Promise<Category | void> {
-    const response: ResponseDto = {
-      data: null,
-    };
+  async getSingleCategory(@Param('id') id: string, @Res() reply: Response): Promise<void> {
     try {
-      const oneCategory = await this.categoryService.findCategoryById(id);
-      if (!oneCategory) {
-        return reply.status(404).send(response);
+      const category = await this.categoryService.findCategoryById(id);
+      if (!category) {
+        return sendError(reply, 'Category not found', 404);
       }
-      response.data = oneCategory;
-      reply.status(200).send(response);
+      sendSuccess(reply, { item: category });
     } catch (error) {
-      reply.status(500).send(response);
+      sendError(reply, error?.message || 'Failed to fetch category', 500);
     }
   }
 }

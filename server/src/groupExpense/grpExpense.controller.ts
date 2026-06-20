@@ -8,25 +8,22 @@ import {
   Res,
   Param,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { GrpExpenseService } from './grpExpense.service';
 import { RequestGrpExpense } from 'src/request';
-import { ResponseDto } from 'src/response';
-import { GroupExpense } from 'src/schemas/groupExpense.schema';
+import { sendError, sendSuccess } from 'src/utils/api-response.util';
 
-@Controller('groupexpense')
+@Controller('api/groupexpense')
 export class GrpExpenseController {
   constructor(private readonly grpExpenseService: GrpExpenseService) {}
 
   @Post()
   async createGroupExpense(
     @Body() body: RequestGrpExpense,
-    @Res() reply: any,
-  ): Promise<void | GroupExpense> {
-    const response: ResponseDto = {
-      data: null,
-    };
+    @Res() reply: Response,
+  ): Promise<void> {
     try {
-      response.data = await this.grpExpenseService.createGroupExpense({
+      const expense = await this.grpExpenseService.createGroupExpense({
         groupId: body.groupId,
         description: body.description,
         amount: body.amount,
@@ -35,92 +32,49 @@ export class GrpExpenseController {
         usersAndShares: body.usersAndShares,
         splitMethod: body.splitMethod,
       });
-      reply.status(200).send(response);
+      sendSuccess(reply, { item: expense });
     } catch (error) {
-      console.log(error);
-      reply.status(500).send(response);
+      sendError(reply, error?.message || 'Failed to create group expense', 500);
     }
   }
 
   @Put('/:id')
   async updateGroupExpenseById(
     @Param('id') id: string,
-    @Res() reply: any,
+    @Res() reply: Response,
     @Body() body: RequestGrpExpense,
-  ): Promise<GroupExpense | null | void> {
-    const response: ResponseDto = {
-      data: null,
-    };
+  ): Promise<void> {
     try {
-      response.data = await this.grpExpenseService.updateGroupExpenseById(
-        id,
-        body,
-      );
-      reply.status(200).send(response);
+      const expense = await this.grpExpenseService.updateGroupExpenseById(id, body);
+      sendSuccess(reply, { item: expense });
     } catch (error) {
-      if (error.status) {
-        return reply.status(400).send(error.message);
+      if (error?.status) {
+        return sendError(reply, error.message || 'Invalid request', 400);
       }
-      reply.status(500).send(error);
+      sendError(reply, error?.message || 'Failed to update group expense', 500);
     }
   }
 
   @Delete('/:id')
-  async deleteGroupExpenseById(
-    @Param('id') id: string,
-    @Res() reply: any,
-  ): Promise<GroupExpense | void> {
-    const response: ResponseDto = {
-      data: null,
-    };
+  async deleteGroupExpenseById(@Param('id') id: string, @Res() reply: Response): Promise<void> {
     try {
-      response.data = await this.grpExpenseService.deleteGroupExpenseById(id);
-      reply.status(200).send(response);
+      const expense = await this.grpExpenseService.deleteGroupExpenseById(id);
+      sendSuccess(reply, { item: expense });
     } catch (error) {
-      reply.status(500).send(response);
-    }
-  }
-
-  @Get('/:id')
-  async fetchGroupExpenseById(
-    @Param('id') id: string,
-    @Res() reply: any,
-  ): Promise<GroupExpense | void> {
-    const response: ResponseDto = {
-      data: null,
-    };
-    try {
-      const oneGroupExpense =
-        await this.grpExpenseService.getGroupExpenseById(id);
-      if (!oneGroupExpense?.length) {
-        return reply.status(404).send(response);
-      }
-      response.data = oneGroupExpense;
-      reply.status(200).send(response);
-    } catch (error) {
-      reply.status(500).send(response);
+      sendError(reply, error?.message || 'Failed to delete group expense', 500);
     }
   }
 
   @Get('/onegroup/:id')
   async fetchGroupExpensesByGroupId(
     @Param('id') id: string,
-    @Res() reply: any,
-  ): Promise<GroupExpense[] | void> {
-    const response: ResponseDto = {
-      data: null,
-    };
+    @Res() reply: Response,
+  ): Promise<void> {
     try {
-      const oneGroupExpenses =
-        await this.grpExpenseService.getGroupExpensesByGroupId(id);
-      if (!oneGroupExpenses.length) {
-        return reply.status(404).send(response);
-      }
-      response.data = oneGroupExpenses;
-      reply.status(200).send(response);
+      const expenses = await this.grpExpenseService.getGroupExpensesByGroupId(id);
+      sendSuccess(reply, { items: expenses || [] });
     } catch (error) {
-      console.log(error);
-      reply.status(500).send(response);
+      sendError(reply, error?.message || 'Failed to fetch group expenses', 500);
     }
   }
 
@@ -128,24 +82,26 @@ export class GrpExpenseController {
   async fetchGroupExpensesByUserId(
     @Param('user') userId: string,
     @Param('group') groupId: string,
-    @Res() reply: any,
-  ): Promise<GroupExpense[] | void> {
-    const response: ResponseDto = {
-      data: null,
-    };
+    @Res() reply: Response,
+  ): Promise<void> {
     try {
-      const userExpenses = await this.grpExpenseService.getExpensesByUserId(
-        userId,
-        groupId,
-      );
-      if (!userExpenses || !userExpenses.length) {
-        return reply.status(404).send(response);
-      }
-      response.data = userExpenses;
-      reply.status(200).send(response);
+      const expenses = await this.grpExpenseService.getExpensesByUserId(userId, groupId);
+      sendSuccess(reply, { items: expenses || [] });
     } catch (error) {
-      console.log(error);
-      reply.status(500).send(response);
+      sendError(reply, error?.message || 'Failed to fetch user group expenses', 500);
+    }
+  }
+
+  @Get('/:id')
+  async fetchGroupExpenseById(@Param('id') id: string, @Res() reply: Response): Promise<void> {
+    try {
+      const expenses = await this.grpExpenseService.getGroupExpenseById(id);
+      if (!expenses?.length) {
+        return sendError(reply, 'Group expense not found', 404);
+      }
+      sendSuccess(reply, { item: expenses[0] });
+    } catch (error) {
+      sendError(reply, error?.message || 'Failed to fetch group expense', 500);
     }
   }
 }

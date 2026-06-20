@@ -8,110 +8,75 @@ import {
   Res,
   Param,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { GroupService } from './group.service';
 import { RequestGroup } from 'src/request';
-import { ResponseDto } from 'src/response';
-import { Group } from 'src/schemas/group.schma';
+import { sendError, sendSuccess } from 'src/utils/api-response.util';
 
-@Controller('group')
+@Controller('api/group')
 export class GroupController {
   constructor(private readonly groupService: GroupService) {}
 
   @Post('/')
-  async creteExpense(
-    @Body() body: RequestGroup,
-    @Res() reply: any,
-  ): Promise<void | Group> {
-    const response: ResponseDto = {
-      data: null,
-    };
+  async creteExpense(@Body() body: RequestGroup, @Res() reply: Response): Promise<void> {
     try {
-      response.data = await this.groupService.createGroup({
+      const group = await this.groupService.createGroup({
         name: body.name,
         createdBy: body.createdBy,
       });
-      reply.status(200).send(response);
+      sendSuccess(reply, { item: group });
     } catch (error) {
-      if (error.name === 'ValidationError') {
-        return reply.status(401).status(response);
+      if (error?.name === 'ValidationError') {
+        return sendError(reply, 'Invalid group data', 401);
       }
-      reply.status(500).send(response);
+      sendError(reply, error?.message || 'Failed to create group', 500);
     }
   }
 
   @Put('/:id')
   async updateGroupById(
     @Param('id') id: string,
-    @Res() reply: any,
+    @Res() reply: Response,
     @Body() body: RequestGroup,
-  ): Promise<Group | void> {
-    const response: ResponseDto = {
-      data: null,
-    };
+  ): Promise<void> {
     try {
-      const putGroup = await this.groupService.updateGroupById(id, body);
-      response.data = putGroup;
-      reply.status(200).send(response);
+      const group = await this.groupService.updateGroupById(id, body);
+      sendSuccess(reply, { item: group });
     } catch (error) {
-      reply.status(500).send(response);
+      sendError(reply, error?.message || 'Failed to update group', 500);
     }
   }
 
   @Delete('/:id')
-  async deleteGroupById(
-    @Param('id') id: string,
-    @Res() reply: any,
-  ): Promise<Group | void> {
-    const response: ResponseDto = {
-      data: null,
-    };
+  async deleteGroupById(@Param('id') id: string, @Res() reply: Response): Promise<void> {
     try {
-      const deleteData = await this.groupService.deleteGroup(id);
-      response.data = deleteData;
-      reply.status(200).send(response);
+      const group = await this.groupService.deleteGroup(id);
+      sendSuccess(reply, { item: group });
     } catch (error) {
-      reply.status(500).send(response);
-    }
-  }
-
-  @Get('/:id')
-  async fetchOneGroupById(
-    @Param('id') id: string,
-    @Res() reply: any,
-  ): Promise<Group | void> {
-    const response: ResponseDto = {
-      data: null,
-    };
-    try {
-      const oneGroup = await this.groupService.fetchGroupById(id);
-      if (!oneGroup || !oneGroup?.length) {
-        return reply.status(404).send(response);
-      }
-      response.data = oneGroup;
-      reply.status(200).send(response);
-    } catch (error) {
-      reply.status(500).send(response);
+      sendError(reply, error?.message || 'Failed to delete group', 500);
     }
   }
 
   @Get('/usergroups/:id')
-  async fetchGroupsByUserId(
-    @Param('id') id: string,
-    @Res() reply: any,
-  ): Promise<Group | void> {
-    const response: ResponseDto = {
-      data: null,
-    };
+  async fetchGroupsByUserId(@Param('id') id: string, @Res() reply: Response): Promise<void> {
     try {
-      const userGroups = await this.groupService.fetchGroupByUserId(id);
-      if (!userGroups || !userGroups.length) {
-        return reply.status(404).send(response);
-      }
-      response.data = userGroups;
-      reply.status(200).send(response);
+      const groups = await this.groupService.fetchGroupByUserId(id);
+      sendSuccess(reply, { items: groups || [] });
     } catch (error) {
-      console.log(error)
-      reply.status(500).send(response);
+      sendError(reply, error?.message || 'Failed to fetch groups', 500);
+    }
+  }
+
+  @Get('/:id')
+  async fetchOneGroupById(@Param('id') id: string, @Res() reply: Response): Promise<void> {
+    try {
+      const groups = await this.groupService.fetchGroupById(id);
+      if (!groups?.length) {
+        return sendError(reply, 'Group not found', 404);
+      }
+      sendSuccess(reply, { item: groups[0] });
+    } catch (error) {
+      sendError(reply, error?.message || 'Failed to fetch group', 500);
     }
   }
 }

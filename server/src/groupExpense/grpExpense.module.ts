@@ -1,29 +1,17 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { GrpExpenseController } from './grpExpense.controller';
 import { GrpExpenseService } from './grpExpense.service';
-import {
-  GroupExpense,
-  GroupExpenseSchema,
-} from 'src/schemas/groupExpense.schema';
-import { MongooseModule } from '@nestjs/mongoose';
-import { GrpMemberService } from 'src/groupMember/grpMember.service';
-import { GroupMember, GroupMemberSchema } from 'src/schemas/groupMember.schema';
+import { GroupExpense } from '../entities/group-expense.entity';
+import { GroupExpenseSplit } from '../entities/group-expense-split.entity';
+import { GroupMemberModule } from 'src/groupMember/grpMember.module';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([
-      {
-        name: GroupExpense.name,
-        schema: GroupExpenseSchema,
-      },
-      {
-        name: GroupMember.name,
-        schema: GroupMemberSchema
-      }
-    ]),
+    TypeOrmModule.forFeature([GroupExpense, GroupExpenseSplit]),
+    GroupMemberModule,
   ],
-  providers: [GrpExpenseService, GrpMemberService],
+  providers: [GrpExpenseService],
   controllers: [GrpExpenseController],
-  exports: [GrpMemberService],
 })
 export class GroupExpenseModule {}

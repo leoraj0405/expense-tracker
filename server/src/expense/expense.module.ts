@@ -1,15 +1,12 @@
-import { Module } from "@nestjs/common";
-import { ExpenseController } from "./expense.controller";
-import { ExpenseService } from "./expense.service";
-import { Expense, ExpenseSchema } from "src/schemas/expense.schma";
-import { MongooseModule } from "@nestjs/mongoose";
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ExpenseController } from './expense.controller';
+import { ExpenseService } from './expense.service';
+import { Expense } from '../entities/expense.entity';
 
 @Module({
-    imports: [MongooseModule.forFeature([{
-        name: Expense.name, schema: ExpenseSchema
-    }])],
-    providers: [ExpenseService],
-    controllers: [ExpenseController],
+  imports: [TypeOrmModule.forFeature([Expense])],
+  providers: [ExpenseService],
+  controllers: [ExpenseController],
 })
-
 export class ExpenseModule {}

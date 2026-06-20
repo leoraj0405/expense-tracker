@@ -1,28 +1,31 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { Category } from '../schemas/category.schema';
-import { Expense } from 'src/schemas/expense.schma';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, IsNull } from 'typeorm';
+import { Category } from '../entities/category.entity';
+import { Expense } from '../entities/expense.entity';
 import { RequestCategory } from '../request';
-import { GroupExpense } from 'src/schemas/groupExpense.schema';
+import { GroupExpense } from '../entities/group-expense.entity';
 
 @Injectable()
 export class CategoryService {
   private readonly logger = new Logger(CategoryService.name);
+
   constructor(
-    @InjectModel(Category.name) private categoryModel: Model<Category>,
-    @InjectModel(Expense.name) private expenseModel: Model<Expense>,
-    @InjectModel(GroupExpense.name)
-    private groupExpenseModel: Model<GroupExpense>,
+    @InjectRepository(Category) private categoryRepo: Repository<Category>,
+    @InjectRepository(Expense) private expenseRepo: Repository<Expense>,
+    @InjectRepository(GroupExpense)
+    private groupExpenseRepo: Repository<GroupExpense>,
   ) {}
 
   async createCategory({ name }: RequestCategory) {
-    const postCategory = new this.categoryModel({
-      name,
-      createdAt: new Date(),
-      updatedAt: null,
-      deletedAt: null,
-    }).save();
+    const postCategory = this.categoryRepo.save(
+      this.categoryRepo.create({
+        name,
+        createdAt: new Date(),
+        updatedAt: null,
+        deletedAt: null,
+      }),
+    );
     this.logger.log(`Create Category ${name}.`);
     return postCategory;
   }
@@ -31,14 +34,11 @@ export class CategoryService {
     const limitNo = limit ?? 5;
     const pageNo = page ?? 1;
     const skip = (pageNo - 1) * limitNo;
-    const category = await this.categoryModel
-      .find({ deletedAt: null })
-      .sort({name: 1})
-      .skip(skip)
-      .limit(limitNo)
-      .exec();
-    const totalCount = await this.categoryModel.countDocuments({
-      deletedAt: null,
+    const [category, totalCount] = await this.categoryRepo.findAndCount({
+      where: { deletedAt: IsNull() },
+      order: { name: 'ASC' },
+      skip,
+      take: limitNo,
     });
     this.logger.log(
       `Categories fetched for page number: ${pageNo}, limit: ${limitNo}.`,
@@ -55,25 +55,20 @@ export class CategoryService {
     id: string,
     updateData: RequestCategory,
   ): Promise<Category | null> {
-    const updateCategory = await this.categoryModel
-      .findByIdAndUpdate(
-        id,
-        { $set: { ...updateData, updatedAt: new Date() } },
-        { new: true },
-      )
-      .exec();
+    await this.categoryRepo.update(id, {
+      ...updateData,
+      updatedAt: new Date(),
+    });
     this.logger.log(`Categories updated for ${updateData}.`);
-    return updateCategory;
+    return this.categoryRepo.findOne({ where: { id } });
   }
 
   async deleteCategory(id: string): Promise<Category | null> {
-    const isUsedInExp = await this.expenseModel.exists({
-      categoryId: id,
-      deletedAt: null,
+    const isUsedInExp = await this.expenseRepo.exists({
+      where: { categoryId: id, deletedAt: IsNull() },
     });
-    const isUsedInGrpExp = await this.groupExpenseModel.exists({
-      categoryId: id,
-      deletedAt: null,
+    const isUsedInGrpExp = await this.groupExpenseRepo.exists({
+      where: { categoryId: id, deletedAt: IsNull() },
     });
     if (isUsedInExp) {
       this.logger.warn(
@@ -92,23 +87,16 @@ export class CategoryService {
         'Category is used in your group expense and cannot be deleted.',
       );
     }
-    const delCategory = await this.categoryModel
-      .findByIdAndUpdate(id, { $set: { deletedAt: new Date() } }, { new: true })
-      .exec();
-
-      this.logger.log(
-        `This ${id} category deleted (soft delete).`,
-      );
-    return delCategory;
+    await this.categoryRepo.update(id, { deletedAt: new Date() });
+    this.logger.log(`This ${id} category deleted (soft delete).`);
+    return this.categoryRepo.findOne({ where: { id } });
   }
 
   async findCategoryById(id: string): Promise<Category | null> {
-    const singleCategory = await this.categoryModel
-      .findOne({ _id: id, deletedAt: null })
-      .exec();
-    this.logger.log(
-        `This ${id} category fetched.`,
-      );
+    const singleCategory = await this.categoryRepo.findOne({
+      where: { id, deletedAt: IsNull() },
+    });
+    this.logger.log(`This ${id} category fetched.`);
     return singleCategory;
   }
 }

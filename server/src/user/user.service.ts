@@ -3,18 +3,19 @@ import {
   UnauthorizedException,
   Logger,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { User } from '../schemas/user.schema';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, IsNull } from 'typeorm';
+import { User } from '../entities/user.entity';
 import { LoginParentReq, RequestUser } from '../request';
 import * as bcrypt from 'bcrypt';
 import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
-export class UserService{
-  private readonly logger = new Logger(User.name);
+export class UserService {
+  private readonly logger = new Logger(UserService.name);
+
   constructor(
-    @InjectModel(User.name) private readonly userModel: Model<User>,
+    @InjectRepository(User) private readonly userRepo: Repository<User>,
     private readonly mailerService: MailerService,
   ) {}
 
@@ -24,7 +25,7 @@ export class UserService{
   ): Promise<User> {
     const hashValueLength = 10;
     const hashedPassword = await bcrypt.hash(password, hashValueLength);
-    const newUser = new this.userModel({
+    const newUser = this.userRepo.create({
       name,
       email,
       password: hashedPassword,
@@ -39,56 +40,45 @@ export class UserService{
       deletedAt: null,
     });
     this.logger.log(`The user created`);
-    return newUser.save();
+    return this.userRepo.save(newUser);
   }
 
   async updateUser(
     { id, updateData }: { id: string; updateData: RequestUser },
     file: Express.Multer.File,
   ): Promise<User | null> {
-    const updateUser = this.userModel.findByIdAndUpdate(
-      id,
-      {
-        $set: {
-          ...updateData,
-          updatedAt: new Date(),
-          profileImage: file?.filename || null,
-        },
-      },
-      { new: true },
-    );
+    await this.userRepo.update(id, {
+      ...updateData,
+      updatedAt: new Date(),
+      profileImage: file?.filename || null,
+    });
     this.logger.log(`The user updated`);
-    return updateUser.exec();
+    return this.findOneUser(id);
   }
 
   async deleteUser(id: string): Promise<User | null> {
-    const deleteuser = this.userModel.findByIdAndUpdate(
-      id,
-      { $set: { deletedAt: new Date() } },
-      { new: true },
-    );
+    await this.userRepo.update(id, { deletedAt: new Date() });
     this.logger.log(`The user deleted (soft delete)`);
-    return deleteuser.exec();
+    return this.userRepo.findOne({ where: { id } });
   }
 
   async findOneUser(id: string): Promise<User | null> {
-    const getOneUser = this.userModel.findOne({ _id: id, deletedAt: null });
+    const getOneUser = await this.userRepo.findOne({
+      where: { id, deletedAt: IsNull() },
+    });
     this.logger.log(`Fetch user by id ${id}`);
     return getOneUser;
   }
 
   async loginUser(email: string, password: string): Promise<User | null> {
-    const validateUser = await this.userModel
-      .findOne({
-        email: email,
-        deletedAt: null,
-      })
-      .select('_id name email password profileImage');
+    const validateUser = await this.userRepo.findOne({
+      where: { email, deletedAt: IsNull() },
+      select: ['id', 'name', 'email', 'password', 'profileImage'],
+    });
     if (!validateUser || !validateUser.password) {
       throw new UnauthorizedException('Invalid email or user does not exist');
     }
-    const hashedPassword = validateUser?.password;
-    const isMatch = await bcrypt.compare(password, hashedPassword);
+    const isMatch = await bcrypt.compare(password, validateUser.password);
     if (!isMatch) {
       this.logger.log(`The user not logged`);
       throw new UnauthorizedException('Invalid User');
@@ -98,11 +88,11 @@ export class UserService{
   }
 
   async parentGenerateOtp(parentData: LoginParentReq) {
-    const isParentEmail = await this.userModel
-      .find({ parentEmail: parentData.parentEmail })
-      .exec();
+    const isParentEmail = await this.userRepo.find({
+      where: { parentEmail: parentData.parentEmail },
+    });
 
-    if (!isParentEmail) {
+    if (!isParentEmail.length) {
       this.logger.error(
         `Inavlid Parent Email Address ${parentData.parentEmail}`,
       );
@@ -111,16 +101,13 @@ export class UserService{
     const characters =
       'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let otp = '';
-    let length = 6;
+    const length = 6;
     for (let i = 0; i < length; i++) {
       const randomIndex = Math.floor(Math.random() * characters.length);
       otp += characters[randomIndex];
     }
-    let mailId = parentData.parentEmail;
-    await this.userModel.updateMany(
-      { parentEmail: mailId },
-      { $set: { parentOtp: otp } },
-    );
+    const mailId = parentData.parentEmail;
+    await this.userRepo.update({ parentEmail: mailId }, { parentOtp: otp });
     await this.mailerService.sendMail({
       to: mailId,
       subject: 'LOGIN AUTHENTICATION',
@@ -136,32 +123,29 @@ export class UserService{
   }
 
   async parentProcessOtp(email, otp): Promise<User[]> {
-    const parentInfo = await this.userModel
-      .findOne({
-        parentEmail: email,
-        parentOtp: otp,
-      })
-      .exec();
-    let parentSavedOtp = parentInfo?.parentOtp;
+    const parentInfo = await this.userRepo.findOne({
+      where: { parentEmail: email, parentOtp: otp },
+    });
+    const parentSavedOtp = parentInfo?.parentOtp;
     if (parentSavedOtp === otp) {
-      const parentData = await this.userModel.find({ parentEmail: email });
+      const parentData = await this.userRepo.find({
+        where: { parentEmail: email },
+      });
       this.logger.log(`Parent Email and OTP is correct`);
       return parentData;
-    } else {
-      this.logger.error(`Invalid Email : ${email} or Wrong OTP : ${otp} `);
-      throw new UnauthorizedException('Invalid Email or Wrong OTP');
     }
+    this.logger.error(`Invalid Email : ${email} or Wrong OTP : ${otp} `);
+    throw new UnauthorizedException('Invalid Email or Wrong OTP');
   }
 
   async checkUserByEmail(email: string): Promise<User[] | null> {
-    const isUser = await this.userModel.find({ email: email, deletedAt: null });
-    return isUser;
+    return this.userRepo.find({ where: { email, deletedAt: IsNull() } });
   }
 
   async generateOTP(email: string) {
-    const isEmail = await this.userModel
-      .findOne({ email: email, deletedAt: null })
-      .exec();
+    const isEmail = await this.userRepo.findOne({
+      where: { email, deletedAt: IsNull() },
+    });
     if (!isEmail) {
       this.logger.error(`Inavlid Email Address ${email}`);
       return null;
@@ -169,18 +153,12 @@ export class UserService{
     const characters =
       'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let otp = '';
-    let length = 6;
+    const length = 6;
     for (let i = 0; i < length; i++) {
       const randomIndex = Math.floor(Math.random() * characters.length);
       otp += characters[randomIndex];
     }
-    await this.userModel.findOneAndUpdate(
-      { email },
-      {
-        $set: { otp },
-      },
-      { new: true },
-    );
+    await this.userRepo.update({ email }, { otp });
     await this.mailerService.sendMail({
       to: email,
       subject: 'RESET PASSWORD VERIFICATION',
@@ -196,27 +174,18 @@ export class UserService{
   }
 
   async processOTP(email: string, otp: string, password: string) {
-    const user = await this.userModel
-      .findOne({
-        email: email,
-        otp: otp,
-      })
-      .exec();
-    let userSavedOtp = user?.otp;
+    const user = await this.userRepo.findOne({
+      where: { email, otp },
+    });
+    const userSavedOtp = user?.otp;
     if (userSavedOtp !== otp) {
       this.logger.error(`Invalid Email : ${email} or Wrong OTP : ${otp} `);
       return null;
     }
     const hashValueLength = 10;
     const hashedPassword = await bcrypt.hash(password, hashValueLength);
-    const updatePassword = await this.userModel.findOneAndUpdate(
-      { email },
-      {
-        $set: { otp, password: hashedPassword },
-      },
-      { new: true },
-    );
+    await this.userRepo.update({ email }, { otp, password: hashedPassword });
     this.logger.log(`User password reseted`);
-    return updatePassword;
+    return this.userRepo.findOne({ where: { email } });
   }
 }

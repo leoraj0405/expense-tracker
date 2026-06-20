@@ -1,19 +1,98 @@
 import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { RequestGrpExpense } from '../request';
-import { GroupExpense } from 'src/schemas/groupExpense.schema';
+import { GroupExpense } from '../entities/group-expense.entity';
+import { GroupExpenseSplit } from '../entities/group-expense-split.entity';
 import { GrpMemberService } from 'src/groupMember/grpMember.service';
+import {
+  formatCategoryRef,
+  formatGroupRef,
+  formatUserRef,
+  mongoId,
+} from '../utils/mongo-compat';
 
 @Injectable()
 export class GrpExpenseService {
-  private readonly logger = new Logger(GroupExpense.name);
-  constructor(
-    @InjectModel(GroupExpense.name)
-    private groupExpensemodel: Model<GroupExpense>,
+  private readonly logger = new Logger(GrpExpenseService.name);
 
+  constructor(
+    @InjectRepository(GroupExpense)
+    private groupExpenseRepo: Repository<GroupExpense>,
+    @InjectRepository(GroupExpenseSplit)
+    private splitRepo: Repository<GroupExpenseSplit>,
     private readonly memberService: GrpMemberService,
   ) {}
+
+  private formatSplits(splits: GroupExpenseSplit[]) {
+    const splitAmong = splits
+      .filter((s) => s.splitType === 'equal')
+      .map((s) => ({
+        memberId: s.memberId,
+        share: Number(s.share),
+        isSettle: s.isSettle,
+      }));
+    const splitUnequal = splits
+      .filter((s) => s.splitType === 'unequal')
+      .map((s) => ({
+        memberId: s.memberId,
+        share: Number(s.share),
+        isSettle: s.isSettle,
+      }));
+    return {
+      splitAmong: splitAmong.length ? splitAmong : undefined,
+      splitUnequal: splitUnequal.length ? splitUnequal : undefined,
+    };
+  }
+
+  private formatGroupExpenseRow(expense: GroupExpense, splits: GroupExpenseSplit[]) {
+    const { splitAmong, splitUnequal } = this.formatSplits(splits);
+    return {
+      ...mongoId(expense.id),
+      description: expense.description,
+      amount: expense.amount,
+      splitAmong,
+      splitUnequal,
+      group: expense.group ? formatGroupRef(expense.group) : undefined,
+      category: expense.category ? formatCategoryRef(expense.category) : undefined,
+      user: expense.user ? formatUserRef(expense.user) : undefined,
+    };
+  }
+
+  private async saveSplits(
+    groupExpenseId: string,
+    splitAmong: { memberId: string; share: number }[] | null,
+    splitUnequal: { memberId: string; share: number }[] | null,
+  ) {
+    await this.splitRepo.delete({ groupExpenseId });
+    const splits: Partial<GroupExpenseSplit>[] = [];
+
+    splitAmong?.forEach((s) => {
+      splits.push({
+        groupExpenseId,
+        memberId: s.memberId,
+        share: s.share,
+        splitType: 'equal',
+        isSettle: false,
+        createdAt: new Date(),
+      });
+    });
+
+    splitUnequal?.forEach((s) => {
+      splits.push({
+        groupExpenseId,
+        memberId: s.memberId,
+        share: s.share,
+        splitType: 'unequal',
+        isSettle: false,
+        createdAt: new Date(),
+      });
+    });
+
+    if (splits.length) {
+      await this.splitRepo.save(splits);
+    }
+  }
 
   async createGroupExpense({
     groupId,
@@ -24,7 +103,7 @@ export class GrpExpenseService {
     usersAndShares,
     splitMethod,
   }: RequestGrpExpense) {
-    var inputs = {
+    const inputs = {
       groupId,
       description,
       amount,
@@ -32,10 +111,8 @@ export class GrpExpenseService {
       categoryId,
       splitAmong: null as { memberId: string; share: number }[] | null,
       splitUnequal: null as typeof usersAndShares | null,
-      createdAt: new Date(),
-      updatedAt: null,
-      deletedAt: null,
     };
+
     if (splitMethod === 'equal') {
       const splitEqualArr: { memberId: string; share: number }[] = [];
       const groupMembersArr =
@@ -46,21 +123,20 @@ export class GrpExpenseService {
       }
 
       const membersId = groupMembersArr.map((member) => member.user._id);
-
       const totalAmount = Number(amount);
       const memberCount = membersId.length;
       const baseShare = Math.floor(totalAmount / memberCount);
       let remainder = totalAmount - baseShare * memberCount;
 
-      membersId.forEach((id) => {
+      membersId.forEach((memberId) => {
         const share = baseShare + (remainder > 0 ? 1 : 0);
         if (remainder > 0) remainder--;
-        splitEqualArr.push({ memberId: id, share });
+        splitEqualArr.push({ memberId, share });
       });
 
       inputs.splitAmong = splitEqualArr;
     } else {
-      let total: number = 0;
+      let total = 0;
       usersAndShares.map((item) => {
         total += Number(item.share);
       });
@@ -69,16 +145,30 @@ export class GrpExpenseService {
       }
       inputs.splitUnequal = usersAndShares;
     }
-    const postGrpExpense = new this.groupExpensemodel(inputs).save();
+
+    const expense = await this.groupExpenseRepo.save(
+      this.groupExpenseRepo.create({
+        groupId: inputs.groupId,
+        description: inputs.description,
+        amount: inputs.amount,
+        userId: inputs.userId,
+        categoryId: inputs.categoryId,
+        createdAt: new Date(),
+        updatedAt: null,
+        deletedAt: null,
+      }),
+    );
+
+    await this.saveSplits(expense.id, inputs.splitAmong, inputs.splitUnequal);
     this.logger.log(`The Group expense created`);
-    return postGrpExpense;
+    return expense;
   }
 
   async updateGroupExpenseById(
     id: string,
     updateData: RequestGrpExpense,
   ): Promise<GroupExpense | null> {
-    var inputs = {
+    const inputs = {
       groupId: updateData.groupId,
       description: updateData.description,
       amount: updateData.amount,
@@ -90,31 +180,25 @@ export class GrpExpenseService {
         updateData.usersAndShares.length > 0
           ? updateData.usersAndShares
           : null,
-      createdAt: new Date(),
-      updatedAt: null,
-      deletedAt: null,
-      splitMethod: updateData.splitMethod,
     };
 
     if (updateData.splitMethod === 'equal') {
       inputs.splitUnequal = null;
-
       const splitEqualArr: { memberId: string; share: number }[] = [];
       const groupMembersArr =
         await this.memberService.fetchGroupMembersByGroupId(updateData.groupId);
       const membersId = groupMembersArr?.map((member) => member.user._id);
 
-      membersId?.forEach((id) => {
+      membersId?.forEach((memberId) => {
         splitEqualArr.push({
-          memberId: id,
+          memberId,
           share: Math.round(updateData.amount / membersId.length),
         });
       });
 
       inputs.splitAmong = splitEqualArr;
     } else {
-      console.log(inputs);
-      let total: number = 0;
+      let total = 0;
       updateData.usersAndShares.map((item) => {
         total += Number(item.share);
       });
@@ -127,182 +211,77 @@ export class GrpExpenseService {
       inputs.splitUnequal = updateData.usersAndShares;
     }
 
-    console.log(inputs, id);
+    await this.groupExpenseRepo.update(id, {
+      groupId: inputs.groupId,
+      description: inputs.description,
+      amount: inputs.amount,
+      userId: inputs.userId,
+      categoryId: inputs.categoryId,
+      updatedAt: new Date(),
+    });
 
-    const updateGroupExpense = await this.groupExpensemodel
-      .findByIdAndUpdate(
-        id,
-        { ...inputs, updatedAt: new Date() },
-        { new: true },
-      )
-      .exec();
+    await this.saveSplits(id, inputs.splitAmong, inputs.splitUnequal);
     this.logger.log(
       `The Group expense updated by Id : ${id} the values : ${updateData}`,
     );
 
-    return updateGroupExpense;
+    return this.groupExpenseRepo.findOne({ where: { id } });
   }
 
   async deleteGroupExpenseById(id: string): Promise<GroupExpense | null> {
-    const deletegroupExpense = await this.groupExpensemodel
-      .findByIdAndUpdate(id, { $set: { deletedAt: new Date() } }, { new: true })
-      .exec();
+    await this.groupExpenseRepo.update(id, { deletedAt: new Date() });
     this.logger.log(`The Group expense ${id} deleted (soft delete)`);
-    return deletegroupExpense;
+    return this.groupExpenseRepo.findOne({ where: { id } });
   }
 
-  async getGroupExpenseById(id: string): Promise<GroupExpense[] | null> {
-    const oneGrpExpense = await this.groupExpensemodel.aggregate([
-      { $match: { _id: new Types.ObjectId(id), deletedAt: null } },
-      {
-        $lookup: {
-          from: 'groups',
-          localField: 'groupId',
-          foreignField: '_id',
-          as: 'group',
-        },
-      },
-      { $unwind: '$group' },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'userId',
-          foreignField: '_id',
-          as: 'user',
-        },
-      },
-      { $unwind: '$user' },
-      {
-        $lookup: {
-          from: 'categories',
-          localField: 'categoryId',
-          foreignField: '_id',
-          as: 'category',
-        },
-      },
-      { $unwind: '$category' },
-      {
-        $project: {
-          _id: 1,
-          description: 1,
-          amount: 1,
-          splitAmong: 1,
-          splitUnequal: 1,
-          'group.name': 1,
-          'category.name': 1,
-          'user.name': 1,
-          'group._id': 1,
-          'category._id': 1,
-          'user._id': 1,
-        },
-      },
-    ]);
+  private async loadExpenseWithRelations(id: string) {
+    return this.groupExpenseRepo.findOne({
+      where: { id, deletedAt: IsNull() },
+      relations: ['group', 'user', 'category'],
+    });
+  }
+
+  async getGroupExpenseById(id: string) {
+    const expense = await this.loadExpenseWithRelations(id);
+    if (!expense) return [];
+    const splits = await this.splitRepo.find({ where: { groupExpenseId: id } });
     this.logger.log(`The group expense fetch by Id : ${id}`);
-
-    return oneGrpExpense;
+    return [this.formatGroupExpenseRow(expense, splits)];
   }
 
-  async getGroupExpensesByGroupId(id: string): Promise<GroupExpense[]> {
-    const groupId = new Types.ObjectId(id);
-    const groupExpenses = await this.groupExpensemodel.aggregate([
-      { $match: { groupId: groupId, deletedAt: null } },
-      {
-        $lookup: {
-          from: 'groups',
-          localField: 'groupId',
-          foreignField: '_id',
-          as: 'group',
-        },
-      },
-      { $unwind: '$group' },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'userId',
-          foreignField: '_id',
-          as: 'user',
-        },
-      },
-      { $unwind: '$user' },
-      {
-        $lookup: {
-          from: 'categories',
-          localField: 'categoryId',
-          foreignField: '_id',
-          as: 'category',
-        },
-      },
-      { $unwind: '$category' },
-      {
-        $project: {
-          _id: 1,
-          description: 1,
-          amount: 1,
-          splitAmong: 1,
-          splitUnequal: 1,
-          'group.name': 1,
-          'category.name': 1,
-          'user.name': 1,
-          'user._id': 1,
-        },
-      },
-    ]);
+  async getGroupExpensesByGroupId(id: string) {
+    const expenses = await this.groupExpenseRepo.find({
+      where: { groupId: id, deletedAt: IsNull() },
+      relations: ['group', 'user', 'category'],
+    });
+    const results = await Promise.all(
+      expenses.map(async (expense) => {
+        const splits = await this.splitRepo.find({
+          where: { groupExpenseId: expense.id },
+        });
+        return this.formatGroupExpenseRow(expense, splits);
+      }),
+    );
     this.logger.log(`The group expense fetch by group Id : ${id}`);
-    return groupExpenses;
+    return results;
   }
 
-  async getExpensesByUserId(
-    userId: string,
-    groupId: string,
-  ): Promise<GroupExpense[] | null> {
-    const user = new Types.ObjectId(userId);
-    const group = new Types.ObjectId(groupId);
-    const groupExpenses = await this.groupExpensemodel.aggregate([
-      { $match: { userId: user, groupId: group, deletedAt: null } },
-      {
-        $lookup: {
-          from: 'groups',
-          localField: 'groupId',
-          foreignField: '_id',
-          as: 'group',
-        },
-      },
-      { $unwind: '$group' },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'userId',
-          foreignField: '_id',
-          as: 'user',
-        },
-      },
-      { $unwind: '$user' },
-      {
-        $lookup: {
-          from: 'categories',
-          localField: 'categoryId',
-          foreignField: '_id',
-          as: 'category',
-        },
-      },
-      { $unwind: '$category' },
-      {
-        $project: {
-          _id: 1,
-          description: 1,
-          amount: 1,
-          splitAmong: 1,
-          splitUnequal: 1,
-          'group.name': 1,
-          'category.name': 1,
-          'user.name': 1,
-          'user._id': 1,
-        },
-      },
-    ]);
+  async getExpensesByUserId(userId: string, groupId: string) {
+    const expenses = await this.groupExpenseRepo.find({
+      where: { userId, groupId, deletedAt: IsNull() },
+      relations: ['group', 'user', 'category'],
+    });
+    const results = await Promise.all(
+      expenses.map(async (expense) => {
+        const splits = await this.splitRepo.find({
+          where: { groupExpenseId: expense.id },
+        });
+        return this.formatGroupExpenseRow(expense, splits);
+      }),
+    );
     this.logger.log(
       `The group expense fetch by user Id : ${userId} in group ${groupId}`,
     );
-    return groupExpenses;
+    return results;
   }
 }

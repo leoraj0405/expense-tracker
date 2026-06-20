@@ -1,109 +1,95 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository, IsNull } from 'typeorm';
 import { RequestGroup } from '../request';
-import { Group } from 'src/schemas/group.schma';
-import { GroupMember } from 'src/schemas/groupMember.schema';
-import { Types } from 'mongoose';
+import { Group } from '../entities/group.entity';
+import { GroupMember } from '../entities/group-member.entity';
+import { formatGroupRef, formatUserRef, mongoId } from '../utils/mongo-compat';
+
 @Injectable()
 export class GroupService {
-  private readonly logger = new Logger(Group.name);
+  private readonly logger = new Logger(GroupService.name);
+
   constructor(
-    @InjectModel(Group.name) private groupModel: Model<Group>,
-    @InjectModel(GroupMember.name) private grpMemberModel: Model<GroupMember>,
+    @InjectRepository(Group) private groupRepo: Repository<Group>,
+    @InjectRepository(GroupMember) private grpMemberRepo: Repository<GroupMember>,
   ) {}
 
   async createGroup({ name, createdBy }: RequestGroup) {
-    const postExpense = new this.groupModel({
-      name,
-      createdBy,
-      createdAt: new Date(),
-      updatedAt: null,
-      deletedAt: null,
-    }).save();
+    const postGroup = this.groupRepo.save(
+      this.groupRepo.create({
+        name,
+        createdBy,
+        createdAt: new Date(),
+        updatedAt: null,
+        deletedAt: null,
+      }),
+    );
     this.logger.log(`The ${name} group was created by ${createdBy}`);
-    return postExpense;
+    return postGroup;
   }
 
   async updateGroupById(
     id: string,
     updateData: RequestGroup,
   ): Promise<Group | null> {
-    const updateGroup = await this.groupModel
-      .findByIdAndUpdate(
-        id,
-        { $set: { ...updateData, updatedAt: new Date() } },
-        { new: true },
-      )
-      .exec();
+    await this.groupRepo.update(id, {
+      ...updateData,
+      updatedAt: new Date(),
+    });
     this.logger.log(`The ${id} Group was updated update data : ${updateData}`);
-    return updateGroup;
+    return this.groupRepo.findOne({ where: { id } });
   }
 
   async deleteGroup(id: string): Promise<Group | null> {
-    const delGroup = await this.groupModel
-      .findByIdAndUpdate(id, { $set: { deletedAt: new Date() } }, { new: true })
-      .exec();
+    await this.groupRepo.update(id, { deletedAt: new Date() });
     this.logger.warn(`The ${id} Group was delete(soft delete)`);
-    return delGroup;
+    return this.groupRepo.findOne({ where: { id } });
   }
 
-  async fetchGroupById(id: string): Promise<Group[] | null> {
-    const oneGroup = await this.groupModel.aggregate([
-      { $match: { _id: new Types.ObjectId(id), deletedAt: null } },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'createdBy',
-          foreignField: '_id',
-          as: 'user',
-        },
-      },
-      {
-        $project: {
-          _id: 1,
-          'user.name': 1,
-          'user.email': 1,
-          name: 1,
-        },
-      },
-    ]);
+  async fetchGroupById(id: string) {
+    const group = await this.groupRepo.findOne({
+      where: { id, deletedAt: IsNull() },
+      relations: ['creator'],
+    });
     this.logger.log(`The expense fetch by Id : ${id}`);
-    return oneGroup;
+    if (!group) return [];
+    return [
+      {
+        ...mongoId(group.id),
+        name: group.name,
+        user: group.creator
+          ? {
+              name: group.creator.name,
+              email: group.creator.email,
+            }
+          : undefined,
+      },
+    ];
   }
 
-  async fetchGroupByUserId(id: string): Promise<Group[] | null> {
-    const memberships = await this.grpMemberModel
-      .find({ userId: { $eq: id }, deletedAt: null })
-      .exec();
+  async fetchGroupByUserId(id: string) {
+    const memberships = await this.grpMemberRepo.find({
+      where: { userId: id, deletedAt: IsNull() },
+    });
 
     const groupIds = memberships.map((member) => member.groupId);
-    const groups = await this.groupModel.aggregate([
-      {
-        $match: {
-          _id: { $in: groupIds.map((id) => id) },
-          deletedAt: null,
-        },
-      },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'createdBy',
-          foreignField: '_id',
-          as: 'createdBy',
-        },
-      },
-      { $unwind: '$createdBy' },
-      {
-        $project: {
-          _id: 1,
-          name: 1,
-          'createdBy.name' : 1,
-          'createdBy._id' : 1
-        },
-      },
-    ]);
-    this.logger.log(`The group fetch by user Id : ${id}`)
-    return groups;
+    if (!groupIds.length) return [];
+
+    const groups = await this.groupRepo.find({
+      where: { id: In(groupIds), deletedAt: IsNull() },
+      relations: ['creator'],
+    });
+
+    this.logger.log(`The group fetch by user Id : ${id}`);
+    return groups.map((group) => ({
+      ...mongoId(group.id),
+      name: group.name,
+      createdBy: group.creator
+        ? {
+            ...formatUserRef(group.creator),
+          }
+        : undefined,
+    }));
   }
 }

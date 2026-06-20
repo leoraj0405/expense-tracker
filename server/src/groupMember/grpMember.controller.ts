@@ -8,15 +8,14 @@ import {
   Res,
   Param,
 } from '@nestjs/common';
-import { GroupMember } from 'src/schemas/groupMember.schema';
+import { Response } from 'express';
 import { RequestGrpMember } from 'src/request';
-import { ResponseDto } from 'src/response';
 import { GrpMemberService } from './grpMember.service';
 import { UserService } from 'src/user/user.service';
-import { MailerService } from '@nestjs-modules/mailer';
-import { Types } from 'mongoose';
+import { isDuplicateKeyError } from 'src/utils/mongo-compat';
+import { sendError, sendSuccess } from 'src/utils/api-response.util';
 
-@Controller('groupmember')
+@Controller('api/groupmember')
 export class GrpMemberController {
   constructor(
     private readonly grpMemberService: GrpMemberService,
@@ -24,20 +23,15 @@ export class GrpMemberController {
   ) {}
 
   @Post()
-  async postGrpMember(
-    @Body() body: RequestGrpMember,
-    @Res() reply: any,
-  ): Promise<void | GroupMember> {
-    const response: ResponseDto = {
-      data: null,
-    };
+  async postGrpMember(@Body() body: RequestGrpMember, @Res() reply: Response): Promise<void> {
     try {
       const groupId = body.groupId;
       const inputEmail = body.email;
 
       if (!inputEmail) {
-        return reply.send(400).send('Email is required');
+        return sendError(reply, 'Email is required', 400);
       }
+
       const isUser = await this.userService.checkUserByEmail(inputEmail);
       if (!isUser?.length) {
         const createUser = await this.userService.createUser(
@@ -49,102 +43,75 @@ export class GrpMemberController {
           },
           undefined,
         );
-        const userId = createUser._id;
-
+        const userId = createUser.id;
         await this.grpMemberService.createGroupMember(groupId, userId);
-        await this.grpMemberService.sendLoginCredentialsInfoToUserEmail(
-          inputEmail,
-        );
-        reply
-          .status(200)
-          .send(
-            'new user created & added in the group. The login credentials sent to him / her email ' +
-              inputEmail,
-          );
+        await this.grpMemberService.sendLoginCredentialsInfoToUserEmail(inputEmail);
+        sendSuccess(reply, {
+          item: {
+            message:
+              'New user created and added to the group. Login credentials sent to ' + inputEmail,
+          },
+        });
       } else {
-        const userId = isUser[0]._id;
+        const userId = isUser[0].id;
         const createMember = await this.grpMemberService.createGroupMember(groupId, userId);
-        reply.status(200).send(createMember);
+        sendSuccess(reply, { item: createMember });
       }
     } catch (error) {
-      if(error.code === 11000) {
-        return reply.status(409).send('This User Already is in the Group.')
+      if (isDuplicateKeyError(error)) {
+        return sendError(reply, 'This user is already in the group.', 409);
       }
-      reply.status(500).send(error);
+      sendError(reply, error?.message || 'Failed to add group member', 500);
     }
   }
 
   @Put('/:id')
   async updateGroupMemberById(
     @Param('id') id: string,
-    @Res() reply: any,
+    @Res() reply: Response,
     @Body() body: RequestGrpMember,
-  ): Promise<GroupMember | void> {
-    const response: ResponseDto = {
-      data: null,
-    };
+  ): Promise<void> {
     try {
-      response.data = await this.grpMemberService.updateGroupMember(id, body);
-      reply.status(200).send(response);
+      const member = await this.grpMemberService.updateGroupMember(id, body);
+      sendSuccess(reply, { item: member });
     } catch (error) {
-      if (error.code === 11000) {
-        return reply.status(409).send(response);
+      if (isDuplicateKeyError(error)) {
+        return sendError(reply, 'Duplicate group member', 409);
       }
-      reply.status(500).send(response);
+      sendError(reply, error?.message || 'Failed to update group member', 500);
     }
   }
+
   @Delete('/:id')
-  async deleteGroupMemberbyId(
-    @Param('id') id: string,
-    @Res() reply: any,
-  ): Promise<GroupMember | void> {
-    const response: ResponseDto = {
-      data: null,
-    };
+  async deleteGroupMemberbyId(@Param('id') id: string, @Res() reply: Response): Promise<void> {
     try {
-      response.data = await this.grpMemberService.deleteGrpMember(id);
-      reply.status(200).send(response);
+      const member = await this.grpMemberService.deleteGrpMember(id);
+      sendSuccess(reply, { item: member });
     } catch (error) {
-      reply.send(error);
+      sendError(reply, error?.message || 'Failed to delete group member', 500);
     }
   }
+
+  @Get('onegroup/:id')
+  async getGroupMembersByGroupId(@Param('id') id: string, @Res() reply: Response): Promise<void> {
+    try {
+      const groupMembers = await this.grpMemberService.fetchGroupMembersByGroupId(id);
+      sendSuccess(reply, { items: groupMembers || [] });
+    } catch (error) {
+      sendError(reply, error?.message || 'Failed to fetch group members', 500);
+    }
+  }
+
   @Get('/:id')
-  async fetchGroupMemberById(
-    @Param('id') id: string,
-    @Res() reply: any,
-  ): Promise<GroupMember | void> {
-    const response: ResponseDto = {
-      data: null,
-    };
+  async fetchGroupMemberById(@Param('id') id: string, @Res() reply: Response): Promise<void> {
     try {
       const groupMember = await this.grpMemberService.fetchGroupMemberById(id);
       if (!groupMember) {
-        return reply.status(404).send(response);
+        return sendError(reply, 'Group member not found', 404);
       }
-      response.data = groupMember;
-      reply.status(200).send(response);
+      sendSuccess(reply, { item: groupMember });
     } catch (error) {
-      reply.status(500).send(response);
-    }
-  }
-  @Get('onegroup/:id')
-  async getGroupMembersByGroupId(
-    @Param('id') id: string,
-    @Res() reply: any,
-  ): Promise<GroupMember | void> {
-    const response: ResponseDto = {
-      data: null,
-    };
-    try {
-      const groupMembers =
-        await this.grpMemberService.fetchGroupMembersByGroupId(id);
-      if (!groupMembers?.length || !groupMembers) {
-        return reply.status(404).send(response);
-      }
-      response.data = groupMembers;
-      reply.status(200).send(response);
-    } catch (error) {
-      reply.status(500).send(response);
+      sendError(reply, error?.message || 'Failed to fetch group member', 500);
     }
   }
 }
