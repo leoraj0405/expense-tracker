@@ -23,7 +23,7 @@ import { ProfilePhotoUpload } from '../components/ui/ProfilePhotoUpload';
 import { useRequireAuth } from '../hooks/useRequireAuth';
 import defaultImage from '../assets/img/profile.png';
 import { userService } from '../services/userService';
-import { ApiError, apiUrl } from '../services/apiClient';
+import { ApiError, resolveAssetUrl } from '../services/apiClient';
 import { saveAuthSession, getToken } from '../utils/authStorage';
 import { getUserId, normalizeUser } from '../utils/entity';
 import { formatDisplayDate } from '../utils/date';
@@ -100,7 +100,10 @@ function Profile() {
 
   const profileSrc = useMemo(() => {
     if (user?.profileUrl && user.profileUrl !== '/uploads/null') {
-      return apiUrl(user.profileUrl);
+      return resolveAssetUrl(user.profileUrl);
+    }
+    if (user?.profileImage && user.profileImage !== 'null') {
+      return resolveAssetUrl(user.profileImage);
     }
     return defaultImage;
   }, [user]);

@@ -19,6 +19,7 @@ export interface SessionUser {
   email?: string;
   profileImage?: string | null;
   data?: User;
+  profileUrl?: string;
 }
 
 export interface Category extends EntityRef {

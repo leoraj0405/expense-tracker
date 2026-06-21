@@ -16,7 +16,7 @@ import {
 } from '@tabler/icons-react';
 import { useAuth } from '../hooks/useAuth';
 import { useAppTheme } from '../hooks/useAppTheme';
-import { apiUrl } from '../services/apiClient';
+import { resolveAssetUrl } from '../services/apiClient';
 import { getInitials } from '../utils/format';
 import defaultImage from '../assets/img/profile.png';
 
@@ -88,10 +88,13 @@ function AppShellLayout({ children }: AppShellLayoutProps) {
 
   const userName = loginUser?.name || loginUser?.data?.name || 'User';
   const profileImage = loginUser?.profileImage || loginUser?.data?.profileImage;
+  const profileUrl = loginUser?.profileUrl || loginUser?.data?.profileUrl;
   const avatarSrc =
-    profileImage && profileImage !== 'null'
-      ? apiUrl(`/uploads/${profileImage}`)
-      : defaultImage;
+    profileUrl && profileUrl !== 'null'
+      ? resolveAssetUrl(profileUrl)
+      : profileImage && profileImage !== 'null'
+        ? resolveAssetUrl(profileImage)
+        : defaultImage;
 
   const meta =
     Object.entries(ROUTE_META).find(([path]) => location.pathname.startsWith(path))?.[1] ||

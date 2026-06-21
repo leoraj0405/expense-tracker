@@ -5,6 +5,7 @@ import {
   RequestMethod,
 } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { StorageModule } from './storage/storage.module';
 import { UserModule } from './user/user.module';
 import { CategoryModule } from './category/category.module';
 import { ExpenseModule } from './expense/expense.module';
@@ -63,6 +64,7 @@ import { JwtModule } from '@nestjs/jwt';
         },
       }),
     }),
+    StorageModule,
     UserModule,
     CategoryModule,
     ExpenseModule,

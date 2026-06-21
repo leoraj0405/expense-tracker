@@ -12,6 +12,7 @@ import { LoginParentReq, RequestUser } from '../request';
 import * as bcrypt from 'bcrypt';
 import { MailerService } from '@nestjs-modules/mailer';
 import { buildOtpEmail } from '../utils/email-templates';
+import { BlobStorageService } from '../storage/blob-storage.service';
 
 @Injectable()
 export class UserService {
@@ -22,6 +23,7 @@ export class UserService {
     @InjectRepository(GroupMember)
     private readonly groupMemberRepo: Repository<GroupMember>,
     private readonly mailerService: MailerService,
+    private readonly blobStorage: BlobStorageService,
   ) {}
 
   async createUser(
@@ -30,6 +32,10 @@ export class UserService {
   ): Promise<User> {
     const hashValueLength = 10;
     const hashedPassword = await bcrypt.hash(password, hashValueLength);
+    let profileImage: string | null = null;
+    if (file) {
+      profileImage = await this.blobStorage.uploadProfileImage(file);
+    }
     const newUser = this.userRepo.create({
       name,
       email,
@@ -39,7 +45,7 @@ export class UserService {
       otp: null,
       otpAttempt: null,
       blockTime: null,
-      profileImage: file?.filename || null,
+      profileImage,
       createdAt: new Date(),
       updatedAt: null,
       deletedAt: null,
@@ -50,13 +56,24 @@ export class UserService {
 
   async updateUser(
     { id, updateData }: { id: string; updateData: RequestUser },
-    file: Express.Multer.File,
+    file?: Express.Multer.File,
   ): Promise<User | null> {
-    await this.userRepo.update(id, {
+    const existing = await this.findOneUser(id);
+    if (!existing) {
+      throw new NotFoundException('User not found');
+    }
+
+    const updates: Partial<User> = {
       ...updateData,
       updatedAt: new Date(),
-      profileImage: file?.filename || null,
-    });
+    };
+
+    if (file) {
+      await this.blobStorage.deleteProfileImage(existing.profileImage);
+      updates.profileImage = await this.blobStorage.uploadProfileImage(file);
+    }
+
+    await this.userRepo.update(id, updates);
     this.logger.log(`The user updated`);
     return this.findOneUser(id);
   }

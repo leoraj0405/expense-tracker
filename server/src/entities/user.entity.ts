@@ -27,6 +27,6 @@ export class User extends BaseEntity {
   @Column({ type: 'datetime', nullable: true })
   blockTime: Date | null;
 
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ type: 'varchar', length: 512, nullable: true })
   profileImage: string | null;
 }

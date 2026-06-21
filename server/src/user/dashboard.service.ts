@@ -17,6 +17,7 @@ import {
   getPreviousMonthBounds,
   resolveExpenseDateRange,
 } from '../utils/date.util';
+import { resolveProfileUrl } from '../utils/profile-image.util';
 
 type SplitRow = { memberId: string; share: number };
 
@@ -83,7 +84,7 @@ export class DashboardService {
         name: user.name,
         email: user.email,
         profileImage: user.profileImage,
-        profileUrl: user.profileImage ? `/uploads/${user.profileImage}` : null,
+        profileUrl: resolveProfileUrl(user.profileImage),
       },
       period: {
         startDate: formatApiDate(currentRange.start),

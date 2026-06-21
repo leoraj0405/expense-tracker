@@ -14,6 +14,14 @@ export const API_PATHS = {
 
 export const apiUrl = (path: string): string => `${BASE_URL}${path}`;
 
+/** Resolves a local upload path or absolute blob URL for display. */
+export const resolveAssetUrl = (pathOrUrl: string | null | undefined): string => {
+  if (!pathOrUrl || pathOrUrl === 'null') return '';
+  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+  const path = pathOrUrl.startsWith('/') ? pathOrUrl : `/uploads/${pathOrUrl}`;
+  return apiUrl(path);
+};
+
 export class ApiError extends Error {
   statusCode: number;
 

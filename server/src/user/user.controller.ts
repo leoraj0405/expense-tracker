@@ -14,21 +14,29 @@ import {
 import { UserService } from './user.service';
 import type { LoginParentReq, LoginUserReq, RequestUser } from '../request';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { memoryStorage } from 'multer';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { sendError, sendSuccess, buildSuccess } from '../utils/api-response.util';
 import { DashboardService } from './dashboard.service';
+import { resolveProfileUrl } from '../utils/profile-image.util';
 
-const profileStorage = diskStorage({
-  destination: './uploads',
-  filename: (_req, file, cb) => {
-    const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, `${uniqueName}${extname(file.originalname)}`);
+const profileUploadOptions = {
+  storage: memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (
+    _req: Express.Request,
+    file: Express.Multer.File,
+    cb: (error: Error | null, acceptFile: boolean) => void,
+  ) => {
+    if (!file.mimetype.startsWith('image/')) {
+      cb(new Error('Only image files are allowed'), false);
+      return;
+    }
+    cb(null, true);
   },
-});
+};
 
 @Controller('api/user')
 export class UserController {
@@ -40,7 +48,7 @@ export class UserController {
   ) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('profileImage', { storage: profileStorage }))
+  @UseInterceptors(FileInterceptor('profileImage', profileUploadOptions))
   async createUser(
     @UploadedFile() file: Express.Multer.File,
     @Body() body: RequestUser,
@@ -56,14 +64,19 @@ export class UserController {
         },
         file,
       );
-      sendSuccess(reply, { item: user });
+      sendSuccess(reply, {
+        item: {
+          ...user,
+          profileUrl: resolveProfileUrl(user.profileImage),
+        },
+      });
     } catch (error) {
       sendError(reply, error?.message || 'Failed to create user', 500);
     }
   }
 
   @Put('/:id')
-  @UseInterceptors(FileInterceptor('profileImage', { storage: profileStorage }))
+  @UseInterceptors(FileInterceptor('profileImage', profileUploadOptions))
   async updateUser(
     @Body() body: RequestUser,
     @Param('id') id: string,
@@ -72,7 +85,12 @@ export class UserController {
   ): Promise<void> {
     try {
       const user = await this.userService.updateUser({ id, updateData: body }, file);
-      sendSuccess(reply, { item: user });
+      sendSuccess(reply, {
+        item: {
+          ...user,
+          profileUrl: resolveProfileUrl(user?.profileImage),
+        },
+      });
     } catch (error) {
       sendError(reply, error?.message || 'Failed to update user', 500);
     }
@@ -101,7 +119,13 @@ export class UserController {
       sendSuccess(reply, {
         item: {
           token,
-          loggedUserData: { name, email, profileImage, id: loggedUser.id },
+          loggedUserData: {
+            name,
+            email,
+            profileImage,
+            profileUrl: resolveProfileUrl(profileImage),
+            id: loggedUser.id,
+          },
         },
       });
     } catch (error) {
@@ -135,6 +159,7 @@ export class UserController {
           email: child.email,
           parentEmail: child.parentEmail,
           profileImage: child.profileImage,
+          profileUrl: resolveProfileUrl(child.profileImage),
           createdAt: child.createdAt,
         })),
       });
@@ -153,7 +178,7 @@ export class UserController {
       sendSuccess(reply, {
         item: {
           ...request.session.data,
-          profileUrl: `/uploads/${userProfile}`,
+          profileUrl: resolveProfileUrl(userProfile),
         },
       });
     } catch (error) {
@@ -188,7 +213,7 @@ export class UserController {
       sendSuccess(reply, {
         item: {
           ...oneUser,
-          profileUrl: `/uploads/${oneUser.profileImage}`,
+          profileUrl: resolveProfileUrl(oneUser.profileImage),
         },
       });
     } catch (error) {
@@ -264,6 +289,7 @@ export class UserController {
             email: child.email,
             parentEmail: child.parentEmail,
             profileImage: child.profileImage,
+            profileUrl: resolveProfileUrl(child.profileImage),
             createdAt: child.createdAt,
           })),
         },
