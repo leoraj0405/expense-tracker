@@ -10,8 +10,8 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { GrpExpenseService } from './grpExpense.service';
-import { RequestGrpExpense } from 'src/request';
-import { sendError, sendSuccess } from 'src/utils/api-response.util';
+import { RequestGrpExpense } from '../request';
+import { sendError, sendSuccess } from '../utils/api-response.util';
 
 @Controller('api/groupexpense')
 export class GrpExpenseController {

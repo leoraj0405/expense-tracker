@@ -4,7 +4,7 @@ import { GrpExpenseController } from './grpExpense.controller';
 import { GrpExpenseService } from './grpExpense.service';
 import { GroupExpense } from '../entities/group-expense.entity';
 import { GroupExpenseSplit } from '../entities/group-expense-split.entity';
-import { GroupMemberModule } from 'src/groupMember/grpMember.module';
+import { GroupMemberModule } from '../groupMember/grpMember.module';
 
 @Module({
   imports: [

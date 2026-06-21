@@ -9,11 +9,11 @@ import {
   Param,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { RequestGrpMember } from 'src/request';
+import { RequestGrpMember } from '../request';
 import { GrpMemberService } from './grpMember.service';
-import { UserService } from 'src/user/user.service';
-import { isDuplicateKeyError } from 'src/utils/mongo-compat';
-import { sendError, sendSuccess } from 'src/utils/api-response.util';
+import { UserService } from '../user/user.service';
+import { isDuplicateKeyError } from '../utils/mongo-compat';
+import { sendError, sendSuccess } from '../utils/api-response.util';
 
 @Controller('api/groupmember')
 export class GrpMemberController {

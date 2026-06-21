@@ -5,7 +5,7 @@ import { GrpMemberService } from './grpMember.service';
 import { GroupMember } from '../entities/group-member.entity';
 import { GroupExpense } from '../entities/group-expense.entity';
 import { GroupExpenseSplit } from '../entities/group-expense-split.entity';
-import { UserModule } from 'src/user/user.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [

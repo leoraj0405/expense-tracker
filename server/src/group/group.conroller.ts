@@ -10,8 +10,8 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { GroupService } from './group.service';
-import { RequestGroup } from 'src/request';
-import { sendError, sendSuccess } from 'src/utils/api-response.util';
+import { RequestGroup } from '../request';
+import { sendError, sendSuccess } from '../utils/api-response.util';
 
 @Controller('api/group')
 export class GroupController {

@@ -4,7 +4,7 @@ import { Repository, IsNull } from 'typeorm';
 import { RequestGrpExpense } from '../request';
 import { GroupExpense } from '../entities/group-expense.entity';
 import { GroupExpenseSplit } from '../entities/group-expense-split.entity';
-import { GrpMemberService } from 'src/groupMember/grpMember.service';
+import { GrpMemberService } from '../groupMember/grpMember.service';
 import {
   formatCategoryRef,
   formatGroupRef,
