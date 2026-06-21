@@ -12,14 +12,21 @@ import {
 import { Response } from 'express';
 import { ExpenseService } from './expense.service';
 import { RequestExpense } from '../request';
-import { sendError, sendPaginated, sendSuccess } from '../utils/api-response.util';
+import {
+  sendError,
+  sendPaginated,
+  sendSuccess,
+} from '../utils/api-response.util';
 
 @Controller('api/expense')
 export class ExpenseController {
   constructor(private readonly expenseService: ExpenseService) {}
 
   @Post()
-  async createExpense(@Body() body: RequestExpense, @Res() reply: Response): Promise<void> {
+  async createExpense(
+    @Body() body: RequestExpense,
+    @Res() reply: Response,
+  ): Promise<void> {
     try {
       const expense = await this.expenseService.createExpense({
         userId: body.userId,
@@ -52,7 +59,10 @@ export class ExpenseController {
   }
 
   @Delete('/:id')
-  async deleteExepenseById(@Param('id') id: string, @Res() reply: Response): Promise<void> {
+  async deleteExepenseById(
+    @Param('id') id: string,
+    @Res() reply: Response,
+  ): Promise<void> {
     try {
       const expense = await this.expenseService.deleteExpense(id);
       sendSuccess(reply, { item: expense });
@@ -97,7 +107,10 @@ export class ExpenseController {
   }
 
   @Get('/:id')
-  async fetchExpenseById(@Param('id') id: string, @Res() reply: Response): Promise<void> {
+  async fetchExpenseById(
+    @Param('id') id: string,
+    @Res() reply: Response,
+  ): Promise<void> {
     try {
       const expenses = await this.expenseService.fetchExpense(id);
       if (!expenses?.length) {

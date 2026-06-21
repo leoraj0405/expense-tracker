@@ -27,7 +27,8 @@ export class DashboardService {
 
   constructor(
     @InjectRepository(User) private readonly userRepo: Repository<User>,
-    @InjectRepository(Expense) private readonly expenseRepo: Repository<Expense>,
+    @InjectRepository(Expense)
+    private readonly expenseRepo: Repository<Expense>,
     @InjectRepository(Group) private readonly groupRepo: Repository<Group>,
     @InjectRepository(GroupMember)
     private readonly groupMemberRepo: Repository<GroupMember>,
@@ -48,21 +49,13 @@ export class DashboardService {
     const currentRange = resolveExpenseDateRange({ startDate, endDate });
     const previousRange = getPreviousMonthBounds(currentRange.start);
 
-    const [
-      currentExpenses,
-      previousTotal,
-      groups,
-      globalBalances,
-    ] = await Promise.all([
-      this.fetchExpensesInRange(userId, currentRange.start, currentRange.end),
-      this.sumExpensesInRange(
-        userId,
-        previousRange.start,
-        previousRange.end,
-      ),
-      this.buildGroupDetails(userId),
-      this.computeGlobalBalances(userId),
-    ]);
+    const [currentExpenses, previousTotal, groups, globalBalances] =
+      await Promise.all([
+        this.fetchExpensesInRange(userId, currentRange.start, currentRange.end),
+        this.sumExpensesInRange(userId, previousRange.start, previousRange.end),
+        this.buildGroupDetails(userId),
+        this.computeGlobalBalances(userId),
+      ]);
 
     const monthTotal = this.sumAmounts(currentExpenses);
     const deltaPercent = this.calcDeltaPercent(monthTotal, previousTotal);
@@ -206,9 +199,7 @@ export class DashboardService {
           expenseCount: expenses.length,
           totalExpense,
           yourBalance: netBalance,
-          createdBy: group.creator
-            ? formatUserRef(group.creator)
-            : undefined,
+          createdBy: group.creator ? formatUserRef(group.creator) : undefined,
         };
       }),
     );
@@ -295,16 +286,18 @@ export class DashboardService {
       });
     }
 
-    const topOweTo = [...debtByPerson.values()].sort(
-      (a, b) => b.amount - a.amount,
-    )[0] ?? null;
+    const topOweTo =
+      [...debtByPerson.values()].sort((a, b) => b.amount - a.amount)[0] ?? null;
 
     return {
       owedToYou: Math.round(owedToYou * 100) / 100,
       youOwe: Math.round(youOwe * 100) / 100,
       owedGroupsCount: groupIds.length > 0 ? owedGroupsCount : 0,
       topOweTo: topOweTo
-        ? { name: topOweTo.name, amount: Math.round(topOweTo.amount * 100) / 100 }
+        ? {
+            name: topOweTo.name,
+            amount: Math.round(topOweTo.amount * 100) / 100,
+          }
         : null,
     };
   }

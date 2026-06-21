@@ -1,4 +1,8 @@
-import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { put, del } from '@vercel/blob';
 import { extname } from 'path';
@@ -38,7 +42,9 @@ export class BlobStorageService {
     return blob.url;
   }
 
-  async deleteProfileImage(storedValue: string | null | undefined): Promise<void> {
+  async deleteProfileImage(
+    storedValue: string | null | undefined,
+  ): Promise<void> {
     if (!storedValue || !isBlobUrl(storedValue) || !this.token) return;
 
     try {

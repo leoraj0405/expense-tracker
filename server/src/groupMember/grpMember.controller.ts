@@ -23,7 +23,10 @@ export class GrpMemberController {
   ) {}
 
   @Post()
-  async postGrpMember(@Body() body: RequestGrpMember, @Res() reply: Response): Promise<void> {
+  async postGrpMember(
+    @Body() body: RequestGrpMember,
+    @Res() reply: Response,
+  ): Promise<void> {
     try {
       const groupId = body.groupId;
       const inputEmail = body.email;
@@ -45,16 +48,22 @@ export class GrpMemberController {
         );
         const userId = createUser.id;
         await this.grpMemberService.createGroupMember(groupId, userId);
-        await this.grpMemberService.sendLoginCredentialsInfoToUserEmail(inputEmail);
+        await this.grpMemberService.sendLoginCredentialsInfoToUserEmail(
+          inputEmail,
+        );
         sendSuccess(reply, {
           item: {
             message:
-              'New user created and added to the group. Login credentials sent to ' + inputEmail,
+              'New user created and added to the group. Login credentials sent to ' +
+              inputEmail,
           },
         });
       } else {
         const userId = isUser[0].id;
-        const createMember = await this.grpMemberService.createGroupMember(groupId, userId);
+        const createMember = await this.grpMemberService.createGroupMember(
+          groupId,
+          userId,
+        );
         sendSuccess(reply, { item: createMember });
       }
     } catch (error) {
@@ -83,7 +92,10 @@ export class GrpMemberController {
   }
 
   @Delete('/:id')
-  async deleteGroupMemberbyId(@Param('id') id: string, @Res() reply: Response): Promise<void> {
+  async deleteGroupMemberbyId(
+    @Param('id') id: string,
+    @Res() reply: Response,
+  ): Promise<void> {
     try {
       const member = await this.grpMemberService.deleteGrpMember(id);
       sendSuccess(reply, { item: member });
@@ -93,9 +105,13 @@ export class GrpMemberController {
   }
 
   @Get('onegroup/:id')
-  async getGroupMembersByGroupId(@Param('id') id: string, @Res() reply: Response): Promise<void> {
+  async getGroupMembersByGroupId(
+    @Param('id') id: string,
+    @Res() reply: Response,
+  ): Promise<void> {
     try {
-      const groupMembers = await this.grpMemberService.fetchGroupMembersByGroupId(id);
+      const groupMembers =
+        await this.grpMemberService.fetchGroupMembersByGroupId(id);
       sendSuccess(reply, { items: groupMembers || [] });
     } catch (error) {
       sendError(reply, error?.message || 'Failed to fetch group members', 500);
@@ -103,7 +119,10 @@ export class GrpMemberController {
   }
 
   @Get('/:id')
-  async fetchGroupMemberById(@Param('id') id: string, @Res() reply: Response): Promise<void> {
+  async fetchGroupMemberById(
+    @Param('id') id: string,
+    @Res() reply: Response,
+  ): Promise<void> {
     try {
       const groupMember = await this.grpMemberService.fetchGroupMemberById(id);
       if (!groupMember) {

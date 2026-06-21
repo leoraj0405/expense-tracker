@@ -12,7 +12,8 @@ export class GroupService {
 
   constructor(
     @InjectRepository(Group) private groupRepo: Repository<Group>,
-    @InjectRepository(GroupMember) private grpMemberRepo: Repository<GroupMember>,
+    @InjectRepository(GroupMember)
+    private grpMemberRepo: Repository<GroupMember>,
   ) {}
 
   async createGroup({ name, createdBy }: RequestGroup) {

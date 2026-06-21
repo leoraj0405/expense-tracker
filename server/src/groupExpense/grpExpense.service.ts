@@ -45,7 +45,10 @@ export class GrpExpenseService {
     };
   }
 
-  private formatGroupExpenseRow(expense: GroupExpense, splits: GroupExpenseSplit[]) {
+  private formatGroupExpenseRow(
+    expense: GroupExpense,
+    splits: GroupExpenseSplit[],
+  ) {
     const { splitAmong, splitUnequal } = this.formatSplits(splits);
     return {
       ...mongoId(expense.id),
@@ -54,7 +57,9 @@ export class GrpExpenseService {
       splitAmong,
       splitUnequal,
       group: expense.group ? formatGroupRef(expense.group) : undefined,
-      category: expense.category ? formatCategoryRef(expense.category) : undefined,
+      category: expense.category
+        ? formatCategoryRef(expense.category)
+        : undefined,
       user: expense.user ? formatUserRef(expense.user) : undefined,
     };
   }

@@ -18,7 +18,11 @@ import { memoryStorage } from 'multer';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
-import { sendError, sendSuccess, buildSuccess } from '../utils/api-response.util';
+import {
+  sendError,
+  sendSuccess,
+  buildSuccess,
+} from '../utils/api-response.util';
 import { DashboardService } from './dashboard.service';
 import { resolveProfileUrl } from '../utils/profile-image.util';
 
@@ -84,7 +88,10 @@ export class UserController {
     @UploadedFile() file: Express.Multer.File,
   ): Promise<void> {
     try {
-      const user = await this.userService.updateUser({ id, updateData: body }, file);
+      const user = await this.userService.updateUser(
+        { id, updateData: body },
+        file,
+      );
       sendSuccess(reply, {
         item: {
           ...user,
@@ -97,7 +104,10 @@ export class UserController {
   }
 
   @Delete('/:id')
-  async deleteUser(@Param('id') id: string, @Res() reply: Response): Promise<void> {
+  async deleteUser(
+    @Param('id') id: string,
+    @Res() reply: Response,
+  ): Promise<void> {
     try {
       const user = await this.userService.deleteUser(id);
       sendSuccess(reply, { item: user });
@@ -107,9 +117,15 @@ export class UserController {
   }
 
   @Post('/login')
-  async loginUser(@Res() reply: Response, @Body() body: LoginUserReq): Promise<void> {
+  async loginUser(
+    @Res() reply: Response,
+    @Body() body: LoginUserReq,
+  ): Promise<void> {
     try {
-      const loggedUser = await this.userService.loginUser(body.email, body.password);
+      const loggedUser = await this.userService.loginUser(
+        body.email,
+        body.password,
+      );
       if (!loggedUser) {
         return sendError(reply, 'Invalid Credentials.', 401);
       }
@@ -204,7 +220,10 @@ export class UserController {
   }
 
   @Get('/:id')
-  async findOneUser(@Res() reply: Response, @Param('id') id: string): Promise<void> {
+  async findOneUser(
+    @Res() reply: Response,
+    @Param('id') id: string,
+  ): Promise<void> {
     try {
       const oneUser = await this.userService.findOneUser(id);
       if (!oneUser) {
@@ -239,7 +258,10 @@ export class UserController {
   }
 
   @Post('/parentgenerateotp')
-  async findParent(@Res() reply: Response, @Body() body: LoginParentReq): Promise<void> {
+  async findParent(
+    @Res() reply: Response,
+    @Body() body: LoginParentReq,
+  ): Promise<void> {
     try {
       const findParent = await this.userService.parentGenerateOtp(body);
       if (!findParent) {
@@ -300,7 +322,10 @@ export class UserController {
   }
 
   @Post('/checkuser')
-  async checkUserByEmail(@Res() reply: Response, @Body() body: { email: string }): Promise<void> {
+  async checkUserByEmail(
+    @Res() reply: Response,
+    @Body() body: { email: string },
+  ): Promise<void> {
     try {
       const isUser = await this.userService.checkUserByEmail(body.email);
       if (!isUser?.length) {

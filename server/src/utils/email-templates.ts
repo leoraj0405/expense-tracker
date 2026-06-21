@@ -134,7 +134,8 @@ export function buildOtpEmail(options: {
   expiryNote?: string;
 }): OtpEmailContent {
   const expiryNote =
-    options.expiryNote ?? 'If you did not request this code, you can safely ignore this email.';
+    options.expiryNote ??
+    'If you did not request this code, you can safely ignore this email.';
   const safeGreeting = escapeHtml(options.greeting);
   const safeIntro = escapeHtml(options.intro);
   const safeTitle = escapeHtml(options.title);
@@ -193,7 +194,8 @@ export function buildWelcomeCredentialsEmail(options: {
   const safeEmail = escapeHtml(options.email);
   const safePassword = escapeHtml(options.password);
   const subject = 'Welcome to Expense Tracker';
-  const preheader = 'Your account has been created. Sign in with the credentials below.';
+  const preheader =
+    'Your account has been created. Sign in with the credentials below.';
 
   const body = `
           <tr>

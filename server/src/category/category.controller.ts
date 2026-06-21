@@ -12,7 +12,11 @@ import {
 import { Response } from 'express';
 import { CategoryService } from './category.service';
 import { RequestCategory } from '../request';
-import { sendError, sendPaginated, sendSuccess } from '../utils/api-response.util';
+import {
+  sendError,
+  sendPaginated,
+  sendSuccess,
+} from '../utils/api-response.util';
 
 @Controller('api/category')
 export class CategoryController {
@@ -24,7 +28,9 @@ export class CategoryController {
     @Res() reply: Response,
   ): Promise<void> {
     try {
-      const category = await this.categoryService.createCategory({ name: body.name });
+      const category = await this.categoryService.createCategory({
+        name: body.name,
+      });
       sendSuccess(reply, { item: category });
     } catch (error) {
       if (error?.code === 11000) {
@@ -73,7 +79,10 @@ export class CategoryController {
   }
 
   @Delete('/:id')
-  async deleteCategory(@Param('id') id: string, @Res() reply: Response): Promise<void> {
+  async deleteCategory(
+    @Param('id') id: string,
+    @Res() reply: Response,
+  ): Promise<void> {
     try {
       const category = await this.categoryService.deleteCategory(id);
       sendSuccess(reply, { item: category });
@@ -83,7 +92,10 @@ export class CategoryController {
   }
 
   @Get('/:id')
-  async getSingleCategory(@Param('id') id: string, @Res() reply: Response): Promise<void> {
+  async getSingleCategory(
+    @Param('id') id: string,
+    @Res() reply: Response,
+  ): Promise<void> {
     try {
       const category = await this.categoryService.findCategoryById(id);
       if (!category) {

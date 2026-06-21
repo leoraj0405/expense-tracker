@@ -60,7 +60,9 @@ export function getCurrentMonthBounds(): ResolvedDateRange {
  * Resolve expense list date range from query params.
  * Priority: explicit start/end → month (YYYY-MM) → current calendar month.
  */
-export function resolveExpenseDateRange(input: DateRangeInput = {}): ResolvedDateRange {
+export function resolveExpenseDateRange(
+  input: DateRangeInput = {},
+): ResolvedDateRange {
   const { startDate, endDate, month } = input;
 
   if (month && /^\d{4}-\d{2}$/.test(month)) {
@@ -87,7 +89,9 @@ export function resolveExpenseDateRange(input: DateRangeInput = {}): ResolvedDat
   return getCurrentMonthBounds();
 }
 
-export function getPreviousMonthBounds(reference: Date = new Date()): ResolvedDateRange {
+export function getPreviousMonthBounds(
+  reference: Date = new Date(),
+): ResolvedDateRange {
   const y = reference.getFullYear();
   const m = reference.getMonth();
   return {

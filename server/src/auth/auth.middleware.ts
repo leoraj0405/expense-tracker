@@ -1,4 +1,8 @@
-import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NestMiddleware,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -18,13 +22,18 @@ export class AuthMiddleware implements NestMiddleware {
 
   private isParentExpenseRead(req: Request, childIds: string[]): boolean {
     if (req.method !== 'GET') return false;
-    const match = req.originalUrl.match(/\/api\/expense\/userexpense\/([^/?]+)/);
+    const match = req.originalUrl.match(
+      /\/api\/expense\/userexpense\/([^/?]+)/,
+    );
     if (!match) return false;
     return childIds.includes(match[1]);
   }
 
   private isParentHome(req: Request): boolean {
-    return req.method === 'GET' && /\/api\/user\/parenthome\/?(\?|$)/.test(req.originalUrl);
+    return (
+      req.method === 'GET' &&
+      /\/api\/user\/parenthome\/?(\?|$)/.test(req.originalUrl)
+    );
   }
 
   use(req: Request, res: Response, next: NextFunction) {
@@ -37,10 +46,12 @@ export class AuthMiddleware implements NestMiddleware {
     try {
       const decoded = this.jwtService.verify(token, {
         secret: this.configService.get<string>('SEMETRIC_KEY'),
-      }) as Record<string, unknown> & Partial<ParentJwtPayload>;
+      });
 
       if (decoded.role === 'parent') {
-        const childIds = Array.isArray(decoded.childIds) ? decoded.childIds : [];
+        const childIds = Array.isArray(decoded.childIds)
+          ? decoded.childIds
+          : [];
         req['parent'] = decoded;
 
         if (this.isParentHome(req) || this.isParentExpenseRead(req, childIds)) {

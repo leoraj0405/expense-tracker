@@ -56,7 +56,9 @@ export class ExpenseService {
       date: updateData.date ? new Date(updateData.date) : undefined,
       updatedAt: new Date(),
     });
-    this.logger.log(`The expense updated by Id : ${id}, values : ${updateData}`);
+    this.logger.log(
+      `The expense updated by Id : ${id}, values : ${updateData}`,
+    );
     return this.expenseRepo.findOne({ where: { id } });
   }
 

@@ -18,7 +18,10 @@ export class GroupController {
   constructor(private readonly groupService: GroupService) {}
 
   @Post('/')
-  async creteExpense(@Body() body: RequestGroup, @Res() reply: Response): Promise<void> {
+  async creteExpense(
+    @Body() body: RequestGroup,
+    @Res() reply: Response,
+  ): Promise<void> {
     try {
       const group = await this.groupService.createGroup({
         name: body.name,
@@ -48,7 +51,10 @@ export class GroupController {
   }
 
   @Delete('/:id')
-  async deleteGroupById(@Param('id') id: string, @Res() reply: Response): Promise<void> {
+  async deleteGroupById(
+    @Param('id') id: string,
+    @Res() reply: Response,
+  ): Promise<void> {
     try {
       const group = await this.groupService.deleteGroup(id);
       sendSuccess(reply, { item: group });
@@ -58,7 +64,10 @@ export class GroupController {
   }
 
   @Get('/usergroups/:id')
-  async fetchGroupsByUserId(@Param('id') id: string, @Res() reply: Response): Promise<void> {
+  async fetchGroupsByUserId(
+    @Param('id') id: string,
+    @Res() reply: Response,
+  ): Promise<void> {
     try {
       const groups = await this.groupService.fetchGroupByUserId(id);
       sendSuccess(reply, { items: groups || [] });
@@ -68,7 +77,10 @@ export class GroupController {
   }
 
   @Get('/:id')
-  async fetchOneGroupById(@Param('id') id: string, @Res() reply: Response): Promise<void> {
+  async fetchOneGroupById(
+    @Param('id') id: string,
+    @Res() reply: Response,
+  ): Promise<void> {
     try {
       const groups = await this.groupService.fetchGroupById(id);
       if (!groups?.length) {

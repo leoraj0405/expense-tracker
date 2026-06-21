@@ -27,7 +27,8 @@ export class ApiExceptionFilter implements ExceptionFilter {
         exceptionResponse !== null &&
         'message' in exceptionResponse
       ) {
-        const message = (exceptionResponse as { message: string | string[] }).message;
+        const message = (exceptionResponse as { message: string | string[] })
+          .message;
         errorMessage = Array.isArray(message) ? message.join(', ') : message;
       }
     } else if (exception instanceof Error) {

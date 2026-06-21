@@ -7,11 +7,7 @@ import { GroupExpense } from '../entities/group-expense.entity';
 import { GroupExpenseSplit } from '../entities/group-expense-split.entity';
 import { MailerService } from '@nestjs-modules/mailer';
 import { buildWelcomeCredentialsEmail } from '../utils/email-templates';
-import {
-  formatGroupRef,
-  formatUserRef,
-  mongoId,
-} from '../utils/mongo-compat';
+import { formatGroupRef, formatUserRef, mongoId } from '../utils/mongo-compat';
 
 export interface GroupMemberWithUser {
   _id: string;
@@ -72,10 +68,9 @@ export class GrpMemberService {
         .createQueryBuilder(GroupExpense, 'expense')
         .leftJoinAndSelect('expense.splits', 'split')
         .where('expense.deletedAt IS NULL')
-        .andWhere(
-          '(expense.userId = :user OR split.memberId = :user)',
-          { user },
-        )
+        .andWhere('(expense.userId = :user OR split.memberId = :user)', {
+          user,
+        })
         .getMany();
 
       for (const expense of expenses) {

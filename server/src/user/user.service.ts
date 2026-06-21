@@ -136,7 +136,7 @@ export class UserService {
       title: 'Verify parent login',
       greeting: 'Hi Parent,',
       intro:
-        'Use the verification code below to sign in to the parent portal and review your children\'s spending.',
+        "Use the verification code below to sign in to the parent portal and review your children's spending.",
       otp,
       expiryNote:
         'This code is for parent portal access only. If you did not request it, please ignore this email.',
@@ -156,7 +156,11 @@ export class UserService {
     const normalizedOtp = otp.trim();
 
     const parentInfo = await this.userRepo.findOne({
-      where: { parentEmail: normalizedEmail, parentOtp: normalizedOtp, deletedAt: IsNull() },
+      where: {
+        parentEmail: normalizedEmail,
+        parentOtp: normalizedOtp,
+        deletedAt: IsNull(),
+      },
     });
     const parentSavedOtp = parentInfo?.parentOtp;
     if (parentSavedOtp === normalizedOtp) {
@@ -166,7 +170,9 @@ export class UserService {
       this.logger.log(`Parent Email and OTP is correct`);
       return parentData;
     }
-    this.logger.error(`Invalid Email : ${normalizedEmail} or Wrong OTP : ${normalizedOtp} `);
+    this.logger.error(
+      `Invalid Email : ${normalizedEmail} or Wrong OTP : ${normalizedOtp} `,
+    );
     return null;
   }
 
@@ -180,7 +186,11 @@ export class UserService {
     return this.userRepo.find({ where: { email, deletedAt: IsNull() } });
   }
 
-  async searchUsers(query: string, groupId?: string, limit = 10): Promise<User[]> {
+  async searchUsers(
+    query: string,
+    groupId?: string,
+    limit = 10,
+  ): Promise<User[]> {
     const trimmed = query.trim();
     if (trimmed.length < 2) return [];
 

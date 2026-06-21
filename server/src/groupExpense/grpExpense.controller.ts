@@ -45,7 +45,10 @@ export class GrpExpenseController {
     @Body() body: RequestGrpExpense,
   ): Promise<void> {
     try {
-      const expense = await this.grpExpenseService.updateGroupExpenseById(id, body);
+      const expense = await this.grpExpenseService.updateGroupExpenseById(
+        id,
+        body,
+      );
       sendSuccess(reply, { item: expense });
     } catch (error) {
       if (error?.status) {
@@ -56,7 +59,10 @@ export class GrpExpenseController {
   }
 
   @Delete('/:id')
-  async deleteGroupExpenseById(@Param('id') id: string, @Res() reply: Response): Promise<void> {
+  async deleteGroupExpenseById(
+    @Param('id') id: string,
+    @Res() reply: Response,
+  ): Promise<void> {
     try {
       const expense = await this.grpExpenseService.deleteGroupExpenseById(id);
       sendSuccess(reply, { item: expense });
@@ -71,7 +77,8 @@ export class GrpExpenseController {
     @Res() reply: Response,
   ): Promise<void> {
     try {
-      const expenses = await this.grpExpenseService.getGroupExpensesByGroupId(id);
+      const expenses =
+        await this.grpExpenseService.getGroupExpensesByGroupId(id);
       sendSuccess(reply, { items: expenses || [] });
     } catch (error) {
       sendError(reply, error?.message || 'Failed to fetch group expenses', 500);
@@ -85,15 +92,25 @@ export class GrpExpenseController {
     @Res() reply: Response,
   ): Promise<void> {
     try {
-      const expenses = await this.grpExpenseService.getExpensesByUserId(userId, groupId);
+      const expenses = await this.grpExpenseService.getExpensesByUserId(
+        userId,
+        groupId,
+      );
       sendSuccess(reply, { items: expenses || [] });
     } catch (error) {
-      sendError(reply, error?.message || 'Failed to fetch user group expenses', 500);
+      sendError(
+        reply,
+        error?.message || 'Failed to fetch user group expenses',
+        500,
+      );
     }
   }
 
   @Get('/:id')
-  async fetchGroupExpenseById(@Param('id') id: string, @Res() reply: Response): Promise<void> {
+  async fetchGroupExpenseById(
+    @Param('id') id: string,
+    @Res() reply: Response,
+  ): Promise<void> {
     try {
       const expenses = await this.grpExpenseService.getGroupExpenseById(id);
       if (!expenses?.length) {
