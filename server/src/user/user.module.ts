@@ -9,7 +9,7 @@ import { Group } from '../entities/group.entity';
 import { GroupMember } from '../entities/group-member.entity';
 import { GroupExpense } from '../entities/group-expense.entity';
 import { GroupExpenseSplit } from '../entities/group-expense-split.entity';
-import { AuthModule } from 'src/auth/auth.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [

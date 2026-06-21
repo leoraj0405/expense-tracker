@@ -11,8 +11,8 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ExpenseService } from './expense.service';
-import { RequestExpense } from 'src/request';
-import { sendError, sendPaginated, sendSuccess } from 'src/utils/api-response.util';
+import { RequestExpense } from '../request';
+import { sendError, sendPaginated, sendSuccess } from '../utils/api-response.util';
 
 @Controller('api/expense')
 export class ExpenseController {

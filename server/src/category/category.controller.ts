@@ -11,8 +11,8 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { CategoryService } from './category.service';
-import { RequestCategory } from 'src/request';
-import { sendError, sendPaginated, sendSuccess } from 'src/utils/api-response.util';
+import { RequestCategory } from '../request';
+import { sendError, sendPaginated, sendSuccess } from '../utils/api-response.util';
 
 @Controller('api/category')
 export class CategoryController {
