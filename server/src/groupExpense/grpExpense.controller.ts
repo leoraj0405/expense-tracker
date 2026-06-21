@@ -13,7 +13,7 @@ import { GrpExpenseService } from './grpExpense.service';
 import { RequestGrpExpense } from '../request';
 import { sendError, sendSuccess } from '../utils/api-response.util';
 
-@Controller('api/groupexpense')
+@Controller('groupexpense')
 export class GrpExpenseController {
   constructor(private readonly grpExpenseService: GrpExpenseService) {}
 

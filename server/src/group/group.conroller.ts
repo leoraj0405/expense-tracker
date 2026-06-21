@@ -13,7 +13,7 @@ import { GroupService } from './group.service';
 import { RequestGroup } from '../request';
 import { sendError, sendSuccess } from '../utils/api-response.util';
 
-@Controller('api/group')
+@Controller('group')
 export class GroupController {
   constructor(private readonly groupService: GroupService) {}
 

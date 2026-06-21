@@ -78,13 +78,13 @@ export class AppModule implements NestModule {
     consumer
       .apply(AuthMiddleware)
       .exclude(
-        { path: '/api/user/login', method: RequestMethod.POST },
-        { path: '/api/user', method: RequestMethod.POST },
-        { path: '/api/user/processotp', method: RequestMethod.POST },
-        { path: '/api/user/parentgenerateotp', method: RequestMethod.POST },
-        { path: '/api/user/parentproccessotp', method: RequestMethod.POST },
-        { path: '/api/user/generateotp', method: RequestMethod.POST },
-        { path: '/api/user/checkuser', method: RequestMethod.POST },
+        { path: 'user/login', method: RequestMethod.POST },
+        { path: 'user', method: RequestMethod.POST },
+        { path: 'user/processotp', method: RequestMethod.POST },
+        { path: 'user/parentgenerateotp', method: RequestMethod.POST },
+        { path: 'user/parentproccessotp', method: RequestMethod.POST },
+        { path: 'user/generateotp', method: RequestMethod.POST },
+        { path: 'user/checkuser', method: RequestMethod.POST },
       )
       .forRoutes({ path: '*', method: RequestMethod.ALL });
   }

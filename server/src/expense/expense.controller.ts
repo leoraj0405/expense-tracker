@@ -18,7 +18,7 @@ import {
   sendSuccess,
 } from '../utils/api-response.util';
 
-@Controller('api/expense')
+@Controller('expense')
 export class ExpenseController {
   constructor(private readonly expenseService: ExpenseService) {}
 

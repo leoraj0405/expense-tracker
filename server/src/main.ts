@@ -12,9 +12,10 @@ async function bootstrap() {
 
   app.use(cookieParser());
   const configService = app.get(ConfigService);
-
+  
   app.set('trust proxy', 1);
-
+  app.setGlobalPrefix('api');
+  
   app.enableCors({
     origin: configService.get<string>('FRONTEND_URL'),
     credentials: true,

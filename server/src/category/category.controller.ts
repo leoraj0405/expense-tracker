@@ -18,7 +18,7 @@ import {
   sendSuccess,
 } from '../utils/api-response.util';
 
-@Controller('api/category')
+@Controller('category')
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 

@@ -15,7 +15,7 @@ import { UserService } from '../user/user.service';
 import { isDuplicateKeyError } from '../utils/mongo-compat';
 import { sendError, sendSuccess } from '../utils/api-response.util';
 
-@Controller('api/groupmember')
+@Controller('groupmember')
 export class GrpMemberController {
   constructor(
     private readonly grpMemberService: GrpMemberService,
